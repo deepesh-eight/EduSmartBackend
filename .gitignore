@@ -1,0 +1,21 @@
+__pycache__/
+.env
+local_settings.py
+
+# Virtual environment
+.venv/
+
+# Testing
+.coverage
+test_*.py
+
+# IDE and editor files
+.idea/
+.vscode/
+
+# Database file (if applicable)
+db.sqlite3
+
+# Log files
+*.log
+
