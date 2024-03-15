@@ -2,6 +2,7 @@
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 # More info on Python, GitHub Actions, and Azure App Service: https://aka.ms/python-webapps-actions
 
+
 name: Build and deploy Python app to Azure Web App - edu-smart-backend
 
 on:
@@ -62,12 +63,12 @@ jobs:
         run: unzip release.zip
 
 
-      - name: Login to Azure
-        uses: azure/login@v1
-        with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_a1798382-e0e5-48f4-ae5f-f867cc371457 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_6c9843fb-b52b-4c63-86a1-56fe64617b8e }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_b96d5462-b87f-4942-bbc4-1e201852b57b }}
+#      - name: Login to Azure
+#        uses: azure/login@v1
+#        with:
+#          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID }}
+#          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID }}
+#          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID }}
 
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v2
@@ -75,3 +76,4 @@ jobs:
         with:
           app-name: 'edu-smart-backend'
           slot-name: 'Production'
+          msiAuthentication: enabled # Enables managed identity for deployment
