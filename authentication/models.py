@@ -206,3 +206,10 @@ class AddressDetails(models.Model):
 
     def __str__(self) -> str:
         return f'{self.user} address details'
+
+class ErrorLogging(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    context = models.TextField(blank=True, null=True)
+    exception = models.TextField(blank=True, null=True)
+    traceback = models.TextField(blank=True, null=True)

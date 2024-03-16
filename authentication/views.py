@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from authentication.models import User, AddressDetails
+from authentication.models import User, AddressDetails, ErrorLogging
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsManagementUser, IsPayRollManagementUser, \
     IsBoardingUser
 from authentication.serializers import UserSignupSerializer, UsersListSerializer, UpdateProfileSerializer, \
@@ -203,6 +203,7 @@ class LoginView(APIView):
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
+            ErrorLogging.exception.error_messages(f'user does not exist {User}')
             resposne = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
                 message=UserLoginMessage.USER_DOES_NOT_EXISTS,
@@ -210,6 +211,7 @@ class LoginView(APIView):
             )
             return Response(resposne, status=status.HTTP_400_BAD_REQUEST)
         if not user.check_password(password):
+            ErrorLogging.exception.error_messages(f'{UserLoginMessage.INCORRECT_PASSWORD}')
             response = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
                 message=UserLoginMessage.INCORRECT_PASSWORD,
