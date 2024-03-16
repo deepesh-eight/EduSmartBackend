@@ -98,9 +98,9 @@ class FetchUserDetailView(APIView):
             )
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
 
-
+#IsAdminUser
 class UsersList(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [permissions.AllowAny]
     pagination_class = CustomPagination
     """
     This class is used to fetch the list of the user's.
