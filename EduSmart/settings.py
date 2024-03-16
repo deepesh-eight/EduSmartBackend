@@ -87,10 +87,10 @@ WSGI_APPLICATION = 'EduSmart.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'edu_samrt',
-        'USER': 'postgres',
-        'PASSWORD': 'postgres',
-        'HOST':'localhost',
+        'NAME': 'postgres',
+        'USER': 'postgresadmin',
+        'PASSWORD': 'Edusmartdb98#$!',
+        'HOST':'edu-postgresqldb.postgres.database.azure.com',
         'PORT':5432
     }
 }
