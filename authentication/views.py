@@ -203,7 +203,6 @@ class LoginView(APIView):
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
-            ErrorLogging.exception.error_messages(f'user does not exist {User}')
             resposne = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
                 message=UserLoginMessage.USER_DOES_NOT_EXISTS,
@@ -211,7 +210,6 @@ class LoginView(APIView):
             )
             return Response(resposne, status=status.HTTP_400_BAD_REQUEST)
         if not user.check_password(password):
-            ErrorLogging.exception.error_messages(f'{UserLoginMessage.INCORRECT_PASSWORD}')
             response = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
                 message=UserLoginMessage.INCORRECT_PASSWORD,

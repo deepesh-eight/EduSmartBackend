@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from constants import USER_TYPE_CHOICES
-from . models import User, AddressDetails
+from .models import User, AddressDetails
 
 
 class UserSignupSerializer(serializers.Serializer):
@@ -63,3 +63,37 @@ class UserLoginSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
     password = serializers.CharField(required=True)
 
+
+# Admin panel serializer
+class StaffProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            'id',
+            'name',
+            'email',
+            'phone',
+            'designation',
+            'is_email_verified',
+            'is_active',
+        ]
+
+
+class StaffUpdateProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            'name',
+            'phone',
+            'designation'
+        ]
+
+
+class StaffSignupSerializer(serializers.Serializer):
+    name = serializers.CharField(required=True)
+    email = serializers.EmailField(required=True)
+    password = serializers.CharField(required=True)
+    phone = serializers.CharField(required=True)
+    user_type = serializers.ChoiceField(
+        choices=USER_TYPE_CHOICES
+    )

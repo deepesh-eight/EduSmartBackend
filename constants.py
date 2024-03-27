@@ -51,9 +51,11 @@ class UserLoginMessage:
     USER_DOES_NOT_EXISTS = "User does not exists."
     INCORRECT_PASSWORD = "Incorrect password, please try again."
     SIGNUP_SUCCESSFUL = "User Signup successful."
+    STAFF_ALREADY_EXISTS = "Staff email or phone already exists"
 
 class UserResponseMessage:
     USER_DOES_NOT_EXISTS = "User does not exists."
+    USER_NOT_FOUND = "User not found"
     USER_DETAIL_MESSAGE = "User detail fetch successfully."
     USER_LIST_MESSAGE = "All user's fetch successfully."
     USER_DELETE_MESSAGE = "User deleted successfully."
