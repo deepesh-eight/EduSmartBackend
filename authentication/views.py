@@ -100,7 +100,7 @@ class FetchUserDetailView(APIView):
 
 #IsAdminUser
 class UsersList(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [IsAdminUser]
     pagination_class = CustomPagination
     """
     This class is used to fetch the list of the user's.
