@@ -181,11 +181,6 @@ class TeacherUpdateProfileView(APIView):
             serializer = TeacherProfileSerializer(teacher, data=request.data, partial=True)
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
-                # Update related Class instances if provided
-                class_name = serializer.validated_data.get('class_name')
-                section = serializer.validated_data.get('section')
-                if class_name or section:
-                    teacher = Class.objects.get_or_create(class_name=class_name, section=section)
                 response = create_response_data(
                     status=status.HTTP_200_OK,
                     message=UserResponseMessage.PROFILE_UPDATED_SUCCESSFULLY,

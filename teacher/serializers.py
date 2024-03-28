@@ -93,16 +93,28 @@ class TeacherListSerializer(serializers.ModelSerializer):
 
 
 class TeacherProfileSerializer(serializers.ModelSerializer):
-    name = serializers.CharField(source='user.name')
     email = serializers.EmailField(source='user.email')
     phone = serializers.CharField(source='user.phone')
-    class_name = serializers.CharField(required=False)
-    section = serializers.CharField(required=False)
+    full_name = serializers.CharField(required=False)
+    dob = serializers.DateField(required=True)
+    image = serializers.CharField(required=True)
+    gender = serializers.ChoiceField(choices=GENDER_CHOICES, required=True)
+    joining_date = serializers.DateField(required=True)
+    religion = serializers.ChoiceField(choices=RELIGION_CHOICES, required=True)
+    blood_group = serializers.ChoiceField(choices=BLOOD_GROUP_CHOICES, required=False)
+    ctc = serializers.DecimalField(max_digits=16, decimal_places=2, default=0.0)
+    class_taught = serializers.ListField(child=serializers.CharField(max_length=100))
+    section = serializers.CharField(max_length=100, required=True)
+    subject = serializers.ListField(child=serializers.CharField(max_length=100))
+    experience = serializers.IntegerField(required=False)
+    role = serializers.ChoiceField(choices=ROLE_CHOICES, required=True)
+    address = serializers.CharField(max_length=255, required=False)
+
 
     class Meta:
         model = TeacherUser
-        fields = ['name', 'email', 'phone', 'dob', 'image', 'first_name', 'last_name', 'salary',
-                  'blood_group', 'class_name', 'section']
+        fields = ['full_name', 'email', 'phone', 'dob', 'image', 'joining_date', 'religion', 'subject', 'experience', 'role', 'address',
+                  'ctc', 'blood_group', 'class_taught', 'section', 'address', 'gender']
 
     def update(self, instance, validated_data):
         user_data = validated_data.pop('user', {})
