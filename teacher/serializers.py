@@ -28,19 +28,39 @@ class TeacherUserSignupSerializer(serializers.Serializer):
 
 
 class TeacherDetailSerializer(serializers.ModelSerializer):
-    name = serializers.SerializerMethodField()
     email = serializers.SerializerMethodField()
+    phone = serializers.SerializerMethodField()
+    class_taught = serializers.SerializerMethodField()
+    subject = serializers.SerializerMethodField()
 
     class Meta:
         model = TeacherUser
-        fields = ['id', 'name', 'gender', 'dob', 'religion', 'email',
-                  'salary', 'joining_date']
+        fields = ['id', 'full_name', 'gender', 'dob', 'blood_group', 'phone', 'address', 'email', 'religion',
+                  'role', 'joining_date', 'class_taught', 'experience', 'subject', 'section', 'ctc']
 
     def get_name(self, obj):
         return obj.user.name if hasattr(obj, 'user') else None
 
     def get_email(self, obj):
         return obj.user.email if hasattr(obj, 'user') else None
+
+    def get_phone(self, obj):
+        phone_number = obj.user.phone
+        if phone_number:
+            return str(phone_number)
+        return None
+
+    def get_subject(self, obj):
+        subjects_str = obj.subject
+        if subjects_str:
+            return eval(subjects_str)
+        return []
+
+    def get_class_taught(self, obj):
+        subjects_str = obj.class_taught
+        if subjects_str:
+            return eval(subjects_str)
+        return []
 
 
 class TeacherListSerializer(serializers.ModelSerializer):
