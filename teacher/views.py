@@ -27,7 +27,6 @@ class TeacherUserCreateView(APIView):
             serializer.is_valid(raise_exception=True)
             full_name = serializer.validated_data['full_name']
             email = serializer.validated_data['email']
-            password = serializer.validated_data['password']
             phone = serializer.validated_data['phone']
             user_type = serializer.validated_data['user_type']
 
@@ -48,7 +47,7 @@ class TeacherUserCreateView(APIView):
 
             if user_type == 'teacher' and serializer.is_valid() == True:
                 user = User.objects.create_user(
-                    name=full_name, email=email, password=password, phone=phone, user_type=user_type
+                    name=full_name, email=email, phone=phone, user_type=user_type
                 )
                 user_teacher = TeacherUser.objects.create(
                     user=user, dob=dob, image=image, gender=gender, joining_date=joining_date, full_name=full_name,
