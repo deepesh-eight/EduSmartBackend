@@ -156,16 +156,21 @@ class Class(models.Model):
 
 class TeacherUser(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    first_name = models.CharField(max_length=255, null=True, blank=True)
-    last_name = models.CharField(max_length=255, null=True, blank=True)
+    full_name = models.CharField(max_length=255, null=True, blank=True)
     dob = models.DateField(null=True, blank=True)
     image = models.CharField(max_length=255, null=True, blank=True)
-    gender = models.CharField(max_length=50, choices=GENDER_CHOICES)
+    gender = models.CharField(max_length=50)
     joining_date = models.DateField(auto_now_add=True, null=True, blank=True)
-    religion = models.CharField(max_length=50, choices=RELIGION_CHOICES)
-    blood_group = models.CharField(max_length=50, choices=BLOOD_GROUP_CHOICES)
-    salary = models.DecimalField(max_digits=16, decimal_places=2, default=0.0)
-    class_taught = models.ManyToManyField(Class)
+    religion = models.CharField(max_length=50)
+    blood_group = models.CharField(max_length=50)
+    ctc = models.DecimalField(max_digits=16, decimal_places=2, default=0.0)
+    # class_taught = models.ManyToManyField(Class)
+    address = models.TextField(blank=True,null=True)
+    role = models.CharField(max_length=255)
+    class_taught = models.TextField(blank=True,null=True)
+    subject = models.TextField(blank=True,null=True)
+    section = models.TextField(blank=True,null=True)
+    experience = models.IntegerField(null=True,blank=True)
 
     def __str__(self) -> str:
         return f'{self.user} user details'

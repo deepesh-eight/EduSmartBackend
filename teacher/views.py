@@ -25,48 +25,36 @@ class TeacherUserCreateView(APIView):
         try:
             serializer = TeacherUserSignupSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
-            name = serializer.validated_data['name']
+            full_name = serializer.validated_data['full_name']
             email = serializer.validated_data['email']
             password = serializer.validated_data['password']
             phone = serializer.validated_data['phone']
             user_type = serializer.validated_data['user_type']
 
-            address_line_1 = serializer.validated_data['address_line_1']
-            address_line_2 = serializer.validated_data['address_line_2']
-            city = serializer.validated_data['city']
-            state = serializer.validated_data['state']
-            country = serializer.validated_data['country']
-            pincode = serializer.validated_data['pincode']
-
             dob = serializer.validated_data['dob']
             image = serializer.validated_data['image']
             gender = serializer.validated_data['gender']
-            first_name = serializer.validated_data['first_name']
-            last_name = serializer.validated_data['last_name']
             joining_date = serializer.validated_data['joining_date']
             religion = serializer.validated_data['religion']
             blood_group = serializer.validated_data['blood_group']
-            salary = serializer.validated_data['salary']
+            ctc = serializer.validated_data['ctc']
 
-            class_name = serializer.validated_data['class_name']
+            class_taught = serializer.validated_data['class_taught']
             section = serializer.validated_data['section']
+            subject = serializer.validated_data['subject']
+            experience = serializer.validated_data['experience']
+            role = serializer.validated_data['role']
+            address = serializer.validated_data['address']
 
             if user_type == 'teacher' and serializer.is_valid() == True:
                 user = User.objects.create_user(
-                    name=name, email=email, password=password, phone=phone, user_type=user_type
-                )
-                user_address = AddressDetails.objects.create(
-                    user=user, address_line_1=address_line_1, address_line_2=address_line_2, city=city, state=state,
-                    country=country, pincode=pincode
-                )
-                class_info = Class.objects.create(
-                    class_name=class_name, section=section
+                    name=full_name, email=email, password=password, phone=phone, user_type=user_type
                 )
                 user_teacher = TeacherUser.objects.create(
-                    user=user, dob=dob, image=image, gender=gender, joining_date=joining_date, first_name=first_name,
-                    religion=religion, blood_group=blood_group, salary=salary, last_name=last_name
+                    user=user, dob=dob, image=image, gender=gender, joining_date=joining_date, full_name=full_name,
+                    religion=religion, blood_group=blood_group, ctc=ctc, class_taught=class_taught, section=section, subject=subject,
+                    experience=experience, role=role, address=address
                 )
-                user_teacher.class_taught.add(class_info)
             else:
                 raise ValidationError("Invalid user_type. Expected 'teacher'.")
             response_data = {

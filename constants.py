@@ -47,6 +47,17 @@ CLASS_CHOICES = [
     ('11th', '11th'),
     ('12th', '12th'),
 ]
+
+SUBJECT_CHOICES = [
+    ("english", "english"),
+    ("hindi", "hindi"),
+    ("maths", "maths"),
+    ("science", "science"),
+]
+ROLE_CHOICES = [
+    ("teacher", "teacher"),
+    ("class_teacher", "class_teacher")
+]
 class UserLoginMessage:
     USER_DOES_NOT_EXISTS = "User does not exists."
     INCORRECT_PASSWORD = "Incorrect password, please try again."

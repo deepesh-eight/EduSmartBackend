@@ -1,39 +1,33 @@
 from rest_framework import serializers
 
-from authentication.models import TeacherUser, StudentUser
-from authentication.serializers import AddressDetailsSerializer
-from constants import USER_TYPE_CHOICES, GENDER_CHOICES, RELIGION_CHOICES, BLOOD_GROUP_CHOICES, CLASS_CHOICES
+from authentication.models import TeacherUser
+from constants import USER_TYPE_CHOICES, GENDER_CHOICES, RELIGION_CHOICES, BLOOD_GROUP_CHOICES, CLASS_CHOICES, \
+    SUBJECT_CHOICES, ROLE_CHOICES
 
 
 class TeacherUserSignupSerializer(serializers.Serializer):
-    name = serializers.CharField(required=True)
+    full_name = serializers.CharField(required=True)
     email = serializers.EmailField(required=True)
     password = serializers.CharField(required=True)
     phone = serializers.CharField(required=True)
     user_type = serializers.ChoiceField(
         choices=USER_TYPE_CHOICES
     )
-
-    # address details
-    address_line_1 = serializers.CharField(required=True)
-    address_line_2 = serializers.CharField(required=False)
-    city = serializers.CharField(required=True)
-    state = serializers.CharField(required=True)
-    country = serializers.CharField(required=True)
-    pincode = serializers.CharField(required=True)
-
-    first_name = serializers.CharField(max_length=255)
-    last_name = serializers.CharField(max_length=255)
     dob = serializers.DateField(required=True)
     image = serializers.ImageField(required=True)
     gender = serializers.ChoiceField(choices=GENDER_CHOICES, required=True)
     joining_date = serializers.DateField(required=True)
     religion = serializers.ChoiceField(choices=RELIGION_CHOICES, required=True)
     blood_group = serializers.ChoiceField(choices=BLOOD_GROUP_CHOICES, required=False)
-    salary = serializers.DecimalField(max_digits=16, decimal_places=2, default=0.0)
+    ctc = serializers.DecimalField(max_digits=16, decimal_places=2, default=0.0)
 
-    class_name = serializers.MultipleChoiceField(choices=CLASS_CHOICES, required=True)
+    class_taught = serializers.MultipleChoiceField(choices=CLASS_CHOICES, required=True)
     section = serializers.CharField(max_length=100, required=True)
+    subject = serializers.MultipleChoiceField(choices=SUBJECT_CHOICES, required=True)
+    experience = serializers.IntegerField(required=False)
+    role = serializers.ChoiceField(choices=ROLE_CHOICES, required=True)
+    address = serializers.CharField(max_length=255, required=False)
+
 
 
 class TeacherDetailSerializer(serializers.ModelSerializer):
@@ -53,16 +47,12 @@ class TeacherDetailSerializer(serializers.ModelSerializer):
 
 
 class TeacherListSerializer(serializers.ModelSerializer):
-    address_detail = AddressDetailsSerializer(source='user.address_details', many=True)
-    name = serializers.SerializerMethodField()
+    email = serializers.EmailField(source='user.email')
     phone = serializers.SerializerMethodField()
 
     class Meta:
-        model = StudentUser
-        fields = ['id', 'name', 'gender', 'phone', 'dob', 'address_detail']
-
-    def get_name(self, obj):
-        return obj.user.name if hasattr(obj, 'user') else None
+        model = TeacherUser
+        fields = ['id', 'full_name', 'subject', 'class_taught', 'phone', 'email']
 
     def get_phone(self, obj):
         phone_number = obj.user.phone
