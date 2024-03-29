@@ -167,10 +167,8 @@ class TeacherUser(models.Model):
     # class_taught = models.ManyToManyField(Class)
     address = models.TextField(blank=True,null=True)
     role = models.CharField(max_length=255)
-    class_taught = models.TextField(blank=True,null=True)
-    subject = models.TextField(blank=True,null=True)
-    section = models.TextField(blank=True,null=True)
     experience = models.IntegerField(null=True,blank=True)
+    class_subject_section_details = models.JSONField(blank=True, null=True)
 
     def __str__(self) -> str:
         return f'{self.user} user details'

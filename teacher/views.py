@@ -38,12 +38,10 @@ class TeacherUserCreateView(APIView):
             blood_group = serializer.validated_data['blood_group']
             ctc = serializer.validated_data['ctc']
 
-            class_taught = serializer.validated_data['class_taught']
-            section = serializer.validated_data['section']
-            subject = serializer.validated_data['subject']
             experience = serializer.validated_data['experience']
             role = serializer.validated_data['role']
             address = serializer.validated_data['address']
+            class_subject_section_details = serializer.validated_data['class_subject_section_details']
 
             if user_type == 'teacher' and serializer.is_valid() == True:
                 user = User.objects.create_user(
@@ -51,8 +49,8 @@ class TeacherUserCreateView(APIView):
                 )
                 user_teacher = TeacherUser.objects.create(
                     user=user, dob=dob, image=image, gender=gender, joining_date=joining_date, full_name=full_name,
-                    religion=religion, blood_group=blood_group, ctc=ctc, class_taught=class_taught, section=section, subject=subject,
-                    experience=experience, role=role, address=address
+                    religion=religion, blood_group=blood_group, ctc=ctc,
+                    experience=experience, role=role, address=address, class_subject_section_details=class_subject_section_details
                 )
             else:
                 raise ValidationError("Invalid user_type. Expected 'teacher'.")
