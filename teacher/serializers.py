@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from EduSmart import settings
 from authentication.models import TeacherUser
 from constants import USER_TYPE_CHOICES, GENDER_CHOICES, RELIGION_CHOICES, BLOOD_GROUP_CHOICES, CLASS_CHOICES, \
     SUBJECT_CHOICES, ROLE_CHOICES
@@ -33,11 +34,12 @@ class TeacherUserSignupSerializer(serializers.Serializer):
 class TeacherDetailSerializer(serializers.ModelSerializer):
     email = serializers.SerializerMethodField()
     phone = serializers.SerializerMethodField()
+    image = serializers.SerializerMethodField()
 
     class Meta:
         model = TeacherUser
         fields = ['id', 'full_name', 'gender', 'dob', 'blood_group', 'phone', 'address', 'email', 'religion',
-                  'role', 'joining_date', 'experience', 'ctc', 'class_subject_section_details']
+                  'role', 'joining_date', 'experience', 'ctc', 'class_subject_section_details', 'image']
 
     def get_name(self, obj):
         return obj.user.name if hasattr(obj, 'user') else None
@@ -51,14 +53,22 @@ class TeacherDetailSerializer(serializers.ModelSerializer):
             return str(phone_number)
         return None
 
+    def get_image(self, obj):
+        # Assuming 'image' field stores the file path or URL
+        if obj.image:
+            # Assuming media URL is configured in settings
+            return settings.MEDIA_URL + str(obj.image)
+        return None
+
 
 class TeacherListSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(source='user.email')
     phone = serializers.SerializerMethodField()
+    image = serializers.SerializerMethodField()
 
     class Meta:
         model = TeacherUser
-        fields = ['id', 'full_name', 'phone', 'email', 'class_subject_section_details']
+        fields = ['id', 'full_name', 'phone', 'email', 'class_subject_section_details', 'image']
 
     def get_phone(self, obj):
         phone_number = obj.user.phone
@@ -71,6 +81,13 @@ class TeacherListSerializer(serializers.ModelSerializer):
         if subjects_str:
             return eval(subjects_str)
         return []
+
+    def get_image(self, obj):
+        # Assuming 'image' field stores the file path or URL
+        if obj.image:
+            # Assuming media URL is configured in settings
+            return settings.MEDIA_URL + str(obj.image)
+        return None
 
 
 

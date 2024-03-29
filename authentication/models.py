@@ -158,7 +158,7 @@ class TeacherUser(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     full_name = models.CharField(max_length=255, null=True, blank=True)
     dob = models.DateField(null=True, blank=True)
-    image = models.CharField(max_length=255, null=True, blank=True)
+    image = models.ImageField(upload_to='', blank=True)
     gender = models.CharField(max_length=50)
     joining_date = models.DateField(auto_now_add=True, null=True, blank=True)
     religion = models.CharField(max_length=50)
