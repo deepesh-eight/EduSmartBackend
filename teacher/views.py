@@ -110,10 +110,10 @@ class TeacherListView(APIView):
     def get(self, request):
         queryset = TeacherUser.objects.all()
         if request.query_params:
-            name = request.query_params.get('name', None)
+            name = request.query_params.get('full_name', None)
             page = request.query_params.get('page_size', None)
             if name:
-                queryset = queryset.filter(user__name__icontains=name)
+                queryset = queryset.filter(full_name__icontains=name)
 
             # Paginate the queryset
             paginator = self.pagination_class()
@@ -169,9 +169,6 @@ class TeacherDeleteView(APIView):
 
 class TeacherUpdateProfileView(APIView):
     permission_classes = [IsAdminUser]
-    """
-    This class is used to update the teacher profile.
-    """
 
     def patch(self, request, pk):
         try:

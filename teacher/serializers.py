@@ -79,7 +79,7 @@ class TeacherProfileSerializer(serializers.ModelSerializer):
     phone = serializers.CharField(source='user.phone')
     full_name = serializers.CharField(required=False)
     dob = serializers.DateField(required=True)
-    image = serializers.ImageField(required=True)
+    image = serializers.CharField(required=True)
     gender = serializers.ChoiceField(choices=GENDER_CHOICES, required=True)
     joining_date = serializers.DateField(required=True)
     religion = serializers.ChoiceField(choices=RELIGION_CHOICES, required=True)
