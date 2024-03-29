@@ -120,13 +120,20 @@ class TeacherListView(APIView):
             paginated_queryset = paginator.paginate_queryset(queryset, request)
 
             serializers = TeacherListSerializer(paginated_queryset, many=True)
-            response = create_response_list_data(
-                status=status.HTTP_200_OK,
-                count=len(serializers.data),
-                message=UserResponseMessage.USER_LIST_MESSAGE,
-                data=serializers.data,
-            )
-            return Response(response, status=status.HTTP_200_OK)
+            response_data = {
+                'status': status.HTTP_200_OK,
+                'count': len(serializers.data),
+                'message': UserResponseMessage.USER_LIST_MESSAGE,
+                'data': serializers.data,
+                'pagination': {
+                    'page_size': paginator.page_size,
+                    'next': paginator.get_next_link(),
+                    'previous': paginator.get_previous_link(),
+                    'total_pages': paginator.page.paginator.num_pages,
+                    'current_page': paginator.page.number,
+                }
+            }
+            return Response(response_data, status=status.HTTP_200_OK)
 
         serializer = TeacherListSerializer(queryset, many=True)
         response = create_response_list_data(
