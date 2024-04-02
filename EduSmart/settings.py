@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-b^&%diqg(h(@4rs^9bhm*9horj^!gkt8)2a@ze%q10a5xwzq6j
 DEBUG = True
 
 ALLOWED_HOSTS = ['edu-management.azurewebsites.net']
-
+base_url = 'http://edu-management.azurewebsites.net'
 # Application definition
 
 INSTALLED_APPS = [

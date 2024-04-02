@@ -169,9 +169,14 @@ class TeacherUser(models.Model):
     role = models.CharField(max_length=255)
     experience = models.IntegerField(null=True,blank=True)
     class_subject_section_details = models.JSONField(blank=True, null=True)
+    highest_qualification = models.CharField(max_length=255)
+    # certificate = models.FileField(upload_to='', blank=True, null=True)
 
     def __str__(self) -> str:
         return f'{self.user} user details'
+class Certificate(models.Model):
+    teacher = models.ForeignKey(TeacherUser, on_delete=models.CASCADE, related_name='certificates')
+    certificate_file = models.FileField(upload_to='')
 
 class StudentUser(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
