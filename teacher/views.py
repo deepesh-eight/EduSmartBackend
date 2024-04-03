@@ -31,6 +31,7 @@ class TeacherUserCreateView(APIView):
             email = serializer.validated_data['email']
             phone = serializer.validated_data['phone']
             user_type = serializer.validated_data['user_type']
+            password = serializer.validated_data['password']
 
             dob = serializer.validated_data['dob']
             image = serializer.validated_data['image']
@@ -50,7 +51,7 @@ class TeacherUserCreateView(APIView):
 
             if user_type == 'teacher' and serializer.is_valid() == True:
                 user = User.objects.create_user(
-                    name=full_name, email=email, phone=phone, user_type=user_type
+                    name=full_name, email=email, phone=phone, user_type=user_type, password=password
                 )
                 user_teacher = TeacherUser.objects.create(
                     user=user, dob=dob, image=image, gender=gender, joining_date=joining_date, full_name=full_name,
@@ -104,7 +105,7 @@ class FetchTeacherDetailView(APIView):
             else:
                 response_data = create_response_data(
                     status=status.HTTP_404_NOT_FOUND,
-                    message=f"{data.full_name} does not exist.",
+                    message=UserResponseMessage.USER_DOES_NOT_EXISTS,
                     data={}
                 )
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
