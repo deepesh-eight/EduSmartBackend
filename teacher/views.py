@@ -31,7 +31,6 @@ class TeacherUserCreateView(APIView):
             email = serializer.validated_data['email']
             phone = serializer.validated_data['phone']
             user_type = serializer.validated_data['user_type']
-            password = serializer.validated_data['password']
 
             dob = serializer.validated_data['dob']
             image = serializer.validated_data['image']
@@ -51,7 +50,7 @@ class TeacherUserCreateView(APIView):
 
             if user_type == 'teacher' and serializer.is_valid() == True:
                 user = User.objects.create_user(
-                    name=full_name, email=email, phone=phone, user_type=user_type, password=password
+                    name=full_name, email=email, phone=phone, user_type=user_type
                 )
                 user_teacher = TeacherUser.objects.create(
                     user=user, dob=dob, image=image, gender=gender, joining_date=joining_date, full_name=full_name,
@@ -65,11 +64,10 @@ class TeacherUserCreateView(APIView):
             else:
                 raise ValidationError("Invalid user_type. Expected 'teacher'.")
             response_data = {
-                'user_id': user.id,
+                'user_id': user_teacher.id,
                 'name': user.name,
                 'email': user.email,
                 'phone': str(user.phone),
-                'is_email_verified': user.is_email_verified,
                 'user_type': user.user_type
             }
             response = create_response_data(

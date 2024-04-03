@@ -24,7 +24,6 @@ class CertificateSerializer(serializers.ModelSerializer):
 class TeacherUserSignupSerializer(serializers.Serializer):
     full_name = serializers.CharField(required=True)
     email = serializers.EmailField(required=True)
-    password = serializers.CharField(max_length=255)
     phone = serializers.CharField(required=True)
     user_type = serializers.ChoiceField(
         choices=USER_TYPE_CHOICES
