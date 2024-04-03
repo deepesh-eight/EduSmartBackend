@@ -1,18 +1,20 @@
 import json
 
 from django.db import IntegrityError
-from rest_framework import status
+from rest_framework import status, permissions
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from authentication.models import User, Class, TeacherUser, StudentUser, Certificate
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsTeacherUser
+from authentication.serializers import UserLoginSerializer
 from constants import UserLoginMessage, UserResponseMessage
 from pagination import CustomPagination
 from teacher.serializers import TeacherUserSignupSerializer, TeacherDetailSerializer, TeacherListSerializer, \
     TeacherProfileSerializer
-from utils import create_response_data, create_response_list_data
+from utils import create_response_data, create_response_list_data, generate_random_password
 
 
 # Create your views here.
@@ -52,6 +54,9 @@ class TeacherUserCreateView(APIView):
                 user = User.objects.create_user(
                     name=full_name, email=email, phone=phone, user_type=user_type
                 )
+                password = generate_random_password()
+                user.set_password(password)
+                user.save()
                 user_teacher = TeacherUser.objects.create(
                     user=user, dob=dob, image=image, gender=gender, joining_date=joining_date, full_name=full_name,
                     religion=religion, blood_group=blood_group, ctc=ctc,
@@ -68,7 +73,8 @@ class TeacherUserCreateView(APIView):
                 'name': user.name,
                 'email': user.email,
                 'phone': str(user.phone),
-                'user_type': user.user_type
+                'user_type': user.user_type,
+                'password': password
             }
             response = create_response_data(
                 status=status.HTTP_201_CREATED,
@@ -190,6 +196,7 @@ class TeacherDeleteView(APIView):
             )
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
 
+
 class TeacherUpdateProfileView(APIView):
     permission_classes = [IsAdminUser]
 
@@ -251,3 +258,45 @@ class TeacherUpdateProfileView(APIView):
                 data={}
             )
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+
+
+class TeacherLoginView(APIView):
+    permission_classes = [permissions.AllowAny, ]
+    """
+    This class is used to login teacher user.
+    """
+    def post(self, request):
+        serializer = UserLoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data['email']
+        password = serializer.validated_data['password']
+
+        try:
+            user = TeacherUser.objects.get(user__email=email)
+        except TeacherUser.DoesNotExist:
+            resposne = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=UserLoginMessage.USER_DOES_NOT_EXISTS,
+                data={}
+            )
+            return Response(resposne, status=status.HTTP_400_BAD_REQUEST)
+        if not user.user.check_password(password):
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=UserLoginMessage.INCORRECT_PASSWORD,
+                data={}
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        teacher_detail = FetchTeacherDetailView.get(self, request, user.id)
+
+        refresh = RefreshToken.for_user(user)
+        response_data = create_response_data(
+            status=status.HTTP_201_CREATED,
+            message=UserLoginMessage.SIGNUP_SUCCESSFUL,
+            data={
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+                'teacher_data':teacher_detail.data.get('data')
+            }
+        )
+        return Response(response_data, status=status.HTTP_201_CREATED)

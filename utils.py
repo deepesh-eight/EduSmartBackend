@@ -1,3 +1,6 @@
+from django.contrib.auth import get_user_model
+
+
 def create_response_data(status, message, data):
     return {
         "status": status,
@@ -11,3 +14,8 @@ def create_response_list_data(status, count,message, data):
         "message": message,
         "data": data
     }
+
+
+def generate_random_password():
+    User = get_user_model()
+    return get_user_model().objects.make_random_password()
