@@ -125,7 +125,7 @@ class TeacherListView(APIView):
     pagination_class = CustomPagination
 
     def get(self, request):
-        queryset = TeacherUser.objects.all()
+        queryset = TeacherUser.objects.filter(user__is_active=True)
         if request.query_params:
             name = request.query_params.get('full_name', None)
             page = request.query_params.get('page_size', None)
