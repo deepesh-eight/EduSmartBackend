@@ -1,46 +1,11 @@
+import datetime
+import json
+
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
 
-GENDER_CHOICES = [
-        ('male', 'Male'),
-        ('female', 'Female'),
-        ('other', 'Other'),
-    ]
-RELIGION_CHOICES = [
-        ('christian', 'Christian'),
-        ('islam', 'Islam'),
-        ('hinduism', 'Hinduism'),
-        ('buddhism', 'Buddhism'),
-        ('sikhism', 'Sikhism'),
-        ('judaism', 'Judaism'),
-        ('other', 'Other'),
-    ]
-BLOOD_GROUP_CHOICES = [
-        ('A+', 'A+'),
-        ('A-', 'A-'),
-        ('B+', 'B+'),
-        ('B-', 'B-'),
-        ('AB+', 'AB+'),
-        ('AB-', 'AB-'),
-        ('O+', 'O+'),
-        ('O-', 'O-'),
-    ]
-CLASS_CHOICES = [
-    ('1st', '1st'),
-    ('2nd', '2nd'),
-    ('3rd', '3rd'),
-    ('4th', '4th'),
-    ('5th', '5th'),
-    ('6th', '6th'),
-    ('7th', '7th'),
-    ('8th', '8th'),
-    ('9th', '9th'),
-    ('10th', '10th'),
-    ('11th', '11th'),
-    ('12th', '12th'),
-]
 
 class UserManager(BaseUserManager):
     use_in_migrations = True
@@ -148,7 +113,7 @@ class ManagementUser(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
 
 class Class(models.Model):
-    class_name = models.CharField(max_length=50, choices=CLASS_CHOICES)
+    class_name = models.CharField(max_length=50)
     section = models.CharField(max_length=100)
 
     def __str__(self) -> str:
@@ -178,26 +143,48 @@ class Certificate(models.Model):
     teacher = models.ForeignKey(TeacherUser, on_delete=models.CASCADE, related_name='certificates')
     certificate_file = models.FileField(upload_to='')
 
+
 class StudentUser(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    dob = models.DateField(null=True, blank=True)
-    image = models.CharField(max_length=255, null=True, blank=True)
-    father_name = models.CharField(max_length=150)
-    mother_name = models.CharField(max_length=150)
-    gender = models.CharField(max_length=50, choices=GENDER_CHOICES)
+    name = models.CharField(max_length=255)
+    dob = models.DateField(default=datetime.date.today)
+    image = models.ImageField(upload_to='', blank=True)
+    father_name = models.CharField(max_length=150, null=True, blank=True)
+    father_phone_number = PhoneNumberField(blank=True, null=True)
+    mother_name = models.CharField(max_length=150,null=True, blank=True)
+    mother_occupation = models.CharField(max_length=255,null=True, blank=True)
+    mother_phone_number = PhoneNumberField(blank=True, null=True)
+    gender = models.CharField(max_length=50)
     father_occupation = models.CharField(max_length=255)
-    admission_date = models.DateField(auto_now_add=True, null=True, blank=True)
+    admission_date = models.DateField(default=datetime.date.today)
     school_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
     bus_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
     canteen_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
     other_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
-    religion = models.CharField(max_length=50, choices=RELIGION_CHOICES)
-    blood_group = models.CharField(max_length=50, choices=BLOOD_GROUP_CHOICES)
-    class_enrolled = models.ForeignKey(Class, on_delete=models.CASCADE)
+    due_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
+    total_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
+    religion = models.CharField(max_length=100)
+    blood_group = models.CharField(max_length=50, blank=True, null=True)
+    class_enrolled = models.CharField(max_length=255)
+    section = models.CharField(max_length=50)
+    curriculum = models.ForeignKey('curriculum.Curriculum', on_delete=models.CASCADE, null=True, blank=True)
+    permanent_address = models.TextField(blank=True, null=True)
+    bus_number = models.CharField(max_length=255)
+    bus_route = models.IntegerField()
 
     def __str__(self) -> str:
-        return f'{self.user} user details'
+        return f'{self.name} user details'
+
+    def get_phone_without_country_code(self):
+        if not self.phone:
+            return None
+        return str(self.phone.as_national.lstrip('0').strip().replace(' ', ''))
+
+    def set_subject(self, subject):
+        self.subject = json.dumps(subject)
+
+    def get_subject(self):
+        return json.loads(self.subject)
 
 class PayrollManagementUser(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)

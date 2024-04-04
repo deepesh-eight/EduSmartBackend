@@ -71,3 +71,6 @@ class UserResponseMessage:
     USER_LIST_MESSAGE = "All user's fetch successfully."
     USER_DELETE_MESSAGE = "User deleted successfully."
     PROFILE_UPDATED_SUCCESSFULLY = "User profile updated successfully"
+class CurriculumMessage:
+    CURRICULUM_CREATED_SUCCESSFULLY = "curriculum created successfully."
+    CURRICULUM_LIST_MESSAGE = "curriculum list fetch successfully."
