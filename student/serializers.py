@@ -44,13 +44,14 @@ class StudentDetailSerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField()
     email = serializers.SerializerMethodField()
     curriculum = serializers.SerializerMethodField()
+    subjects = serializers.SerializerMethodField()
 
     class Meta:
         model = StudentUser
         fields = ['id', 'name', 'image', 'class_enrolled', 'section', 'admission_date', 'dob', 'gender', 'religion', 'blood_group',
                   'school_fee','bus_fee', 'canteen_fee', 'other_fee', 'due_fee', 'total_fee', 'father_name', 'father_phone_number',
                   'father_occupation', 'mother_name', 'mother_phone_number', 'mother_occupation', 'email', 'permanent_address', 'curriculum',
-                   'bus_number', 'bus_route']
+                   'subjects', 'bus_number', 'bus_route']
 
 
     def get_curriculum(self,obj):
@@ -65,6 +66,9 @@ class StudentDetailSerializer(serializers.ModelSerializer):
 
     def get_email(self, obj):
         return obj.user.email if hasattr(obj, 'user') else None
+
+    def get_subjects(self, obj):
+        return obj.curriculum.subject_name_code if hasattr(obj, 'curriculum') else None
 
 
 class studentProfileSerializer(serializers.ModelSerializer):

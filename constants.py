@@ -1,11 +1,11 @@
 USER_TYPE_CHOICES = [
-        ('admin', 'Admin'),
-        ('management', 'Management'),
-        ('student', 'Student'),
-        ('teacher', 'Teacher'),
-        ('payrollmanagement', 'PayrollManagement'),
-        ('boarding', 'Boarding'),
-    ]
+    ('admin', 'Admin'),
+    ('management', 'Management'),
+    ('student', 'Student'),
+    ('teacher', 'Teacher'),
+    ('payrollmanagement', 'PayrollManagement'),
+    ('boarding', 'Boarding'),
+]
 
 GENDER_CHOICES = [
     ('male', 'Male'),
@@ -14,24 +14,24 @@ GENDER_CHOICES = [
 ]
 
 RELIGION_CHOICES = [
-        ('christian', 'Christian'),
-        ('islam', 'Islam'),
-        ('hinduism', 'Hinduism'),
-        ('buddhism', 'Buddhism'),
-        ('sikhism', 'Sikhism'),
-        ('judaism', 'Judaism'),
-        ('other', 'Other'),
-    ]
+    ('christian', 'Christian'),
+    ('islam', 'Islam'),
+    ('hinduism', 'Hinduism'),
+    ('buddhism', 'Buddhism'),
+    ('sikhism', 'Sikhism'),
+    ('judaism', 'Judaism'),
+    ('other', 'Other'),
+]
 BLOOD_GROUP_CHOICES = [
-        ('A+', 'A+'),
-        ('A-', 'A-'),
-        ('B+', 'B+'),
-        ('B-', 'B-'),
-        ('AB+', 'AB+'),
-        ('AB-', 'AB-'),
-        ('O+', 'O+'),
-        ('O-', 'O-'),
-    ]
+    ('A+', 'A+'),
+    ('A-', 'A-'),
+    ('B+', 'B+'),
+    ('B-', 'B-'),
+    ('AB+', 'AB+'),
+    ('AB-', 'AB-'),
+    ('O+', 'O+'),
+    ('O-', 'O-'),
+]
 
 CLASS_CHOICES = [
     ('1st', '1st'),
@@ -58,11 +58,14 @@ ROLE_CHOICES = [
     ("teacher", "teacher"),
     ("class_teacher", "class_teacher")
 ]
+
+
 class UserLoginMessage:
     USER_DOES_NOT_EXISTS = "User does not exists."
     INCORRECT_PASSWORD = "Incorrect password, please try again."
     SIGNUP_SUCCESSFUL = "User Signup successful."
     STAFF_ALREADY_EXISTS = "Staff email or phone already exists"
+
 
 class UserResponseMessage:
     USER_DOES_NOT_EXISTS = "User does not exists."
@@ -71,6 +74,11 @@ class UserResponseMessage:
     USER_LIST_MESSAGE = "All user's fetch successfully."
     USER_DELETE_MESSAGE = "User deleted successfully."
     PROFILE_UPDATED_SUCCESSFULLY = "User profile updated successfully"
+
+
 class CurriculumMessage:
-    CURRICULUM_CREATED_SUCCESSFULLY = "curriculum created successfully."
-    CURRICULUM_LIST_MESSAGE = "curriculum list fetch successfully."
+    CURRICULUM_CREATED_SUCCESSFULLY = "Curriculum created successfully."
+    CURRICULUM_LIST_MESSAGE = "Curriculum list fetch successfully."
+    CURRICULUM_DELETED_SUCCESSFULLY = "Curriculum deleted successfully."
+    CURRICULUM_NOT_FOUND = "Curriculum not found."
+    CURRICULUM_DETAIL_MESSAGE = "Curriculum detail fetch successfully."
