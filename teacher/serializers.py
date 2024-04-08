@@ -98,10 +98,11 @@ class TeacherDetailSerializer(serializers.ModelSerializer):
         return None
 
     def get_image(self, obj):
-        # Assuming 'image' field stores the file path or URL
         if obj.image:
-            # Assuming media URL is configured in settings
-            return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.image)}'
+            if obj.image.name.startswith(settings.base_url + settings.MEDIA_URL):
+                return str(obj.image)
+            else:
+                return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.image)}'
         return None
 
     def get_certificates(self, obj):
@@ -140,20 +141,36 @@ class TeacherListSerializer(serializers.ModelSerializer):
         return None
 
 
+class ImageFieldStringAndFile(serializers.Field):
+    def to_representation(self, value):
+        if value:
+            # Assuming value is a file path string
+            return value.url if hasattr(value, 'url') else value
+        return None
+
+    def to_internal_value(self, data):
+        # If data is a file object, return it as is
+        if hasattr(data, 'content_type'):
+            return data
+        # If data is a string (file path), return it as is
+        elif isinstance(data, str):
+            return data
+        else:
+            raise serializers.ValidationError('Invalid file type. Must be a file object or a string representing a file path.')
 
 class TeacherProfileSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(source='user.email',required=False)
     phone = serializers.CharField(source='user.phone')
     full_name = serializers.CharField(required=False)
-    dob = serializers.DateField(required=True)
-    image = serializers.ImageField(required=True)
-    gender = serializers.ChoiceField(choices=GENDER_CHOICES, required=True)
-    joining_date = serializers.DateField(required=True)
-    religion = serializers.ChoiceField(choices=RELIGION_CHOICES, required=True)
+    dob = serializers.DateField(required=False)
+    image = ImageFieldStringAndFile(required=False)
+    gender = serializers.ChoiceField(choices=GENDER_CHOICES, required=False)
+    joining_date = serializers.DateField(required=False)
+    religion = serializers.ChoiceField(choices=RELIGION_CHOICES, required=False)
     blood_group = serializers.ChoiceField(choices=BLOOD_GROUP_CHOICES, required=False)
     ctc = serializers.DecimalField(max_digits=16, decimal_places=2, default=0.0)
     experience = serializers.IntegerField(required=False)
-    role = serializers.ChoiceField(choices=ROLE_CHOICES, required=True)
+    role = serializers.ChoiceField(choices=ROLE_CHOICES, required=False)
     address = serializers.CharField(max_length=255, required=False)
     class_subject_section_details = serializers.ListField(
         child=serializers.DictField(
