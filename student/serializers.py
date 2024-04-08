@@ -58,10 +58,11 @@ class StudentDetailSerializer(serializers.ModelSerializer):
         return obj.curriculum.curriculum_name if hasattr(obj, 'curriculum') else None
 
     def get_image(self, obj):
-        # Assuming 'image' field stores the file path or URL
         if obj.image:
-            # Assuming media URL is configured in settings
-            return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.image)}'
+            if obj.image.name.startswith(settings.base_url + settings.MEDIA_URL):
+                return str(obj.image)
+            else:
+                return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.image)}'
         return None
 
     def get_email(self, obj):
@@ -70,15 +71,31 @@ class StudentDetailSerializer(serializers.ModelSerializer):
     def get_subjects(self, obj):
         return obj.curriculum.subject_name_code if hasattr(obj, 'curriculum') else None
 
+class ImageFieldStringAndFile(serializers.Field):
+    def to_representation(self, value):
+        if value:
+            # Assuming value is a file path string
+            return value.url if hasattr(value, 'url') else value
+        return None
+
+    def to_internal_value(self, data):
+        # If data is a file object, return it as is
+        if hasattr(data, 'content_type'):
+            return data
+        # If data is a string (file path), return it as is
+        elif isinstance(data, str):
+            return data
+        else:
+            raise serializers.ValidationError('Invalid file type. Must be a file object or a string representing a file path.')
 
 class studentProfileSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(source='user.email', required=False)
-    name = serializers.CharField(required=True)
+    name = serializers.CharField(required=False)
     user_type = serializers.ChoiceField(
         choices=USER_TYPE_CHOICES
     )
-    dob = serializers.DateField(required=True)
-    image = serializers.ImageField(required=False)
+    dob = serializers.DateField(required=False)
+    image = ImageFieldStringAndFile(required=False)
     father_name = serializers.CharField(required=False)
     father_phone_number = serializers.CharField(required=False)
     mother_name = serializers.CharField(required=False)
@@ -86,7 +103,7 @@ class studentProfileSerializer(serializers.ModelSerializer):
     mother_phone_number = serializers.CharField(required=False)
     gender = serializers.CharField(required=True)
     father_occupation = serializers.CharField(required=False)
-    admission_date = serializers.DateField(required=True)
+    admission_date = serializers.DateField(required=False)
     school_fee = serializers.DecimalField(max_digits=10, decimal_places=2, default=0.0)
     bus_fee = serializers.DecimalField(max_digits=10, decimal_places=2, default=0.0)
     canteen_fee = serializers.DecimalField(max_digits=10, decimal_places=2, default=0.0)
@@ -95,9 +112,9 @@ class studentProfileSerializer(serializers.ModelSerializer):
     total_fee = serializers.DecimalField(max_digits=10, decimal_places=2, default=0.0)
     religion = serializers.CharField(required=False)
     blood_group = serializers.CharField(required=False)
-    class_enrolled = serializers.CharField(required=True)
-    section = serializers.CharField(required=True)
-    curriculum = serializers.CharField(required=True)
+    class_enrolled = serializers.CharField(required=False)
+    section = serializers.CharField(required=False)
+    curriculum = serializers.CharField(required=False)
     permanent_address = serializers.CharField(max_length=255, required=False)
     bus_number = serializers.CharField(required=False)
     bus_route = serializers.IntegerField(required=False)
@@ -134,8 +151,9 @@ class StudentListSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'class_enrolled', 'section', 'father_phone_number', 'permanent_address', 'image']
 
     def get_image(self, obj):
-        # Assuming 'image' field stores the file path or URL
         if obj.image:
-            # Assuming media URL is configured in settings
-            return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.image)}'
+            if obj.image.name.startswith(settings.base_url + settings.MEDIA_URL):
+                return str(obj.image)
+            else:
+                return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.image)}'
         return None

@@ -134,10 +134,11 @@ class TeacherListSerializer(serializers.ModelSerializer):
         return []
 
     def get_image(self, obj):
-        # Assuming 'image' field stores the file path or URL
         if obj.image:
-            # Assuming media URL is configured in settings
-            return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.image)}'
+            if obj.image.name.startswith(settings.base_url + settings.MEDIA_URL):
+                return str(obj.image)
+            else:
+                return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.image)}'
         return None
 
 
