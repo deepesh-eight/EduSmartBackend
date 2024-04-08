@@ -1,3 +1,5 @@
+import json
+
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
@@ -38,17 +40,23 @@ class TeacherUserSignupSerializer(serializers.Serializer):
     experience = serializers.IntegerField(required=False)
     role = serializers.ChoiceField(choices=ROLE_CHOICES, required=True)
     address = serializers.CharField(max_length=255, required=False)
-    class_subject_section_details = serializers.ListField(
-        child=serializers.DictField(
-            child=serializers.CharField(max_length=100)  # Adjust max_length as needed
-        ),
-        allow_empty=True
-    )
+    class_subject_section_details = serializers.CharField()
     highest_qualification = serializers.CharField(max_length=255)
     certificate_files = serializers.ListField(
         child=serializers.FileField(),
         required=False
     )
+
+    def to_internal_value(self, data):
+        ret = super().to_internal_value(data)
+        try:
+            class_subject_section_details_str = json.loads(
+                data.get('class_subject_section_details', '[]'))  # Parse string input as JSON
+            ret['class_subject_section_details'] = class_subject_section_details_str
+        except json.JSONDecodeError:
+            raise serializers.ValidationError({'class_subject_section_details': 'Invalid JSON format'})
+
+        return ret
 
     def validate_certificate_files(self, value):
         if len(value) > 5:
@@ -70,7 +78,7 @@ class TeacherDetailSerializer(serializers.ModelSerializer):
     email = serializers.SerializerMethodField()
     phone = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
-    certificates = CertificateSerializer(source='certificates.all', many=True, read_only=True)
+    certificates = serializers.SerializerMethodField()
 
     class Meta:
         model = TeacherUser
@@ -95,6 +103,12 @@ class TeacherDetailSerializer(serializers.ModelSerializer):
             # Assuming media URL is configured in settings
             return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.image)}'
         return None
+
+    def get_certificates(self, obj):
+        # Fetch and serialize certificates associated with the user
+        certificates = Certificate.objects.filter(user=obj.user)
+        serializer = CertificateSerializer(certificates, many=True)
+        return serializer.data
 
 
 class TeacherListSerializer(serializers.ModelSerializer):

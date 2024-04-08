@@ -38,6 +38,8 @@ class UserManager(BaseUserManager):
             extra_fields.setdefault("user_type", "teacher")
         elif user_type == 'student':
             extra_fields.setdefault("user_type", "student")
+        elif user_type == 'non-teaching':
+            extra_fields.setdefault("user_type", "non-teaching")
         return self._create_user(email, password, **extra_fields)
 
 
@@ -62,6 +64,7 @@ class User(AbstractUser):
         ('teacher', 'Teacher'),
         ('payrollmanagement', 'PayrollManagement'),
         ('boarding', 'Boarding'),
+        ('non-teaching', 'Non-teaching')
     ]
 
     user_type = models.CharField(max_length=20, choices=USER_TYPE_CHOICES)
@@ -140,7 +143,7 @@ class TeacherUser(models.Model):
     def __str__(self) -> str:
         return f'{self.user} user details'
 class Certificate(models.Model):
-    teacher = models.ForeignKey(TeacherUser, on_delete=models.CASCADE, related_name='certificates')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='certificates')
     certificate_file = models.FileField(upload_to='')
 
 

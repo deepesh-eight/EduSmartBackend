@@ -65,7 +65,7 @@ class TeacherUserCreateView(APIView):
                     highest_qualification=highest_qualification,
                 )
                 for cert_file in certificates:
-                    Certificate.objects.create(teacher=user_teacher, certificate_file=cert_file)
+                    Certificate.objects.create(user=user, certificate_file=cert_file)
             else:
                 raise ValidationError("Invalid user_type. Expected 'teacher'.")
             response_data = {
@@ -235,9 +235,9 @@ class TeacherUpdateProfileView(APIView):
 
                 # Update certificates separately
                 if files_data:
-                    teacher.certificates.all().delete()  # Delete existing certificates
+                    teacher.user.certificates.all().delete()  # Delete existing certificates
                     for cert_file_data in files_data:
-                        Certificate.objects.create(teacher=teacher, certificate_file=cert_file_data)
+                        Certificate.objects.create(user=teacher.user, certificate_file=cert_file_data)
                 response = create_response_data(
                     status=status.HTTP_200_OK,
                     message=UserResponseMessage.PROFILE_UPDATED_SUCCESSFULLY,
