@@ -6,7 +6,8 @@ from EduSmart import settings
 from authentication.permissions import IsAdminUser
 from constants import CurriculumMessage
 from curriculum.models import Curriculum, CurriculumPDF
-from curriculum.serializers import CurriculumSerializer, CurriculumDetailSerializer, CurriculumUploadSerializer
+from curriculum.serializers import CurriculumSerializer, CurriculumDetailSerializer, CurriculumUploadSerializer, \
+    CurriculumListerializer
 from pagination import CustomPagination
 from utils import create_response_data, create_response_list_data
 
@@ -96,7 +97,7 @@ class CurriculumlistView(APIView):
                 queryset = queryset.filter(class_name__icontains=class_name)
             paginator = self.pagination_class()
             paginated_queryset = paginator.paginate_queryset(queryset, request)
-            serializer = CurriculumSerializer(paginated_queryset, many=True)
+            serializer = CurriculumListerializer(paginated_queryset, many=True)
             response_data = {
                 'status': status.HTTP_200_OK,
                 'count': len(serializer.data),
@@ -111,7 +112,7 @@ class CurriculumlistView(APIView):
                 }
             }
             return Response(response_data, status=status.HTTP_200_OK)
-        serializer = CurriculumSerializer(queryset, many=True)
+        serializer = CurriculumListerializer(queryset, many=True)
         response = create_response_list_data(
             status=status.HTTP_200_OK,
             count=len(serializer.data),
@@ -152,6 +153,10 @@ class CurriculumFetchView(APIView):
     def get(self, request, pk):
         try:
             data = Curriculum.objects.get(id=pk)
+            if not data.curriculum_name:
+                querset1 = CurriculumPDF.objects.get(curriculum=data.id)
+                data.curriculum_name = f"{settings.base_url}{settings.MEDIA_URL}{querset1.curriculum_pdf_file}"
+                data.save()
             serializer = CurriculumDetailSerializer(data)
             response_data = create_response_data(
                 status=status.HTTP_200_OK,
