@@ -142,6 +142,23 @@ class TeacherUser(models.Model):
 
     def __str__(self) -> str:
         return f'{self.user} user details'
+
+
+class StaffUser(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    first_name = models.CharField(255)
+    last_name = models.CharField(255)
+    image = models.ImageField(upload_to='', blank=True)
+    gender = models.CharField(max_length=50)
+    dob = models.DateField(default=datetime.date.today)
+    blood_group = models.CharField(max_length=50, blank=True, null=True)
+    religion = models.CharField(max_length=100)
+    role = models.CharField(max_length=255)
+    address = models.TextField(blank=True, null=True)
+    joining_date = models.DateField(auto_now_add=True, null=True, blank=True)
+    ctc = models.DecimalField(max_digits=16, decimal_places=2, default=0.0)
+
+
 class Certificate(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='certificates')
     certificate_file = models.FileField(upload_to='')

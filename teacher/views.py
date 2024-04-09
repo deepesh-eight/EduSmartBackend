@@ -251,7 +251,7 @@ class TeacherUpdateProfileView(APIView):
                     data=serializer.errors
                 )
                 return Response(response, status=status.HTTP_400_BAD_REQUEST)
-        except User.DoesNotExist:
+        except TeacherUser.DoesNotExist:
             response_data = create_response_data(
                 status=status.HTTP_404_NOT_FOUND,
                 message=UserResponseMessage.USER_DOES_NOT_EXISTS,

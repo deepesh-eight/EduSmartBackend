@@ -1,8 +1,10 @@
 from rest_framework import serializers
 
-from constants import USER_TYPE_CHOICES
-from .models import User, AddressDetails
-
+from EduSmart import settings
+from constants import USER_TYPE_CHOICES, ROLE_CHOICES
+from teacher.serializers import CertificateSerializer, ImageFieldStringAndFile
+from .models import User, AddressDetails, StaffUser, Certificate
+from django.core.exceptions import ValidationError as DjangoValidationError
 
 class UserSignupSerializer(serializers.Serializer):
     name = serializers.CharField(required=True)
@@ -97,3 +99,166 @@ class StaffSignupSerializer(serializers.Serializer):
     user_type = serializers.ChoiceField(
         choices=USER_TYPE_CHOICES
     )
+
+class NonTeachingStaffSerializers(serializers.Serializer):
+    image = serializers.ImageField(required=True)
+    first_name = serializers.CharField(required=True)
+    last_name = serializers.CharField(required=True)
+    gender = serializers.CharField(required=True)
+    dob = serializers.DateField(required=True)
+    blood_group = serializers.CharField(required=False)
+    religion = serializers.CharField(required=True)
+    email = serializers.EmailField(required=True)
+    phone = serializers.CharField(required=True)
+    user_type = serializers.ChoiceField(
+        choices=USER_TYPE_CHOICES
+    )
+    role = serializers.CharField(required=True)
+    address = serializers.CharField(max_length=255, required=False)
+    joining_date = serializers.DateField(required=True)
+    ctc = serializers.DecimalField(max_digits=16, decimal_places=2, default=0.0)
+    certificate_files = serializers.ListField(
+        child=serializers.FileField(),
+        required=False
+    )
+
+    def validate_certificate_files(self, value):
+        if len(value) > 5:
+            raise serializers.ValidationError("Can't add more than 5 certificates.")
+
+        for cert_file in value:
+            if cert_file.size > 1048576:  # 1 MB
+                raise serializers.ValidationError('Uploaded certificate size cannot exceed 1 MB.')
+
+            try:
+                cert_file.open()  # Ensure the file is open before further processing
+                # Here you can perform additional validation if needed
+            except DjangoValidationError as e:
+                raise serializers.ValidationError(str(e))
+
+        return value
+
+
+class NonTeachingStaffListSerializers(serializers.ModelSerializer):
+    email = serializers.EmailField(source='user.email')
+    phone = serializers.SerializerMethodField()
+    image = serializers.SerializerMethodField()
+    name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = StaffUser
+        fields = ['id', 'name', 'role', 'phone', 'email', 'image']
+
+    def get_phone(self, obj):
+        phone_number = obj.user.phone
+        if phone_number:
+            return str(phone_number)
+        return None
+
+    def get_email(self, obj):
+        return obj.user.email if hasattr(obj, 'user') else None
+
+    def get_image(self, obj):
+        if obj.image:
+            if obj.image.name.startswith(settings.base_url + settings.MEDIA_URL):
+                return str(obj.image)
+            else:
+                return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.image)}'
+        return None
+
+    def get_name(self, obj):
+        if obj.first_name and obj.last_name:
+            return f'{obj.first_name} {obj.last_name}'
+
+class NonTeachingStaffDetailSerializers(serializers.ModelSerializer):
+    email = serializers.EmailField(source='user.email')
+    phone = serializers.SerializerMethodField()
+    image = serializers.SerializerMethodField()
+    name = serializers.SerializerMethodField()
+    certificates = serializers.SerializerMethodField()
+
+    class Meta:
+        model = StaffUser
+        fields = ['id', 'name', 'role', 'phone', 'email', 'image', 'dob', 'gender', 'religion', 'blood_group', 'address', 'joining_date',
+                  'ctc', 'certificates']
+
+    def get_phone(self, obj):
+        phone_number = obj.user.phone
+        if phone_number:
+            return str(phone_number)
+        return None
+
+    def get_email(self, obj):
+        return obj.user.email if hasattr(obj, 'user') else None
+
+    def get_image(self, obj):
+        if obj.image:
+            if obj.image.name.startswith(settings.base_url + settings.MEDIA_URL):
+                return str(obj.image)
+            else:
+                return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.image)}'
+        return None
+
+    def get_name(self, obj):
+        if obj.first_name and obj.last_name:
+            return f'{obj.first_name} {obj.last_name}'
+
+    def get_certificates(self, obj):
+        # Fetch and serialize certificates associated with the user
+        certificates = Certificate.objects.filter(user=obj.user)
+        serializer = CertificateSerializer(certificates, many=True)
+        return serializer.data
+
+class NonTeachingStaffProfileSerializers(serializers.ModelSerializer):
+    image = ImageFieldStringAndFile(required=False)
+    first_name = serializers.CharField(required=True)
+    last_name = serializers.CharField(required=True)
+    gender = serializers.CharField(required=True)
+    dob = serializers.DateField(required=True)
+    blood_group = serializers.CharField(required=False)
+    religion = serializers.CharField(required=True)
+    email = serializers.EmailField(required=True)
+    phone = serializers.CharField(required=True)
+    user_type = serializers.ChoiceField(
+        choices=USER_TYPE_CHOICES
+    )
+    role = serializers.CharField(required=True)
+    address = serializers.CharField(max_length=255, required=False)
+    joining_date = serializers.DateField(required=True)
+    ctc = serializers.DecimalField(max_digits=16, decimal_places=2, default=0.0)
+    certificate_files = serializers.ListField(
+        child=serializers.FileField(),
+        required=False
+    )
+
+
+    class Meta:
+        model = StaffUser
+        fields = ['image', 'first_name', 'last_name', 'gender', 'dob', 'blood_group', 'religion', 'email', 'phone', 'user_type',
+                  'role', 'address', 'address', 'joining_date', 'ctc','certificate_files']
+
+    def update(self, instance, validated_data):
+        user_data = validated_data.pop('user', {})
+        validated_data.pop('email', None)
+        user = instance.user
+        for attr, value in user_data.items():
+            setattr(user, attr, value)
+        user.save()
+
+        return super().update(instance, validated_data)
+
+    def validate_certificate_files(self, value):
+        if len(value) > 5:
+            raise serializers.ValidationError("Can't add more than 5 certificates.")
+
+        for cert_file in value:
+            if cert_file.size > 1048576:  # 1 MB
+                raise serializers.ValidationError('Uploaded certificate size cannot exceed 1 MB.')
+
+            try:
+                cert_file.open()  # Ensure the file is open before further processing
+                # Here you can perform additional validation if needed
+            except DjangoValidationError as e:
+                raise serializers.ValidationError(str(e))
+
+        return value

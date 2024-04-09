@@ -5,6 +5,7 @@ USER_TYPE_CHOICES = [
     ('teacher', 'Teacher'),
     ('payrollmanagement', 'PayrollManagement'),
     ('boarding', 'Boarding'),
+    ('non-teaching', 'Non-teaching')
 ]
 
 GENDER_CHOICES = [

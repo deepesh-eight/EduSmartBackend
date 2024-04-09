@@ -19,4 +19,11 @@ urlpatterns = [
     path('staff/get-profile/<int:pk>/', GetStaffView.as_view(), name='get_staff'),
     path('staff/update-profile/<int:pk>/', StaffUpdateProfileView.as_view(), name='staff_update_profile'),
     path('staff/delete/<int:pk>/', AdminStaffDeleteView.as_view(), name='staff_delete'),
+
+    #Non teaching staff APIS
+    path('non-teaching-staff/create/', NonTeachingStaffCreateView.as_view(), name='staff_create'),
+    path('non-teaching-staff/fetch/list/', NonTeachingStaffListView.as_view(), name='staff_list'),
+    path('non-teaching-staff/fetch/detail/<int:pk>/', NonTeachingStaffDetailView.as_view(), name='staff_detail'),
+    path('non-teaching-staff/delete/<int:pk>/', NonTeachingStaffDeleteView.as_view(), name='staff_delete'),
+    path('non-teaching-staff/update/<int:pk>/', NonTeachingStaffUpdateView.as_view(), name='staff_delete'),
 ]
