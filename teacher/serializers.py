@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
 from EduSmart import settings
-from authentication.models import TeacherUser, Certificate
+from authentication.models import TeacherUser, Certificate, TeachersSchedule
 from constants import USER_TYPE_CHOICES, GENDER_CHOICES, RELIGION_CHOICES, BLOOD_GROUP_CHOICES, CLASS_CHOICES, \
     SUBJECT_CHOICES, ROLE_CHOICES
 
@@ -215,3 +215,47 @@ class TeacherProfileSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(str(e))
 
         return value
+
+class ScheduleCreateSerializer(serializers.ModelSerializer):
+    start_date = serializers.DateField(required=True)
+    end_date = serializers.DateField(required=True)
+    schedule_data = serializers.CharField(required=True)
+
+    class Meta:
+        model = TeachersSchedule
+        fields = ['start_date', 'end_date', 'schedule_data']
+
+    def to_internal_value(self, data):
+        ret = super().to_internal_value(data)
+        try:
+            schedule_str = json.loads(
+                data.get('schedule_data', '[]'))  # Parse string input as JSON
+            ret['schedule_data'] = schedule_str
+        except json.JSONDecodeError:
+            raise serializers.ValidationError({'schedule_data': 'Invalid JSON format'})
+
+        return ret
+
+
+class ScheduleDetailSerializer(serializers.ModelSerializer):
+    start_date = serializers.DateField(required=True)
+    end_date = serializers.DateField(required=True)
+    schedule_data = serializers.CharField(required=True)
+
+    class Meta:
+        model = TeachersSchedule
+        fields = ['id', 'start_date', 'end_date', 'schedule_data']
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        schedule_data_str = data.get('schedule_data', '')
+
+        # Convert the string representation of schedule_data to a list of dictionaries
+        try:
+            schedule_data_list = json.loads(schedule_data_str.replace("'", '"'))
+        except json.JSONDecodeError:
+            schedule_data_list = []
+
+        # Update the data dictionary with the converted schedule_data
+        data['schedule_data'] = schedule_data_list
+        return data

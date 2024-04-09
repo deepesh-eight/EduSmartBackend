@@ -7,13 +7,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from authentication.models import User, Class, TeacherUser, StudentUser, Certificate
+from authentication.models import User, Class, TeacherUser, StudentUser, Certificate, TeachersSchedule
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsTeacherUser
 from authentication.serializers import UserLoginSerializer
-from constants import UserLoginMessage, UserResponseMessage
+from constants import UserLoginMessage, UserResponseMessage, ScheduleMessage
 from pagination import CustomPagination
 from teacher.serializers import TeacherUserSignupSerializer, TeacherDetailSerializer, TeacherListSerializer, \
-    TeacherProfileSerializer
+    TeacherProfileSerializer, ScheduleCreateSerializer, ScheduleDetailSerializer
 from utils import create_response_data, create_response_list_data, generate_random_password
 
 
@@ -300,3 +300,104 @@ class TeacherLoginView(APIView):
             }
         )
         return Response(response_data, status=status.HTTP_201_CREATED)
+
+
+class TeacherScheduleCreateView(APIView):
+    permission_classes = [IsAdminUser, ]
+    """
+    This class is used to create schedule for teacher's.
+    """
+    def post(self, request):
+        serializer = ScheduleCreateSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+            response_data = create_response_data(
+                status=status.HTTP_201_CREATED,
+                message=ScheduleMessage.SCHEDULE_CREATED_SUCCESSFULLY,
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_201_CREATED)
+        else:
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=serializer.errors,
+                data=serializer.errors
+            )
+            return Response(response, status=status.HTTP_200_OK)
+
+class TeacherScheduleDetailView(APIView):
+    """
+    This class is created to fetch the detail of the teacher schedule.
+    """
+    permission_classes = [IsAdminUser | IsTeacherUser]
+
+    def get(self, request, pk):
+        try:
+            data = TeachersSchedule.objects.get(id=pk)
+            if data:
+                serializer = ScheduleDetailSerializer(data)
+                response_data = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=ScheduleMessage.SCHEDULE_FETCHED_SUCCESSFULLY,
+                    data=serializer.data
+                )
+                return Response(response_data, status=status.HTTP_200_OK)
+            else:
+                response_data = create_response_data(
+                    status=status.HTTP_404_NOT_FOUND,
+                    message=ScheduleMessage.SCHEDULE_NOT_FOUND,
+                    data={}
+                )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=ScheduleMessage.SCHEDULE_NOT_FOUND,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+
+class TeacherScheduleListView(APIView):
+    """
+    This class is created to fetch the list of the teacher's schedule.
+    """
+    permission_classes = [IsAdminUser]
+    pagination_class = CustomPagination
+
+    def get(self, request):
+        queryset = TeacherUser.objects.filter(user__is_active=True)
+        if request.query_params:
+            start_date = request.query_params.get('start_date', None)
+            end_date = request.query_params.get('end_date', None)
+            page = request.query_params.get('page_size', None)
+            if start_date:
+                queryset = queryset.filter(start_date__icontains=start_date)
+
+            # Paginate the queryset
+            paginator = self.pagination_class()
+            paginated_queryset = paginator.paginate_queryset(queryset, request)
+
+            serializers = TeacherListSerializer(paginated_queryset, many=True)
+            response_data = {
+                'status': status.HTTP_200_OK,
+                'count': len(serializers.data),
+                'message': UserResponseMessage.USER_LIST_MESSAGE,
+                'data': serializers.data,
+                'pagination': {
+                    'page_size': paginator.page_size,
+                    'next': paginator.get_next_link(),
+                    'previous': paginator.get_previous_link(),
+                    'total_pages': paginator.page.paginator.num_pages,
+                    'current_page': paginator.page.number,
+                }
+            }
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        serializer = TeacherListSerializer(queryset, many=True)
+        response = create_response_list_data(
+            status=status.HTTP_200_OK,
+            count=len(serializer.data),
+            message=UserResponseMessage.USER_LIST_MESSAGE,
+            data=serializer.data,
+        )
+        return Response(response, status=status.HTTP_200_OK)
