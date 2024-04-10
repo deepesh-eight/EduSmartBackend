@@ -236,6 +236,13 @@ class ScheduleCreateSerializer(serializers.ModelSerializer):
 
         return ret
 
+    def validate(self, data):
+        start_date = data.get('start_date')
+        end_date = data.get('end_date')
+        if start_date and end_date and end_date < start_date:
+            raise serializers.ValidationError("End date cannot be less than start date.")
+        return data
+
 
 class ScheduleDetailSerializer(serializers.ModelSerializer):
     start_date = serializers.DateField(required=True)

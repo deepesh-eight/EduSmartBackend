@@ -45,17 +45,18 @@ class StudentDetailSerializer(serializers.ModelSerializer):
     email = serializers.SerializerMethodField()
     curriculum = serializers.SerializerMethodField()
     subjects = serializers.SerializerMethodField()
+    exam_board = serializers.SerializerMethodField()
 
     class Meta:
         model = StudentUser
         fields = ['id', 'name', 'image', 'class_enrolled', 'section', 'admission_date', 'dob', 'gender', 'religion', 'blood_group',
                   'school_fee','bus_fee', 'canteen_fee', 'other_fee', 'due_fee', 'total_fee', 'father_name', 'father_phone_number',
                   'father_occupation', 'mother_name', 'mother_phone_number', 'mother_occupation', 'email', 'permanent_address', 'curriculum',
-                   'subjects', 'bus_number', 'bus_route']
+                   'subjects', 'bus_number', 'bus_route', 'exam_board']
 
 
     def get_curriculum(self,obj):
-        return obj.curriculum.curriculum_name if hasattr(obj, 'curriculum') else None
+        return obj.curriculum.id if hasattr(obj, 'curriculum') else None
 
     def get_image(self, obj):
         if obj.image:
@@ -70,6 +71,9 @@ class StudentDetailSerializer(serializers.ModelSerializer):
 
     def get_subjects(self, obj):
         return obj.curriculum.subject_name_code if hasattr(obj, 'curriculum') else None
+
+    def get_exam_board(self, obj):
+        return obj.curriculum.exam_board if hasattr(obj, 'curriculum') else None
 
 class ImageFieldStringAndFile(serializers.Field):
     def to_representation(self, value):

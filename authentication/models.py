@@ -230,8 +230,8 @@ class ErrorLogging(models.Model):
     traceback = models.TextField(blank=True, null=True)
 
 class TeachersSchedule(models.Model):
-    start_date = models.DateField()
-    end_date = models.DateField()
+    start_date = models.DateField(default=datetime.date.today)
+    end_date = models.DateField(default=datetime.date.today)
     schedule_data = models.JSONField(null=True)
 
 class StaffAttendence(models.Model):
