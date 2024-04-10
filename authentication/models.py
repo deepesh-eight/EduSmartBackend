@@ -233,3 +233,21 @@ class TeachersSchedule(models.Model):
     start_date = models.DateField()
     end_date = models.DateField()
     schedule_data = models.JSONField(null=True)
+
+class StaffAttendence(models.Model):
+    staff = models.ForeignKey(StaffUser, on_delete=models.CASCADE)
+    date = models.DateField()
+    mark_attendence = models.CharField(max_length=100)
+
+
+class EventsCalender(models.Model):
+    day_event = models.CharField(max_length=200) # This will be choice field it can be one_day_event or multi_day_event.
+    event_date = models.DateField()
+    calendar = models.CharField(max_length=200) # This will be choice field it can be academic_calendar or events.
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    event_image = models.ImageField(upload_to='', blank=True)
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)

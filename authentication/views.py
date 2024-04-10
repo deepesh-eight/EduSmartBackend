@@ -411,6 +411,7 @@ class NonTeachingStaffUpdateView(APIView):
     This class is used to update the non teaching staff.
     """
     permission_classes = [IsAdminUser]
+
     def patch(self, request, pk):
         try:
             files_data = []
