@@ -79,7 +79,7 @@ class UserResponseMessage:
 
 class CurriculumMessage:
     CURRICULUM_CREATED_SUCCESSFULLY = "Curriculum created successfully."
-    CURRICULUM_LIST_MESSAGE = "Curriculum list fetch successfully."
+    CURRICULUM_LIST_MESSAGE = "All curriculum fetch successfully."
     CURRICULUM_DELETED_SUCCESSFULLY = "Curriculum deleted successfully."
     CURRICULUM_NOT_FOUND = "Curriculum not found."
     CURRICULUM_DETAIL_MESSAGE = "Curriculum detail fetch successfully."
@@ -89,3 +89,6 @@ class ScheduleMessage:
     SCHEDULE_CREATED_SUCCESSFULLY = "Schedule created successfully.",
     SCHEDULE_FETCHED_SUCCESSFULLY = "Schedule fetched successfully."
     SCHEDULE_NOT_FOUND = "Schedule not found."
+    SCHEDULE_DELETED_SUCCESSFULLY = "Schedule deleted successfully.",
+    SCHEDULE_LIST_MESSAGE = "All schedule fetch successfully."
+    SCHEDULE_UPDATED_SUCCESSFULLY = "Teacher schedule updated successfully"

@@ -245,24 +245,121 @@ class ScheduleCreateSerializer(serializers.ModelSerializer):
 
 
 class ScheduleDetailSerializer(serializers.ModelSerializer):
-    start_date = serializers.DateField(required=True)
-    end_date = serializers.DateField(required=True)
-    schedule_data = serializers.CharField(required=True)
+    schedule_date = serializers.SerializerMethodField()
+    teacher = serializers.SerializerMethodField()
+    schedule_data = serializers.ListField(child=serializers.DictField(), required=False)
 
     class Meta:
         model = TeachersSchedule
-        fields = ['id', 'start_date', 'end_date', 'schedule_data']
+        fields = ['schedule_date', 'teacher', 'schedule_data']
+
+    def get_teacher(self, obj):
+        schedule_data = obj.schedule_data
+        if schedule_data:
+            teacher_name = schedule_data[0]['teacher'] if schedule_data else None
+            return teacher_name
+        return None
+
+    def get_schedule_date(self, obj):
+        return f'{obj.start_date} to {obj.end_date}'
 
     def to_representation(self, instance):
-        data = super().to_representation(instance)
-        schedule_data_str = data.get('schedule_data', '')
+        representation = super().to_representation(instance)
+        schedule_data = representation.get('schedule_data', [])
 
-        # Convert the string representation of schedule_data to a list of dictionaries
+        # Iterate through each schedule item and modify its representation
+        for item in schedule_data:
+            # Add class_timing_duration field
+            class_timing = item.get('class_timing', '')
+            class_duration = item.get('class_duration', '')
+            item['class_timing_duration'] = f"{class_timing}|({class_duration})"
+
+            # Add lecture_type field
+            alter_nate_day = item.get('alternate_day_lecture', '0')
+            select_day = item.get('select_day_lectures', '0')
+            select_days = item.get('select_days', [])
+            if select_day == '1':
+                lecture_type = f'Selected Day({select_days})'
+            elif alter_nate_day == '1':
+                lecture_type = f'Alternate Day({select_days})'
+            else:
+                lecture_type = "Daily"
+            item['lecture_type'] = lecture_type
+
+            # Remove unnecessary fields
+            item.pop('class_timing', None)
+            item.pop('class_duration', None)
+            item.pop('select_day_lecture', None)
+            item.pop('select_days', None)
+            item.pop('teacher', None)
+            item.pop('daily_lecture', None)
+            item.pop('alternate_day_lecture', None)
+
+        return representation
+
+
+class ScheduleListSerializer(serializers.ModelSerializer):
+    teacher = serializers.SerializerMethodField()
+    role = serializers.SerializerMethodField()
+    class_duration = serializers.SerializerMethodField()
+    total_classes = serializers.SerializerMethodField()
+    class Meta:
+        model = TeachersSchedule
+        fields = ['id', 'teacher', 'role', 'class_duration', 'total_classes']
+
+    def get_teacher_role(self, teacher_name):
         try:
-            schedule_data_list = json.loads(schedule_data_str.replace("'", '"'))
-        except json.JSONDecodeError:
-            schedule_data_list = []
+            teacher = TeacherUser.objects.get(full_name=teacher_name)
+            return teacher.role  # Assuming 'role' is the field you want to retrieve
+        except TeacherUser.DoesNotExist:
+            return None
 
-        # Update the data dictionary with the converted schedule_data
-        data['schedule_data'] = schedule_data_list
+    def get_teacher(self, obj):
+        schedule_data = obj.schedule_data
+        if schedule_data:
+            teacher_name = schedule_data[0]['teacher'] if schedule_data else None
+            return teacher_name
+        return None
+
+    def get_role(self, obj):
+        teacher_name = self.get_teacher(obj)
+        return self.get_teacher_role(teacher_name) if teacher_name else None
+
+    def get_total_classes(self, obj):
+        schedule_data = obj.schedule_data
+        return len(schedule_data) if schedule_data else 0
+
+    def get_class_duration(self, obj):
+        schedule_data = obj.schedule_data
+        return schedule_data[0]['class_duration'] if schedule_data else 0
+
+
+class ScheduleUpdateSerializer(serializers.ModelSerializer):
+    start_date = serializers.DateField(required=True)
+    end_date = serializers.DateField(required=True)
+    schedule_data = serializers.ListField(
+        child=serializers.DictField(
+            child=serializers.CharField(max_length=100)  # Adjust max_length as needed
+        ),
+        allow_empty=True
+    )
+
+    class Meta:
+        model = TeachersSchedule
+        fields = ['start_date', 'end_date', 'schedule_data']
+
+    def validate(self, data):
+        start_date = data.get('start_date')
+        end_date = data.get('end_date')
+        if start_date and end_date and end_date < start_date:
+            raise serializers.ValidationError("End date cannot be less than start date.")
         return data
+
+    def update(self, instance, validated_data):
+        # Update the instance with the validated data
+        instance.start_date = validated_data.get('start_date', instance.start_date)
+        instance.end_date = validated_data.get('end_date', instance.end_date)
+        instance.schedule_data = validated_data.get('schedule_data', instance.schedule_data)
+        instance.save()  # Save the changes to the database
+        return instance
+

@@ -13,4 +13,6 @@ urlpatterns = [
         path('schedule/create/', TeacherScheduleCreateView.as_view(), name='schedule_create'),
         path('schedule/detail/<int:pk>/', TeacherScheduleDetailView.as_view(), name='schedule_detail'),
         path('schedule/list/', TeacherScheduleListView.as_view(), name='schedule_list'),
+        path('schedule/delete/<int:pk>/', TeacherScheduleDeleteView.as_view(), name='schedule_delete'),
+        path('schedule/update/<int:pk>/', TeacherScheduleUpdateView.as_view(), name='schedule_update'),
 ]

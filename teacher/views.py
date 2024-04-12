@@ -13,7 +13,8 @@ from authentication.serializers import UserLoginSerializer
 from constants import UserLoginMessage, UserResponseMessage, ScheduleMessage
 from pagination import CustomPagination
 from teacher.serializers import TeacherUserSignupSerializer, TeacherDetailSerializer, TeacherListSerializer, \
-    TeacherProfileSerializer, ScheduleCreateSerializer, ScheduleDetailSerializer
+    TeacherProfileSerializer, ScheduleCreateSerializer, ScheduleDetailSerializer, ScheduleListSerializer, \
+    ScheduleUpdateSerializer
 from utils import create_response_data, create_response_list_data, generate_random_password
 
 
@@ -357,6 +358,7 @@ class TeacherScheduleDetailView(APIView):
             )
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
 
+
 class TeacherScheduleListView(APIView):
     """
     This class is created to fetch the list of the teacher's schedule.
@@ -365,23 +367,27 @@ class TeacherScheduleListView(APIView):
     pagination_class = CustomPagination
 
     def get(self, request):
-        queryset = TeacherUser.objects.filter(user__is_active=True)
+        queryset = TeachersSchedule.objects.all()
         if request.query_params:
             start_date = request.query_params.get('start_date', None)
             end_date = request.query_params.get('end_date', None)
-            page = request.query_params.get('page_size', None)
-            if start_date:
-                queryset = queryset.filter(start_date__icontains=start_date)
+
+            if start_date and end_date:
+                queryset = queryset.filter(start_date__gte=start_date, end_date__lte=end_date)
+            elif start_date:
+                queryset = queryset.filter(start_date__gte=start_date)
+            elif end_date:
+                queryset = queryset.filter(end_date__lte=end_date)
 
             # Paginate the queryset
             paginator = self.pagination_class()
             paginated_queryset = paginator.paginate_queryset(queryset, request)
 
-            serializers = TeacherListSerializer(paginated_queryset, many=True)
+            serializers = ScheduleListSerializer(paginated_queryset, many=True)
             response_data = {
                 'status': status.HTTP_200_OK,
                 'count': len(serializers.data),
-                'message': UserResponseMessage.USER_LIST_MESSAGE,
+                'message': ScheduleMessage.SCHEDULE_LIST_MESSAGE,
                 'data': serializers.data,
                 'pagination': {
                     'page_size': paginator.page_size,
@@ -393,11 +399,78 @@ class TeacherScheduleListView(APIView):
             }
             return Response(response_data, status=status.HTTP_200_OK)
 
-        serializer = TeacherListSerializer(queryset, many=True)
+        serializer = ScheduleListSerializer(queryset, many=True)
         response = create_response_list_data(
             status=status.HTTP_200_OK,
             count=len(serializer.data),
-            message=UserResponseMessage.USER_LIST_MESSAGE,
+            message=ScheduleMessage.SCHEDULE_LIST_MESSAGE,
             data=serializer.data,
         )
         return Response(response, status=status.HTTP_200_OK)
+
+
+class TeacherScheduleDeleteView(APIView):
+    permission_classes = [IsAdminUser]
+    """
+    This class is used to delete the teacher schedule.
+    """
+
+    def delete(self, request, pk):
+        try:
+            schedule_data = TeachersSchedule.objects.get(id=pk)
+
+            schedule_data.delete()
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=ScheduleMessage.SCHEDULE_DELETED_SUCCESSFULLY,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except TeachersSchedule.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=ScheduleMessage.SCHEDULE_NOT_FOUND,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+
+
+class TeacherScheduleUpdateView(APIView):
+    """
+    This class is used to update the teacher schedule.
+    """
+    permission_classes = [IsAdminUser]
+
+    def patch(self, request, pk):
+        try:
+            schedule_data_details = request.data.get('schedule_data')
+            schedule_data_str = json.loads(schedule_data_details)
+            data = {
+                'start_date': request.data.get('start_date'),
+                'end_date': request.data.get('end_date'),
+                'schedule_data':schedule_data_str
+            }
+            staff = TeachersSchedule.objects.get(id=pk)
+            serializer = ScheduleUpdateSerializer(staff, data=data, partial=True)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                response = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=ScheduleMessage.SCHEDULE_UPDATED_SUCCESSFULLY,
+                    data={}
+                )
+                return Response(response, status=status.HTTP_200_OK)
+            else:
+                response = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=serializer.errors,
+                    data=serializer.errors
+                )
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        except TeachersSchedule.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=ScheduleMessage.SCHEDULE_NOT_FOUND,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
