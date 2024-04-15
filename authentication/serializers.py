@@ -1,9 +1,9 @@
 from rest_framework import serializers
 
 from EduSmart import settings
-from constants import USER_TYPE_CHOICES, ROLE_CHOICES
+from constants import USER_TYPE_CHOICES, ROLE_CHOICES, ATTENDENCE_CHOICE
 from teacher.serializers import CertificateSerializer, ImageFieldStringAndFile
-from .models import User, AddressDetails, StaffUser, Certificate
+from .models import User, AddressDetails, StaffUser, Certificate, StaffAttendence
 from django.core.exceptions import ValidationError as DjangoValidationError
 
 class UserSignupSerializer(serializers.Serializer):
@@ -262,3 +262,57 @@ class NonTeachingStaffProfileSerializers(serializers.ModelSerializer):
                 raise serializers.ValidationError(str(e))
 
         return value
+
+
+class StaffAttendanceSerializer(serializers.ModelSerializer):
+    staff = serializers.CharField(required=True)
+    date = serializers.DateField(required=True)
+    mark_attendence = serializers.ChoiceField(choices=ATTENDENCE_CHOICE, required=True)
+
+    class Meta:
+        model = StaffAttendence
+        fields = ['staff', 'date', 'mark_attendence']
+
+    def create(self, validated_data):
+        student_id = validated_data.pop('staff')
+        try:
+            staff = StaffUser.objects.get(id=student_id)
+        except StaffUser.DoesNotExist:
+            raise serializers.ValidationError("Invalid staff ID.")
+
+        # Use the retrieved staff object to create the attendance record
+        staff_attendance = StaffAttendence.objects.create(staff=staff, **validated_data)
+        return staff_attendance
+
+
+class StaffAttendanceDetailSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = StaffAttendence
+        fields = ['date', 'mark_attendence']
+
+
+class StaffAttendanceListSerializer(serializers.ModelSerializer):
+    id = serializers.SerializerMethodField()
+    name = serializers.SerializerMethodField()
+    role = serializers.SerializerMethodField()
+    class Meta:
+        model = StaffAttendence
+        fields = ['name', 'id', 'role', 'date', 'mark_attendence']
+
+    def get_id(self, obj):
+        teacher_id = obj.get('teacher__id')
+        if teacher_id:
+            return teacher_id
+
+    def get_name(self, obj):
+        first_name = obj.get('staff__first_name')
+        last_name = obj.get('staff__last_name')
+        name = f"{first_name} {last_name}"
+        if name:
+            return name
+
+    def get_role(self, obj):
+        staff_role = obj.get('staff__role')
+        if staff_role:
+            return staff_role

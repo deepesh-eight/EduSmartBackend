@@ -141,7 +141,7 @@ class TeacherUser(models.Model):
     # certificate = models.FileField(upload_to='', blank=True, null=True)
 
     def __str__(self) -> str:
-        return f'{self.user} user details'
+        return f'{self.id}'
 
 
 class StaffUser(models.Model):
@@ -157,6 +157,9 @@ class StaffUser(models.Model):
     address = models.TextField(blank=True, null=True)
     joining_date = models.DateField(auto_now_add=True, null=True, blank=True)
     ctc = models.DecimalField(max_digits=16, decimal_places=2, default=0.0)
+
+    def __str__(self) -> str:
+        return f'{self.id}'
 
 
 class Certificate(models.Model):
@@ -193,7 +196,7 @@ class StudentUser(models.Model):
     bus_route = models.IntegerField()
 
     def __str__(self) -> str:
-        return f'{self.name} user details'
+        return f'{self.id}'
 
     def get_phone_without_country_code(self):
         if not self.phone:
@@ -233,6 +236,11 @@ class TeachersSchedule(models.Model):
     start_date = models.DateField(default=datetime.date.today)
     end_date = models.DateField(default=datetime.date.today)
     schedule_data = models.JSONField(null=True)
+
+class TeacherAttendence(models.Model):
+    teacher = models.ForeignKey(TeacherUser, on_delete=models.CASCADE)
+    date = models.DateField()
+    mark_attendence = models.CharField(max_length=100)
 
 class StaffAttendence(models.Model):
     staff = models.ForeignKey(StaffUser, on_delete=models.CASCADE)

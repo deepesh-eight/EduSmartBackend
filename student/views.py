@@ -1,3 +1,6 @@
+import calendar
+import datetime
+
 from django.db import IntegrityError
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
@@ -6,12 +9,15 @@ from rest_framework.views import APIView
 
 from authentication.models import User, Class, AddressDetails, StudentUser
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsStudentUser
-from constants import UserLoginMessage, UserResponseMessage
+from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage
 from curriculum.models import Curriculum
 from pagination import CustomPagination
+from student.models import StudentAttendence
 from student.serializers import StudentUserSignupSerializer, StudentDetailSerializer, StudentListSerializer, \
-    studentProfileSerializer
-from utils import create_response_data, create_response_list_data
+    studentProfileSerializer, StudentAttendanceSerializer, StudentAttendanceDetailSerializer, \
+    StudentAttendanceListSerializer
+from utils import create_response_data, create_response_list_data, get_student_total_attendance, \
+    get_student_total_absent, get_student_attendence_percentage
 
 
 class StudentUserCreateView(APIView):
@@ -231,3 +237,140 @@ class StudentUpdateProfileView(APIView):
                 data={}
             )
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+
+
+class AttendanceCreateView(APIView):
+    permission_classes = [IsAdminUser, ]
+    """
+    This class is used to create attendance of student's.
+    """
+    def post(self, request):
+        serializer = StudentAttendanceSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+            response_data = create_response_data(
+                status=status.HTTP_201_CREATED,
+                message=AttendenceMarkedMessage.ATTENDENCE_MARKED_SUCCESSFULLY,
+                data=serializer.data,
+            )
+            return Response(response_data, status=status.HTTP_201_CREATED)
+        else:
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=serializer.errors,
+                data=serializer.errors
+            )
+            return Response(response, status=status.HTTP_200_OK)
+
+
+class FetchAttendanceDetailView(APIView):
+    """
+    This class is created to fetch the detail of the student attendance.
+    """
+    permission_classes = [IsAdminUser,]
+
+    def get(self, request, pk):
+        try:
+            student = StudentUser.objects.get(id=pk)
+            data = StudentAttendence.objects.filter(student_id=pk).order_by('-date')
+
+            filter_type = request.query_params.get('filter_type', None)
+            if filter_type:
+                today = datetime.date.today()
+                if filter_type == 'weekly':
+                    start_date = today - datetime.timedelta(days=today.weekday())
+                    end_date = start_date + datetime.timedelta(days=6)
+                elif filter_type == 'monthly':
+                    start_date = today.replace(day=1)
+                    end_date = today.replace(day=calendar.monthrange(today.year, today.month)[1])
+                elif filter_type == 'yearly':
+                    start_date = today.replace(month=1, day=1)
+                    end_date = today.replace(month=12, day=31)
+                data = data.filter(date__range=(start_date, end_date))
+
+            start_date = request.query_params.get('start_date', None)
+            date = request.query_params.get('date', None)
+            end_date = request.query_params.get('end_date', None)
+            if start_date and end_date:
+                start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d').date()
+                end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d').date()
+                data = data.filter(date__range=(start_date, end_date))
+            if date:
+                date = datetime.datetime.strptime(date, '%Y-%m-%d').date()
+                data = data.filter(date=(date))
+
+            if data:
+                serializer = StudentAttendanceDetailSerializer(data, many=True)
+                response_data = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=UserResponseMessage.USER_DETAIL_MESSAGE,
+                    data={
+                        "student_name": student.name,
+                        "student_roll_no": student.id,
+                        "class": student.class_enrolled,
+                        "section": student.section,
+                        "total_attendance": get_student_total_attendance(data),
+                        "total_absent": get_student_total_absent(data),
+                        "total_percentage": f"{get_student_attendence_percentage(data)}%",
+                        "attendence_detail": serializer.data,
+                    }
+                )
+                return Response(response_data, status=status.HTTP_200_OK)
+            else:
+                response_data = create_response_data(
+                    status=status.HTTP_404_NOT_FOUND,
+                    message=UserResponseMessage.USER_DOES_NOT_EXISTS,
+                    data={}
+                )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=UserResponseMessage.USER_DOES_NOT_EXISTS,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+
+
+class FetchAttendanceListView(APIView):
+    """
+    This class is created to fetch the list of the student attendance according to class.
+    """
+    permission_classes = [IsAdminUser, ]
+    pagination_class = CustomPagination
+
+    def get(self, request):
+        try:
+            data = StudentAttendence.objects.select_related('student').values(
+                'student__name',
+                'student__class_enrolled',
+                'student__section',
+                'mark_attendence',
+                'date'
+            ).order_by('-date')
+            # Paginate the queryset
+            paginator = self.pagination_class()
+            result_page = paginator.paginate_queryset(data, request)
+
+            serializers = StudentAttendanceListSerializer(result_page, many=True)
+            response_data = {
+                'status': status.HTTP_200_OK,
+                'count': len(serializers.data),
+                'message': UserResponseMessage.USER_LIST_MESSAGE,
+                'data': serializers.data,
+                'pagination': {
+                    'page_size': paginator.page_size,
+                    'next': paginator.get_next_link(),
+                    'previous': paginator.get_previous_link(),
+                    'total_pages': paginator.page.paginator.num_pages,
+                    'current_page': paginator.page.number,
+                }
+            }
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response = {
+                "message": "An error occurred while fetching attendance list.",
+                "error": str(e),
+            }
+            return Response(response, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+

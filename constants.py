@@ -60,6 +60,11 @@ ROLE_CHOICES = [
     ("class_teacher", "class_teacher")
 ]
 
+ATTENDENCE_CHOICE = [
+    ("P", "present"),
+    ("A", "Absent"),
+    ("L", "On_leave")
+]
 
 class UserLoginMessage:
     USER_DOES_NOT_EXISTS = "User does not exists."
@@ -92,3 +97,7 @@ class ScheduleMessage:
     SCHEDULE_DELETED_SUCCESSFULLY = "Schedule deleted successfully.",
     SCHEDULE_LIST_MESSAGE = "All schedule fetch successfully."
     SCHEDULE_UPDATED_SUCCESSFULLY = "Teacher schedule updated successfully"
+
+
+class AttendenceMarkedMessage:
+    ATTENDENCE_MARKED_SUCCESSFULLY = "Attendence marked successfully."

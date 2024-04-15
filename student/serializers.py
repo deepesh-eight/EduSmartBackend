@@ -1,10 +1,14 @@
+import datetime
+
 from rest_framework import serializers
 
 from EduSmart import settings
 from authentication.models import StudentUser, User
 from authentication.serializers import AddressDetailsSerializer
-from constants import USER_TYPE_CHOICES, GENDER_CHOICES, RELIGION_CHOICES, CLASS_CHOICES, BLOOD_GROUP_CHOICES
+from constants import USER_TYPE_CHOICES, GENDER_CHOICES, RELIGION_CHOICES, CLASS_CHOICES, BLOOD_GROUP_CHOICES, \
+    ATTENDENCE_CHOICE
 from curriculum.models import Curriculum
+from student.models import StudentAttendence
 
 
 class StudentUserSignupSerializer(serializers.Serializer):
@@ -161,3 +165,71 @@ class StudentListSerializer(serializers.ModelSerializer):
             else:
                 return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.image)}'
         return None
+
+class StudentAttendanceSerializer(serializers.ModelSerializer):
+    student = serializers.CharField(required=True)
+    date = serializers.DateField(required=True)
+    mark_attendence = serializers.ChoiceField(choices=ATTENDENCE_CHOICE, required=True)
+
+    class Meta:
+        model = StudentAttendence
+        fields = ['student', 'date', 'mark_attendence']
+
+
+    def create(self, validated_data):
+        student_id = validated_data.pop('student')
+        try:
+            student = StudentUser.objects.get(id=student_id)
+        except StudentUser.DoesNotExist:
+            raise serializers.ValidationError("Invalid student ID.")
+
+        # Use the retrieved student object to create the attendance record
+        student_attendance = StudentAttendence.objects.create(student=student, **validated_data)
+        return student_attendance
+
+
+class StudentAttendanceDetailSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = StudentAttendence
+        fields = ['date', 'mark_attendence']
+
+
+class StudentAttendanceListSerializer(serializers.ModelSerializer):
+    roll_number = serializers.SerializerMethodField()
+    name = serializers.SerializerMethodField()
+    percentage = serializers.SerializerMethodField()
+    class_enrolled = serializers.SerializerMethodField()
+    section = serializers.SerializerMethodField()
+    class_strength = serializers.SerializerMethodField()
+    class Meta:
+        model = StudentAttendence
+        fields = ['name', 'roll_number', 'date', 'class_enrolled', 'section', 'mark_attendence', 'percentage', 'class_strength']
+
+    def get_roll_number(self, obj):
+        student_id = obj.get('student__id')
+        if student_id:
+            return student_id
+
+    def get_name(self, obj):
+        student_name = obj.get('student__name')
+        if student_name:
+            return student_name
+
+    def get_class_enrolled(self, obj):
+        student_class = obj.get('student__class_enrolled')
+        if student_class:
+            return student_class
+
+    def get_section(self, obj):
+        student_section = obj.get('student__section')
+        if student_section:
+            return student_section
+
+    def get_percentage(self, obj):
+        year = datetime.date.today().year
+        total_attendance = StudentAttendence.objects.filter(date__year=year,
+            mark_attendence='P').count()
+        total_school_days = 365
+        attendence_percentage = (total_attendance / total_school_days) * 100
+        return f"{round(attendence_percentage)}%"

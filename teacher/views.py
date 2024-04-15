@@ -1,3 +1,5 @@
+import calendar
+import datetime
 import json
 
 from django.db import IntegrityError
@@ -7,15 +9,18 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from authentication.models import User, Class, TeacherUser, StudentUser, Certificate, TeachersSchedule
+from authentication.models import User, Class, TeacherUser, StudentUser, Certificate, TeachersSchedule, \
+    TeacherAttendence
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsTeacherUser
 from authentication.serializers import UserLoginSerializer
-from constants import UserLoginMessage, UserResponseMessage, ScheduleMessage
+from constants import UserLoginMessage, UserResponseMessage, ScheduleMessage, AttendenceMarkedMessage
 from pagination import CustomPagination
 from teacher.serializers import TeacherUserSignupSerializer, TeacherDetailSerializer, TeacherListSerializer, \
     TeacherProfileSerializer, ScheduleCreateSerializer, ScheduleDetailSerializer, ScheduleListSerializer, \
-    ScheduleUpdateSerializer
-from utils import create_response_data, create_response_list_data, generate_random_password
+    ScheduleUpdateSerializer, TeacherAttendanceSerializer, TeacherAttendanceDetailSerializer, \
+    TeacherAttendanceListSerializer
+from utils import create_response_data, create_response_list_data, generate_random_password,get_teacher_total_attendance, \
+    get_teacher_monthly_attendance, get_teacher_total_absent, get_teacher_monthly_absent
 
 
 # Create your views here.
@@ -474,3 +479,178 @@ class TeacherScheduleUpdateView(APIView):
                 data={}
             )
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+
+
+class TeacherAttendanceCreateView(APIView):
+    permission_classes = [IsAdminUser, ]
+    """
+    This class is used to create attendance of teacher's.
+    """
+    def post(self, request):
+        serializer = TeacherAttendanceSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+            response_data = create_response_data(
+                status=status.HTTP_201_CREATED,
+                message=AttendenceMarkedMessage.ATTENDENCE_MARKED_SUCCESSFULLY,
+                data=serializer.data,
+            )
+            return Response(response_data, status=status.HTTP_201_CREATED)
+        else:
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=serializer.errors,
+                data=serializer.errors
+            )
+            return Response(response, status=status.HTTP_200_OK)
+
+
+class FetchAttendanceDetailView(APIView):
+    """
+    This class is created to fetch the detail of the teacher attendance.
+    """
+    permission_classes = [IsAdminUser,]
+
+    def get(self, request, pk):
+        try:
+            teacher = TeacherUser.objects.get(id=pk)
+            data = TeacherAttendence.objects.filter(teacher_id=pk).order_by('-date')
+
+            filter_type = request.query_params.get('filter_type', None)
+            if filter_type:
+                today = datetime.date.today()
+                if filter_type == 'weekly':
+                    start_date = today - datetime.timedelta(days=today.weekday())
+                    end_date = start_date + datetime.timedelta(days=6)
+                elif filter_type == 'monthly':
+                    start_date = today.replace(day=1)
+                    end_date = today.replace(day=calendar.monthrange(today.year, today.month)[1])
+                elif filter_type == 'yearly':
+                    start_date = today.replace(month=1, day=1)
+                    end_date = today.replace(month=12, day=31)
+                data = data.filter(date__range=(start_date, end_date))
+
+            start_date = request.query_params.get('start_date', None)
+            date = request.query_params.get('date', None)
+            end_date = request.query_params.get('end_date', None)
+            if start_date and end_date:
+                start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d').date()
+                end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d').date()
+                data = data.filter(date__range=(start_date, end_date))
+            if date:
+                date = datetime.datetime.strptime(date, '%Y-%m-%d').date()
+                data = data.filter(date=(date))
+
+            if data:
+                serializer = TeacherAttendanceDetailSerializer(data, many=True)
+                response_data = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=UserResponseMessage.USER_DETAIL_MESSAGE,
+                    data={
+                        "teacher_name": teacher.full_name,
+                        "teacher_id": teacher.id,
+                        "class_teacher": f"{teacher.class_subject_section_details[0].get('class')} class" if teacher.role == 'class_teacher' else None,
+                        "class_section": teacher.class_subject_section_details[0].get('section') if teacher.role == 'class_teacher' else None,
+                        "subject": teacher.class_subject_section_details[0].get('subject') if teacher.role == 'class_teacher' else None,
+                        "total_attendance": get_teacher_total_attendance(data),
+                        "monthly_attendance": get_teacher_monthly_attendance(data),
+                        "total_absent": get_teacher_total_absent(data),
+                        "monthly_absent": get_teacher_monthly_absent(data),
+                        "attendence_detail": serializer.data,
+                    }
+                )
+                return Response(response_data, status=status.HTTP_200_OK)
+            else:
+                response_data = create_response_data(
+                    status=status.HTTP_404_NOT_FOUND,
+                    message=UserResponseMessage.USER_DOES_NOT_EXISTS,
+                    data={}
+                )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=UserResponseMessage.USER_DOES_NOT_EXISTS,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+
+
+class FetchAttendanceListView(APIView):
+    """
+    This class is created to fetch the list of the teacher's attendance.
+    """
+    permission_classes = [IsAdminUser, ]
+    pagination_class = CustomPagination
+
+    def get(self, request):
+        try:
+            data = TeacherAttendence.objects.select_related('teacher').values(
+                'teacher__class_subject_section_details',
+                'teacher__role',
+                'teacher__full_name',
+                'teacher__id',
+                'mark_attendence',
+                'date'
+            ).order_by('-date')
+
+            filter_type = request.query_params.get('filter_type', None)
+            if filter_type:
+                today = datetime.date.today()
+                if filter_type == 'weekly':
+                    start_date = today - datetime.timedelta(days=today.weekday())
+                    end_date = start_date + datetime.timedelta(days=6)
+                elif filter_type == 'monthly':
+                    start_date = today.replace(day=1)
+                    end_date = today.replace(day=calendar.monthrange(today.year, today.month)[1])
+                elif filter_type == 'yearly':
+                    start_date = today.replace(month=1, day=1)
+                    end_date = today.replace(month=12, day=31)
+                data = data.filter(date__range=(start_date, end_date))
+
+            start_date = request.query_params.get('start_date', None)
+            date = request.query_params.get('date', None)
+            end_date = request.query_params.get('end_date', None)
+            if start_date and end_date:
+                start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d').date()
+                end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d').date()
+                data = data.filter(date__range=(start_date, end_date))
+            if date:
+                date = datetime.datetime.strptime(date, '%Y-%m-%d').date()
+                data = data.filter(date=(date))
+
+            present_staff = request.query_params.get('present_staff', None)
+            absent_staff = request.query_params.get('absent_staff', None)
+            on_leave = request.query_params.get('on_leave', None)
+            if present_staff:
+                data = data.filter(mark_attendence='P')
+            if absent_staff:
+                data = data.filter(mark_attendence='A')
+            if on_leave:
+                data = data.filter(mark_attendence='L')
+
+            # Paginate the queryset
+            paginator = self.pagination_class()
+            result_page = paginator.paginate_queryset(data, request)
+
+            serializers = TeacherAttendanceListSerializer(result_page, many=True)
+            response_data = {
+                'status': status.HTTP_200_OK,
+                'count': len(serializers.data),
+                'message': UserResponseMessage.USER_LIST_MESSAGE,
+                'data': serializers.data,
+                'pagination': {
+                    'page_size': paginator.page_size,
+                    'next': paginator.get_next_link(),
+                    'previous': paginator.get_previous_link(),
+                    'total_pages': paginator.page.paginator.num_pages,
+                    'current_page': paginator.page.number,
+                }
+            }
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response = {
+                "message": "An error occurred while fetching attendance list.",
+                "error": str(e),
+            }
+            return Response(response, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -1,12 +1,13 @@
+import datetime
 import json
 
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
 from EduSmart import settings
-from authentication.models import TeacherUser, Certificate, TeachersSchedule
+from authentication.models import TeacherUser, Certificate, TeachersSchedule, TeacherAttendence
 from constants import USER_TYPE_CHOICES, GENDER_CHOICES, RELIGION_CHOICES, BLOOD_GROUP_CHOICES, CLASS_CHOICES, \
-    SUBJECT_CHOICES, ROLE_CHOICES
+    SUBJECT_CHOICES, ROLE_CHOICES, ATTENDENCE_CHOICE
 
 
 class CertificateSerializer(serializers.ModelSerializer):
@@ -79,11 +80,12 @@ class TeacherDetailSerializer(serializers.ModelSerializer):
     phone = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
     certificates = serializers.SerializerMethodField()
+    class_teacher = serializers.SerializerMethodField()
 
     class Meta:
         model = TeacherUser
         fields = ['id', 'full_name', 'gender', 'dob', 'blood_group', 'phone', 'address', 'email', 'religion',
-                  'role', 'joining_date', 'experience', 'ctc', 'class_subject_section_details', 'image', 'certificates', 'highest_qualification']
+                  'role', 'joining_date', 'experience', 'ctc', 'class_subject_section_details', 'image', 'certificates', 'highest_qualification', 'class_teacher']
 
     def get_name(self, obj):
         return obj.user.name if hasattr(obj, 'user') else None
@@ -110,6 +112,11 @@ class TeacherDetailSerializer(serializers.ModelSerializer):
         certificates = Certificate.objects.filter(user=obj.user)
         serializer = CertificateSerializer(certificates, many=True)
         return serializer.data
+
+    def get_class_teacher(self, obj):
+        if obj.role == 'class_teacher':
+            class_teacher = obj.class_subject_section_details[0]
+            return class_teacher
 
 
 class TeacherListSerializer(serializers.ModelSerializer):
@@ -363,3 +370,61 @@ class ScheduleUpdateSerializer(serializers.ModelSerializer):
         instance.save()  # Save the changes to the database
         return instance
 
+
+class TeacherAttendanceSerializer(serializers.ModelSerializer):
+    teacher = serializers.CharField(required=True)
+    date = serializers.DateField(required=True)
+    mark_attendence = serializers.ChoiceField(choices=ATTENDENCE_CHOICE, required=True)
+
+    class Meta:
+        model = TeacherAttendence
+        fields = ['teacher', 'date', 'mark_attendence']
+
+    def create(self, validated_data):
+        teacher_id = validated_data.pop('teacher')
+        try:
+            teacher = TeacherUser.objects.get(id=teacher_id)
+        except TeacherUser.DoesNotExist:
+            raise serializers.ValidationError("Invalid teacher ID.")
+
+        # Use the retrieved teacher object to create the attendance record
+        teacher_attendance = TeacherAttendence.objects.create(teacher=teacher, **validated_data)
+        return teacher_attendance
+
+
+class TeacherAttendanceDetailSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = TeacherAttendence
+        fields = ['date', 'mark_attendence']
+
+
+class TeacherAttendanceListSerializer(serializers.ModelSerializer):
+    id = serializers.SerializerMethodField()
+    name = serializers.SerializerMethodField()
+    class_teacher = serializers.SerializerMethodField()
+    subject = serializers.SerializerMethodField()
+    section = serializers.SerializerMethodField()
+
+    class Meta:
+        model = TeacherAttendence
+        fields = ['name', 'id', 'class_teacher', 'subject', 'section', 'date', 'mark_attendence']
+
+    def get_id(self, obj):
+        student_id = obj.get('teacher__id')
+        if student_id:
+            return student_id
+
+    def get_name(self, obj):
+        student_name = obj.get('teacher__full_name')
+        if student_name:
+            return student_name
+
+    def get_class_teacher(self, obj):
+        return f"{obj.get('teacher__class_subject_section_details')[0].get('class')} class" if obj.get('teacher__role') == 'class_teacher' else None
+
+    def get_subject(self, obj):
+        return obj.get('teacher__class_subject_section_details')[0].get('subject') if obj.get('teacher__role') == 'class_teacher' else None
+
+    def get_section(self, obj):
+        return obj.get('teacher__class_subject_section_details')[0].get('section') if obj.get('teacher__role') == 'class_teacher' else None
