@@ -233,3 +233,25 @@ class StudentAttendanceListSerializer(serializers.ModelSerializer):
         total_school_days = 365
         attendence_percentage = (total_attendance / total_school_days) * 100
         return f"{round(attendence_percentage)}%"
+
+
+class StudentListBySectionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StudentUser
+        fields = ['id', 'name', 'class_enrolled', 'section']
+
+
+class StudentAttendanceCreateSerializer(serializers.ModelSerializer):
+    date = serializers.SerializerMethodField(required=False)
+    class Meta:
+        model = StudentAttendence
+        fields = ['id', 'date', 'mark_attendence']
+
+    def validate(self, data):
+        if 'date' in data:
+            try:
+                # Attempt to parse the date string
+                data['date'] = serializers.DateField().to_internal_value(data['date'])
+            except serializers.ValidationError:
+                raise serializers.ValidationError({"date": ["Date must be in YYYY-MM-DD format"]})
+        return data

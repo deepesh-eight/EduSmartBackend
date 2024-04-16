@@ -1,7 +1,9 @@
 import calendar
 import datetime
+import json
 
 from django.db import IntegrityError
+from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
@@ -15,7 +17,7 @@ from pagination import CustomPagination
 from student.models import StudentAttendence
 from student.serializers import StudentUserSignupSerializer, StudentDetailSerializer, StudentListSerializer, \
     studentProfileSerializer, StudentAttendanceSerializer, StudentAttendanceDetailSerializer, \
-    StudentAttendanceListSerializer
+    StudentAttendanceListSerializer, StudentListBySectionSerializer, StudentAttendanceCreateSerializer
 from utils import create_response_data, create_response_list_data, get_student_total_attendance, \
     get_student_total_absent, get_student_attendence_percentage
 
@@ -374,3 +376,98 @@ class FetchAttendanceListView(APIView):
             }
             return Response(response, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+class FetchStudentList(APIView):
+    """
+    This class is created to fetch the list of the student's according to section.
+    """
+    permission_classes = [IsAdminUser]
+    pagination_class = CustomPagination
+
+    def get(self, request):
+        class_name = request.query_params.get('class_enrolled')
+        section = request.query_params.get('section')
+        selected_date_str = request.query_params.get('date')
+
+        if not class_name or not section:
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message="Class and section are required.",
+                data={}
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+        if selected_date_str:
+            try:
+                selected_date = datetime.datetime.strptime(selected_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                response = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message="Invalid date format. Please provide date in YYYY-MM-DD format.",
+                    data={}
+                )
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            selected_date = None
+
+        students = StudentUser.objects.filter(class_enrolled=class_name, section=section)
+        serializer = StudentListBySectionSerializer(students, many=True)
+
+        if selected_date:
+            attendance_records = StudentAttendence.objects.filter(date=selected_date, student__in=students)
+            attendance_mapping = {attendance.student_id: {'date': attendance.date, 'mark_attendence': attendance.mark_attendence} for attendance in attendance_records}
+
+            for student_data in serializer.data:
+                student_id = student_data['id']
+                if student_id in attendance_mapping:
+                    attendance_data = attendance_mapping[student_id]
+                    student_data['date'] = attendance_data['date']
+                    student_data['mark_attendence'] = attendance_data['mark_attendence']
+                else:
+                    student_data['date'] = selected_date
+                    student_data['mark_attendence'] = None
+
+        response = create_response_data(
+            status=status.HTTP_200_OK,
+            message="Student list fetched successfully.",
+            data=serializer.data
+        )
+        return Response(response, status=status.HTTP_200_OK)
+
+
+class StudentAttendanceCreateView(APIView):
+    def post(self, request):
+        data_str = request.data.get('data')  # Assuming data is sent as form-data with key 'data'
+
+        try:
+            data_json = json.loads(data_str)
+        except json.JSONDecodeError:
+            return Response("Invalid JSON format", status=status.HTTP_400_BAD_REQUEST)
+
+        for item in data_json:
+            serializer = StudentAttendanceCreateSerializer(data=item)
+            if serializer.is_valid():
+                student_id = item['id']
+                date = item['date']
+                mark_attendence = item['mark_attendence']
+                student_user = get_object_or_404(StudentUser, id=student_id)
+
+                # Create or update attendance record
+                StudentAttendence.objects.update_or_create(
+                    student=student_user,
+                    date=date,
+                    mark_attendence=mark_attendence
+                )
+            else:
+                response = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=serializer.errors,
+                    data={}
+                )
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        response = create_response_data(
+            status=status.HTTP_200_OK,
+            message=AttendenceMarkedMessage.ATTENDENCE_MARKED_SUCCESSFULLY,
+            data={}
+        )
+        return Response(response, status=status.HTTP_200_OK)
