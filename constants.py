@@ -80,6 +80,7 @@ class UserResponseMessage:
     USER_LIST_MESSAGE = "All user's fetch successfully."
     USER_DELETE_MESSAGE = "User deleted successfully."
     PROFILE_UPDATED_SUCCESSFULLY = "User profile updated successfully"
+    EMAIL_ALREADY_EXIST = "Email already exist."
 
 
 class CurriculumMessage:

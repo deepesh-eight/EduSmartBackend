@@ -61,20 +61,20 @@ class AdminStaffLoginView(APIView):
 
 
 class StaffListView(APIView):
-    permission_classes = [IsAdminUser, ]
+    permission_classes = [IsSuperAdminUser, ]
 
     def get(self, request):
-        serializer = StaffProfileSerializer(User.objects.filter(is_staff=True, is_active=True), many=True)
+        serializer = StaffProfileSerializer(User.objects.filter(is_staff=True, is_active=True, user_type="admin"), many=True)
         response_data = create_response_data(
             status=status.HTTP_200_OK,
-            message="",
+            message=UserResponseMessage.USER_LIST_MESSAGE,
             data=serializer.data
         )
         return Response(response_data, status=status.HTTP_200_OK)
 
 
 class StaffProfileView(APIView):
-    permission_classes = [IsStaffUser, ]
+    permission_classes = [IsAdminUser, ]
 
     def get(self, request):
         serializer = StaffProfileSerializer(request.user)
@@ -87,7 +87,7 @@ class StaffProfileView(APIView):
 
 
 class GetStaffView(APIView):
-    permission_classes = [IsStaffUser, ]
+    permission_classes = [IsSuperAdminUser, ]
 
     def get(self, request, pk):
         instance = User.objects.get(id=pk)
@@ -108,7 +108,7 @@ class GetStaffView(APIView):
 
 
 class StaffUpdateProfileView(APIView):
-    permission_classes = [IsStaffUser, ]
+    permission_classes = [IsSuperAdminUser, ]
 
     def patch(self, request, pk):
         user = User.objects.get(id=pk, is_staff=True)
@@ -132,7 +132,7 @@ class StaffUpdateProfileView(APIView):
 
 
 class AdminStaffDeleteView(APIView):
-    permission_classes = [IsAdminUser, ]
+    permission_classes = [IsSuperAdminUser, ]
 
     def delete(self, request, pk):
         user = User.objects.get(id=pk, is_staff=True)
@@ -153,7 +153,7 @@ class AdminStaffDeleteView(APIView):
 
 
 class AdminStaffCreateView(APIView):
-    permission_classes = [IsAdminUser, ]
+    permission_classes = [IsSuperAdminUser, ]
 
     def post(self, request):
         serializer = StaffSignupSerializer(data=request.data)

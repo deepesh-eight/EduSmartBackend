@@ -26,7 +26,7 @@ from utils import create_response_data, create_response_list_data, generate_rand
 # Create your views here.
 
 class TeacherUserCreateView(APIView):
-    permission_classes = [IsSuperAdminUser | IsAdminUser]
+    permission_classes = [IsAdminUser]
     """
     This class is used to create teacher type user's.
     """
@@ -99,7 +99,7 @@ class FetchTeacherDetailView(APIView):
     """
     This class is created to fetch the detail of the teacher.
     """
-    permission_classes = [IsAdminUser | IsTeacherUser]
+    permission_classes = [IsAdminUser,]
 
     def get(self, request, pk):
         try:
@@ -264,6 +264,13 @@ class TeacherUpdateProfileView(APIView):
                 data={}
             )
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+        except IntegrityError as e:
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=UserResponseMessage.EMAIL_ALREADY_EXIST,
+                data={},
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
 
 class TeacherLoginView(APIView):
@@ -335,7 +342,7 @@ class TeacherScheduleDetailView(APIView):
     """
     This class is created to fetch the detail of the teacher schedule.
     """
-    permission_classes = [IsAdminUser | IsTeacherUser]
+    permission_classes = [IsAdminUser]
 
     def get(self, request, pk):
         try:

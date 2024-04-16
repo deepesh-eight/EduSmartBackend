@@ -8,7 +8,7 @@ def is_superadmin_user(user):
 
 
 def is_admin_user(user):
-    return user.is_authenticated and isinstance(user, User) and user.is_superuser
+    return user.is_authenticated and isinstance(user, User) and user.user_type == "admin"
 
 
 def is_student_user(user):
@@ -32,7 +32,7 @@ def is_boarding_user(user):
 
 
 def is_staff_user(user):
-    return user.is_authenticated and isinstance(user, User) and user.is_staff
+    return user.is_authenticated and isinstance(user, User) and user.user_type == "non-teaching"
 
 
 class IsSuperAdminUser(permissions.BasePermission):

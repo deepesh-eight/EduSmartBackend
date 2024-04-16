@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from authentication.models import User, Class, AddressDetails, StudentUser
-from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsStudentUser
+from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsStudentUser, IsTeacherUser
 from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage
 from curriculum.models import Curriculum
 from pagination import CustomPagination
@@ -23,7 +23,7 @@ from utils import create_response_data, create_response_list_data, get_student_t
 
 
 class StudentUserCreateView(APIView):
-    permission_classes = [IsSuperAdminUser | IsAdminUser]
+    permission_classes = [IsAdminUser]
     """
     This class is used to create student type user's.
     """
@@ -105,7 +105,7 @@ class FetchStudentDetailView(APIView):
     """
     This class is created to fetch the detail of the student.
     """
-    permission_classes = [IsAdminUser | IsStudentUser]
+    permission_classes = [IsAdminUser]
 
     def get(self, request, pk):
         try:
@@ -381,7 +381,7 @@ class FetchStudentList(APIView):
     """
     This class is created to fetch the list of the student's according to section.
     """
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsTeacherUser]
     pagination_class = CustomPagination
 
     def get(self, request):
@@ -436,6 +436,11 @@ class FetchStudentList(APIView):
 
 
 class StudentAttendanceCreateView(APIView):
+    """
+    This class is created to marked_attendance of the student's.
+    """
+    permission_classes = [IsTeacherUser]
+
     def post(self, request):
         data_str = request.data.get('data')  # Assuming data is sent as form-data with key 'data'
 
