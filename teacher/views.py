@@ -285,7 +285,8 @@ class TeacherLoginView(APIView):
         password = serializer.validated_data['password']
 
         try:
-            user = TeacherUser.objects.get(user__email=email)
+            teacher_user = TeacherUser.objects.get(user__email=email)
+            user = User.objects.get(email=email)
         except TeacherUser.DoesNotExist:
             resposne = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
@@ -293,14 +294,14 @@ class TeacherLoginView(APIView):
                 data={}
             )
             return Response(resposne, status=status.HTTP_400_BAD_REQUEST)
-        if not user.user.check_password(password):
+        if not user.check_password(password):
             response = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
                 message=UserLoginMessage.INCORRECT_PASSWORD,
                 data={}
             )
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
-        teacher_detail = FetchTeacherDetailView.get(self, request, user.id)
+        teacher_detail = FetchTeacherDetailView.get(self, request, teacher_user.id)
 
         refresh = RefreshToken.for_user(user)
         response_data = create_response_data(

@@ -174,12 +174,11 @@ class NonTeachingStaffDetailSerializers(serializers.ModelSerializer):
     email = serializers.EmailField(source='user.email')
     phone = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
-    name = serializers.SerializerMethodField()
     certificates = serializers.SerializerMethodField()
 
     class Meta:
         model = StaffUser
-        fields = ['id', 'name', 'role', 'phone', 'email', 'image', 'dob', 'gender', 'religion', 'blood_group', 'address', 'joining_date',
+        fields = ['id', 'first_name', 'last_name', 'role', 'phone', 'email', 'image', 'dob', 'gender', 'religion', 'blood_group', 'address', 'joining_date',
                   'ctc', 'certificates']
 
     def get_phone(self, obj):
@@ -199,9 +198,6 @@ class NonTeachingStaffDetailSerializers(serializers.ModelSerializer):
                 return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.image)}'
         return None
 
-    def get_name(self, obj):
-        if obj.first_name and obj.last_name:
-            return f'{obj.first_name} {obj.last_name}'
 
     def get_certificates(self, obj):
         # Fetch and serialize certificates associated with the user
