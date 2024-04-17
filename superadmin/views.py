@@ -5,7 +5,8 @@ from rest_framework.views import APIView
 
 from authentication.permissions import IsSuperAdminUser
 from constants import SchoolMessage
-from superadmin.serializers import SchoolCreateSerializer
+from superadmin.models import SchoolProfile
+from superadmin.serializers import SchoolCreateSerializer, SchoolProfileSerializer
 from utils import create_response_data
 
 
@@ -23,7 +24,7 @@ class SchoolCreateView(APIView):
             response = create_response_data(
                 status=status.HTTP_201_CREATED,
                 message=SchoolMessage.SCHOOL_CREATED_SUCCESSFULLY,
-                data=serializer.data
+                data={}
             )
             return Response(response, status=status.HTTP_200_OK)
         else:
@@ -33,3 +34,27 @@ class SchoolCreateView(APIView):
                 data=serializer.errors
             )
             return Response(response, status=status.HTTP_200_OK)
+
+
+class SchoolProfileView(APIView):
+    permission_classes = [IsSuperAdminUser,]
+    """
+    This class is created to fetch profile of the school.
+    """
+    def get(self, request, pk):
+        try:
+            data = SchoolProfile.objects.get(id=pk)
+            serializer = SchoolProfileSerializer(data)
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=SchoolMessage.SCHOOL_DETAIL_MESSAGE,
+                data=serializer.data
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=SchoolMessage.SCHOOL_DOES_NOT_EXISTS,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
