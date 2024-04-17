@@ -12,6 +12,8 @@ urlpatterns = [
         path('attendance/create/', AttendanceCreateView.as_view(), name='attendance_create'),
         path('attendance/detail/<int:pk>/', FetchAttendanceDetailView.as_view(), name='fetch_attendance_detail'),
         path('attendance/list/',  FetchAttendanceListView.as_view(), name='fetch_attendance_list'),
+
+        #Student API's for Mobile
         path('mobile/student/list/', FetchStudentList.as_view(), name='fetch_student_list'),
         path('mobile/attendance/create/', StudentAttendanceCreateView.as_view(), name='attendance_create'),
 

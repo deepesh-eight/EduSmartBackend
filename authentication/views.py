@@ -6,6 +6,7 @@ from rest_framework import status, permissions
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from authentication.models import User, AddressDetails, ErrorLogging, Certificate, StaffUser, StaffAttendence
@@ -14,7 +15,7 @@ from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsManageme
 from authentication.serializers import UserSignupSerializer, UsersListSerializer, UpdateProfileSerializer, \
     UserLoginSerializer, NonTeachingStaffSerializers, NonTeachingStaffListSerializers, \
     NonTeachingStaffDetailSerializers, NonTeachingStaffProfileSerializers, StaffAttendanceSerializer, \
-    StaffAttendanceDetailSerializer, StaffAttendanceListSerializer
+    StaffAttendanceDetailSerializer, StaffAttendanceListSerializer, LogoutSerializer
 from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage
 from pagination import CustomPagination
 from utils import create_response_data, create_response_list_data, get_staff_total_attendance, \
@@ -643,3 +644,17 @@ class FetchAttendanceListView(APIView):
                 "error": str(e),
             }
             return Response(response, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class LogoutView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        try:
+            serializer = LogoutSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+        except AuthenticationFailed as e:
+            return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'message': 'User logged out successfully'}, status=status.HTTP_200_OK)

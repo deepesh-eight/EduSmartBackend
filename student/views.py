@@ -19,7 +19,7 @@ from student.serializers import StudentUserSignupSerializer, StudentDetailSerial
     studentProfileSerializer, StudentAttendanceSerializer, StudentAttendanceDetailSerializer, \
     StudentAttendanceListSerializer, StudentListBySectionSerializer, StudentAttendanceCreateSerializer
 from utils import create_response_data, create_response_list_data, get_student_total_attendance, \
-    get_student_total_absent, get_student_attendence_percentage
+    get_student_total_absent, get_student_attendence_percentage, generate_random_password
 
 
 class StudentUserCreateView(APIView):
@@ -71,6 +71,9 @@ class StudentUserCreateView(APIView):
                 user = User.objects.create_user(
                     name=name, email=email, user_type=user_type
                 )
+                password = generate_random_password()
+                user.set_password(password)
+                user.save()
                 user_student = StudentUser.objects.create(
                     user=user, name=name, dob=dob, image=image, father_name=father_name, mother_name=mother_name,
                     gender=gender, father_occupation=father_occupation, religion=religion,
@@ -86,7 +89,8 @@ class StudentUserCreateView(APIView):
                 'user_id': user_student.id,
                 'name': user_student.name,
                 'email': user.email,
-                'user_type': user.user_type
+                'user_type': user.user_type,
+                'password': password
             }
             response = create_response_data(
                 status=status.HTTP_201_CREATED,

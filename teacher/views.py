@@ -10,11 +10,13 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from authentication.models import User, Class, TeacherUser, StudentUser, Certificate, TeachersSchedule, \
-    TeacherAttendence
+    TeacherAttendence, StaffUser
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsTeacherUser
 from authentication.serializers import UserLoginSerializer
+from authentication.views import NonTeachingStaffDetailView
 from constants import UserLoginMessage, UserResponseMessage, ScheduleMessage, AttendenceMarkedMessage
 from pagination import CustomPagination
+from student.views import FetchStudentDetailView
 from teacher.serializers import TeacherUserSignupSerializer, TeacherDetailSerializer, TeacherListSerializer, \
     TeacherProfileSerializer, ScheduleCreateSerializer, ScheduleDetailSerializer, ScheduleListSerializer, \
     ScheduleUpdateSerializer, TeacherAttendanceSerializer, TeacherAttendanceDetailSerializer, \
@@ -285,15 +287,34 @@ class TeacherLoginView(APIView):
         password = serializer.validated_data['password']
 
         try:
-            teacher_user = TeacherUser.objects.get(user__email=email)
             user = User.objects.get(email=email)
-        except TeacherUser.DoesNotExist:
-            resposne = create_response_data(
+            if user.user_type == "student":
+                student_user = StudentUser.objects.get(user=user)
+                student_detail = FetchStudentDetailView.get(self, request, student_user.id)
+                user_detail = student_detail.data.get('data')
+            elif user.user_type == "teacher":
+                teacher_user = TeacherUser.objects.get(user=user)
+                teacher_detail = FetchTeacherDetailView.get(self, request, teacher_user.id)
+                user_detail = teacher_detail.data.get('data')
+            elif user.user_type == "non-teaching":
+                staff_user = StaffUser.objects.get(user=user)
+                staff_detail = NonTeachingStaffDetailView.get(self, request, staff_user.id)
+                user_detail = staff_detail.data.get('data')
+        except User.DoesNotExist:
+            response = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
                 message=UserLoginMessage.USER_DOES_NOT_EXISTS,
                 data={}
             )
-            return Response(resposne, status=status.HTTP_400_BAD_REQUEST)
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        except (StudentUser.DoesNotExist, TeacherUser.DoesNotExist, StaffUser.DoesNotExist):
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=UserLoginMessage.USER_DOES_NOT_EXISTS,
+                data={}
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
         if not user.check_password(password):
             response = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
@@ -301,16 +322,15 @@ class TeacherLoginView(APIView):
                 data={}
             )
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
-        teacher_detail = FetchTeacherDetailView.get(self, request, teacher_user.id)
 
         refresh = RefreshToken.for_user(user)
         response_data = create_response_data(
             status=status.HTTP_201_CREATED,
-            message=UserLoginMessage.SIGNUP_SUCCESSFUL,
+            message=UserLoginMessage.USER_LOGIN_SUCCESSFUL,
             data={
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
-                'teacher_data':teacher_detail.data.get('data')
+                'user_data': user_detail
             }
         )
         return Response(response_data, status=status.HTTP_201_CREATED)

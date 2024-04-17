@@ -71,6 +71,7 @@ class UserLoginMessage:
     INCORRECT_PASSWORD = "Incorrect password, please try again."
     SIGNUP_SUCCESSFUL = "User Signup successful."
     STAFF_ALREADY_EXISTS = "Staff email or phone already exists"
+    USER_LOGIN_SUCCESSFUL = "User login successfully."
 
 
 class UserResponseMessage:
@@ -102,3 +103,6 @@ class ScheduleMessage:
 
 class AttendenceMarkedMessage:
     ATTENDENCE_MARKED_SUCCESSFULLY = "Attendence marked successfully."
+
+class SchoolMessage:
+    SCHOOL_CREATED_SUCCESSFULLY = "School created successfully."

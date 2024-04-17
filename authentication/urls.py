@@ -30,5 +30,8 @@ urlpatterns = [
     # Non-teaching staff attendence API's
     path('attendance/create/', AttendanceCreateView.as_view(), name='attendance_create'),
     path('attendance/detail/<int:pk>/', FetchAttendanceDetailView.as_view(), name='fetch_attendance_detail'),
-    path('attendance/list/',  FetchAttendanceListView.as_view(), name='fetch_attendance_list')
+    path('attendance/list/',  FetchAttendanceListView.as_view(), name='fetch_attendance_list'),
+
+    #Mobile App
+    path('users/logout/', LogoutView.as_view(), name='user-logout'),
 ]

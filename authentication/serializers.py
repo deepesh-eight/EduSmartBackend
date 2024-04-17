@@ -1,4 +1,6 @@
 from rest_framework import serializers
+from rest_framework.exceptions import AuthenticationFailed
+from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 
 from EduSmart import settings
 from constants import USER_TYPE_CHOICES, ROLE_CHOICES, ATTENDENCE_CHOICE
@@ -312,3 +314,24 @@ class StaffAttendanceListSerializer(serializers.ModelSerializer):
         staff_role = obj.get('staff__role')
         if staff_role:
             return staff_role
+
+class LogoutSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
+
+    default_error_messages = {
+        'bad_token': 'Token is expired or invalid',
+    }
+
+    def validate(self, attrs):
+        self.token = attrs['refresh']
+        return attrs
+
+    def save(self):
+        try:
+            refresh_token = RefreshToken(self.token)
+            refresh_token.blacklist()
+            access_token = refresh_token.access_token
+            # if datetime.now() > access_token["exp"]:
+            #     raise AuthenticationFailed(self.error_messages['bad_token'])
+        except TokenError:
+            raise AuthenticationFailed(self.error_messages['bad_token'])
