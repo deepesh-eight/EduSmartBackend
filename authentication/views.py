@@ -480,20 +480,28 @@ class AttendanceCreateView(APIView):
     This class is used to marked non-teaching staff attendance.
     """
     def post(self, request):
-        serializer = StaffAttendanceSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            serializer.save()
-            response_data = create_response_data(
-                status=status.HTTP_201_CREATED,
-                message=AttendenceMarkedMessage.ATTENDENCE_MARKED_SUCCESSFULLY,
-                data=serializer.data,
-            )
-            return Response(response_data, status=status.HTTP_201_CREATED)
-        else:
+        try:
+            serializer = StaffAttendanceSerializer(data=request.data)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                response_data = create_response_data(
+                    status=status.HTTP_201_CREATED,
+                    message=AttendenceMarkedMessage.ATTENDENCE_MARKED_SUCCESSFULLY,
+                    data=serializer.data,
+                )
+                return Response(response_data, status=status.HTTP_201_CREATED)
+            else:
+                response = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=serializer.errors,
+                    data=serializer.errors
+                )
+                return Response(response, status=status.HTTP_200_OK)
+        except ValidationError as e:
             response = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
-                message=serializer.errors,
-                data=serializer.errors
+                message=e.args[0],
+                data={}
             )
             return Response(response, status=status.HTTP_200_OK)
 
@@ -566,6 +574,7 @@ class FetchAttendanceDetailView(APIView):
             )
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
 
+
 class FetchAttendanceListView(APIView):
     """
     This class is created to fetch the list of the teacher's attendance.
@@ -574,56 +583,18 @@ class FetchAttendanceListView(APIView):
     pagination_class = CustomPagination
 
     def get(self, request):
-        try:
-            data = StaffAttendence.objects.select_related('staff').values(
-                'staff__first_name',
-                'staff__last_name',
-                'staff__id',
-                'staff__role',
-                'mark_attendence',
-                'date'
-            ).order_by('-date')
-
-            filter_type = request.query_params.get('filter_type', None)
-            if filter_type:
-                today = datetime.date.today()
-                if filter_type == 'weekly':
-                    start_date = today - datetime.timedelta(days=today.weekday())
-                    end_date = start_date + datetime.timedelta(days=6)
-                elif filter_type == 'monthly':
-                    start_date = today.replace(day=1)
-                    end_date = today.replace(day=calendar.monthrange(today.year, today.month)[1])
-                elif filter_type == 'yearly':
-                    start_date = today.replace(month=1, day=1)
-                    end_date = today.replace(month=12, day=31)
-                data = data.filter(date__range=(start_date, end_date))
-
-            start_date = request.query_params.get('start_date', None)
-            date = request.query_params.get('date', None)
-            end_date = request.query_params.get('end_date', None)
-            if start_date and end_date:
-                start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d').date()
-                end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d').date()
-                data = data.filter(date__range=(start_date, end_date))
-            if date:
-                date = datetime.datetime.strptime(date, '%Y-%m-%d').date()
-                data = data.filter(date=(date))
-
-            present_staff = request.query_params.get('present_staff', None)
-            absent_staff = request.query_params.get('absent_staff', None)
-            on_leave = request.query_params.get('on_leave', None)
-            if present_staff:
-                data = data.filter(mark_attendence='P')
-            if absent_staff:
-                data = data.filter(mark_attendence='A')
-            if on_leave:
-                data = data.filter(mark_attendence='L')
+        queryset = StaffUser.objects.filter(user__is_active=True)
+        if request.query_params:
+            name = request.query_params.get('first_name', None)
+            page = request.query_params.get('page_size', None)
+            if name:
+                queryset = queryset.filter(first_name__icontains=name)
 
             # Paginate the queryset
             paginator = self.pagination_class()
-            result_page = paginator.paginate_queryset(data, request)
+            paginated_queryset = paginator.paginate_queryset(queryset, request)
 
-            serializers = StaffAttendanceListSerializer(result_page, many=True)
+            serializers = StaffAttendanceListSerializer(paginated_queryset, many=True)
             response_data = {
                 'status': status.HTTP_200_OK,
                 'count': len(serializers.data),
@@ -638,12 +609,15 @@ class FetchAttendanceListView(APIView):
                 }
             }
             return Response(response_data, status=status.HTTP_200_OK)
-        except Exception as e:
-            response = {
-                "message": "An error occurred while fetching attendance list.",
-                "error": str(e),
-            }
-            return Response(response, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        serializer = StaffAttendanceListSerializer(queryset, many=True)
+        response = create_response_list_data(
+            status=status.HTTP_200_OK,
+            count=len(serializer.data),
+            message=UserResponseMessage.USER_LIST_MESSAGE,
+            data=serializer.data,
+        )
+        return Response(response, status=status.HTTP_200_OK)
 
 
 class LogoutView(APIView):

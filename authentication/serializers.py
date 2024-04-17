@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
-
+from datetime import date
 from EduSmart import settings
 from constants import USER_TYPE_CHOICES, ROLE_CHOICES, ATTENDENCE_CHOICE
 from teacher.serializers import CertificateSerializer, ImageFieldStringAndFile
@@ -264,23 +264,28 @@ class NonTeachingStaffProfileSerializers(serializers.ModelSerializer):
 
 class StaffAttendanceSerializer(serializers.ModelSerializer):
     staff = serializers.CharField(required=True)
-    date = serializers.DateField(required=True)
     mark_attendence = serializers.ChoiceField(choices=ATTENDENCE_CHOICE, required=True)
 
     class Meta:
         model = StaffAttendence
-        fields = ['staff', 'date', 'mark_attendence']
+        fields = ['staff', 'mark_attendence']
 
     def create(self, validated_data):
+        validated_data['date'] = date.today()
         student_id = validated_data.pop('staff')
         try:
             staff = StaffUser.objects.get(id=student_id)
         except StaffUser.DoesNotExist:
             raise serializers.ValidationError("Invalid staff ID.")
 
-        # Use the retrieved staff object to create the attendance record
-        staff_attendance = StaffAttendence.objects.create(staff=staff, **validated_data)
-        return staff_attendance
+        # Check if attendance already marked for the user and today's date
+        existing_attendance = StaffAttendence.objects.filter(staff=staff, date=validated_data['date']).exists()
+        if existing_attendance:
+            raise serializers.ValidationError("Attendance already marked for this staff today.")
+
+        # Use the retrieved teacher object to create the attendance record
+        teacher_attendance = StaffAttendence.objects.create(staff=staff, **validated_data)
+        return teacher_attendance
 
 
 class StaffAttendanceDetailSerializer(serializers.ModelSerializer):
@@ -291,29 +296,18 @@ class StaffAttendanceDetailSerializer(serializers.ModelSerializer):
 
 
 class StaffAttendanceListSerializer(serializers.ModelSerializer):
-    id = serializers.SerializerMethodField()
     name = serializers.SerializerMethodField()
-    role = serializers.SerializerMethodField()
     class Meta:
-        model = StaffAttendence
-        fields = ['name', 'id', 'role', 'date', 'mark_attendence']
-
-    def get_id(self, obj):
-        teacher_id = obj.get('teacher__id')
-        if teacher_id:
-            return teacher_id
+        model = StaffUser
+        fields = ['name', 'id', 'role']
 
     def get_name(self, obj):
-        first_name = obj.get('staff__first_name')
-        last_name = obj.get('staff__last_name')
+        first_name = obj.first_name
+        last_name = obj.last_name
         name = f"{first_name} {last_name}"
         if name:
             return name
 
-    def get_role(self, obj):
-        staff_role = obj.get('staff__role')
-        if staff_role:
-            return staff_role
 
 class LogoutSerializer(serializers.Serializer):
     refresh = serializers.CharField()
