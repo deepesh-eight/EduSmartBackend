@@ -1,4 +1,4 @@
-import datetime
+from datetime import date
 import json
 
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -373,19 +373,24 @@ class ScheduleUpdateSerializer(serializers.ModelSerializer):
 
 class TeacherAttendanceSerializer(serializers.ModelSerializer):
     teacher = serializers.CharField(required=True)
-    date = serializers.DateField(required=True)
     mark_attendence = serializers.ChoiceField(choices=ATTENDENCE_CHOICE, required=True)
 
     class Meta:
         model = TeacherAttendence
-        fields = ['teacher', 'date', 'mark_attendence']
+        fields = ['teacher', 'mark_attendence']
 
     def create(self, validated_data):
+        validated_data['date'] = date.today()
         teacher_id = validated_data.pop('teacher')
         try:
             teacher = TeacherUser.objects.get(id=teacher_id)
         except TeacherUser.DoesNotExist:
             raise serializers.ValidationError("Invalid teacher ID.")
+
+        # Check if attendance already marked for the user and today's date
+        existing_attendance = TeacherAttendence.objects.filter(teacher=teacher,date=validated_data['date']).exists()
+        if existing_attendance:
+            raise serializers.ValidationError("Attendance already marked for this teacher today.")
 
         # Use the retrieved teacher object to create the attendance record
         teacher_attendance = TeacherAttendence.objects.create(teacher=teacher, **validated_data)
@@ -400,31 +405,19 @@ class TeacherAttendanceDetailSerializer(serializers.ModelSerializer):
 
 
 class TeacherAttendanceListSerializer(serializers.ModelSerializer):
-    id = serializers.SerializerMethodField()
-    name = serializers.SerializerMethodField()
     class_teacher = serializers.SerializerMethodField()
     subject = serializers.SerializerMethodField()
     section = serializers.SerializerMethodField()
 
     class Meta:
-        model = TeacherAttendence
-        fields = ['name', 'id', 'class_teacher', 'subject', 'section', 'date', 'mark_attendence']
-
-    def get_id(self, obj):
-        student_id = obj.get('teacher__id')
-        if student_id:
-            return student_id
-
-    def get_name(self, obj):
-        student_name = obj.get('teacher__full_name')
-        if student_name:
-            return student_name
+        model = TeacherUser
+        fields = ['full_name', 'id', 'class_teacher', 'subject', 'section']
 
     def get_class_teacher(self, obj):
-        return f"{obj.get('teacher__class_subject_section_details')[0].get('class')} class" if obj.get('teacher__role') == 'class_teacher' else None
+        return f"{obj.class_subject_section_details[0].get('class')} class" if obj.role == 'class_teacher' else None
 
     def get_subject(self, obj):
-        return obj.get('teacher__class_subject_section_details')[0].get('subject') if obj.get('teacher__role') == 'class_teacher' else None
+        return obj.class_subject_section_details[0].get("subject") if obj.role == 'class_teacher' else None
 
     def get_section(self, obj):
-        return obj.get('teacher__class_subject_section_details')[0].get('section') if obj.get('teacher__role') == 'class_teacher' else None
+        return obj.class_subject_section_details[0].get("section") if obj.role == 'class_teacher' else None
