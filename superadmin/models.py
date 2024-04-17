@@ -16,7 +16,7 @@ class SchoolProfile(models.Model):
     email = models.EmailField(unique=True)
     school_website = models.CharField(max_length=255, null=True, blank=True)
     school_id = models.CharField(max_length=200, null=True, blank=True)
-    password = models.CharField(max_length=50, null=True, blank=True)
+    password = models.CharField(max_length=255, null=True, blank=True)
     description = models.TextField(null=True, blank=True)
 
     def get_contact_no_without_country_code(self):
