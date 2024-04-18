@@ -9,7 +9,8 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from authentication.models import User, AddressDetails, ErrorLogging, Certificate, StaffUser, StaffAttendence
+from authentication.models import User, AddressDetails, ErrorLogging, Certificate, StaffUser, StaffAttendence, \
+    TeacherUser, StudentUser
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsManagementUser, IsPayRollManagementUser, \
     IsBoardingUser
 from authentication.serializers import UserSignupSerializer, UsersListSerializer, UpdateProfileSerializer, \
@@ -18,6 +19,8 @@ from authentication.serializers import UserSignupSerializer, UsersListSerializer
     StaffAttendanceDetailSerializer, StaffAttendanceListSerializer, LogoutSerializer
 from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage
 from pagination import CustomPagination
+from student.serializers import StudentDetailSerializer
+from teacher.serializers import TeacherDetailSerializer
 from utils import create_response_data, create_response_list_data, get_staff_total_attendance, \
     get_staff_monthly_attendance, get_staff_total_absent, get_staff_monthly_absent
 
@@ -621,6 +624,9 @@ class FetchAttendanceListView(APIView):
 
 
 class LogoutView(APIView):
+    """
+    This class is created to logout the login user.
+    """
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
@@ -632,3 +638,37 @@ class LogoutView(APIView):
         except AuthenticationFailed as e:
             return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response({'message': 'User logged out successfully'}, status=status.HTTP_200_OK)
+
+
+class UserProfileView(APIView):
+    """
+    This class is created to fetch detail of the user profile.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        try:
+            user = request.user
+            if user.user_type == 'teacher':
+                teacher_user = TeacherUser.objects.get(user=user)
+                user_detail = TeacherDetailSerializer(teacher_user)
+            elif user.user_type == "student":
+                student_user = StudentUser.objects.get(user=user)
+                user_detail = StudentDetailSerializer(student_user)
+            elif user.user_type == "non-teaching":
+                staff_user = StaffUser.objects.get(user=user)
+                user_detail = NonTeachingStaffDetailSerializers(staff_user)
+        except (StudentUser.DoesNotExist, TeacherUser.DoesNotExist, StaffUser.DoesNotExist):
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=UserLoginMessage.USER_DOES_NOT_EXISTS,
+                data={}
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        response_data = create_response_data(
+            status=status.HTTP_201_CREATED,
+            message=UserLoginMessage.USER_LOGIN_SUCCESSFUL,
+            data= user_detail.data
+        )
+        return Response(response_data, status=status.HTTP_201_CREATED)
+

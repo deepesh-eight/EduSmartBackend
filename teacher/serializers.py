@@ -117,6 +117,7 @@ class TeacherDetailSerializer(serializers.ModelSerializer):
         if obj.role == 'class_teacher':
             class_teacher = obj.class_subject_section_details[0]
             return class_teacher
+        return None
 
 
 class TeacherListSerializer(serializers.ModelSerializer):

@@ -275,10 +275,10 @@ class TeacherUpdateProfileView(APIView):
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
 
-class TeacherLoginView(APIView):
+class UserLoginView(APIView):
     permission_classes = [permissions.AllowAny, ]
     """
-    This class is used to login teacher user.
+    This class is used to login user.
     """
     def post(self, request):
         serializer = UserLoginSerializer(data=request.data)
@@ -288,18 +288,6 @@ class TeacherLoginView(APIView):
 
         try:
             user = User.objects.get(email=email)
-            if user.user_type == "student":
-                student_user = StudentUser.objects.get(user=user)
-                student_detail = FetchStudentDetailView.get(self, request, student_user.id)
-                user_detail = student_detail.data.get('data')
-            elif user.user_type == "teacher":
-                teacher_user = TeacherUser.objects.get(user=user)
-                teacher_detail = FetchTeacherDetailView.get(self, request, teacher_user.id)
-                user_detail = teacher_detail.data.get('data')
-            elif user.user_type == "non-teaching":
-                staff_user = StaffUser.objects.get(user=user)
-                staff_detail = NonTeachingStaffDetailView.get(self, request, staff_user.id)
-                user_detail = staff_detail.data.get('data')
         except User.DoesNotExist:
             response = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
@@ -307,14 +295,6 @@ class TeacherLoginView(APIView):
                 data={}
             )
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
-        except (StudentUser.DoesNotExist, TeacherUser.DoesNotExist, StaffUser.DoesNotExist):
-            response = create_response_data(
-                status=status.HTTP_400_BAD_REQUEST,
-                message=UserLoginMessage.USER_DOES_NOT_EXISTS,
-                data={}
-            )
-            return Response(response, status=status.HTTP_400_BAD_REQUEST)
-
         if not user.check_password(password):
             response = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
@@ -330,7 +310,6 @@ class TeacherLoginView(APIView):
             data={
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
-                'user_data': user_detail
             }
         )
         return Response(response_data, status=status.HTTP_201_CREATED)

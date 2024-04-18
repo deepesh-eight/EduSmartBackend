@@ -16,7 +16,7 @@ urlpatterns = [
         path('schedule/update/<int:pk>/', TeacherScheduleUpdateView.as_view(), name='schedule_update'),
 
         #Teacher attendence API's
-        path('user/login/', TeacherLoginView.as_view(), name='teacher_login'),
+        path('user/login/', UserLoginView.as_view(), name='user_login'),
         path('attendance/create/', TeacherAttendanceCreateView.as_view(), name='attendance_create'),
         path('attendance/detail/<int:pk>/', FetchAttendanceDetailView.as_view(), name='fetch_attendance_detail'),
         path('attendance/list/',  FetchAttendanceListView.as_view(), name='fetch_attendance_list')

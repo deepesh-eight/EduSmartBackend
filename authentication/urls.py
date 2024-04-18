@@ -34,4 +34,6 @@ urlpatterns = [
 
     #Mobile App
     path('users/logout/', LogoutView.as_view(), name='user-logout'),
+    path('user/profile/', UserProfileView.as_view(), name='user_profile'),
+
 ]
