@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from EduSmart import settings
-from authentication.permissions import IsAdminUser
+from authentication.permissions import IsAdminUser, IsInSameSchool
 from constants import CurriculumMessage
 from curriculum.models import Curriculum, CurriculumPDF
 from curriculum.serializers import CurriculumSerializer, CurriculumDetailSerializer, CurriculumUploadSerializer, \
@@ -16,12 +16,16 @@ from utils import create_response_data, create_response_list_data
 
 
 class CurriculumCreateView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser, IsInSameSchool]
     """
     This class is used to create curriculum.
     """
     def post(self,request):
-        serializer = CurriculumSerializer(data=request.data)
+        mutable_data = request.data.copy()
+
+        # Add school_id to the mutable copy
+        mutable_data['school_id'] = request.user.school_id
+        serializer = CurriculumSerializer(data=mutable_data)
         if serializer.is_valid(raise_exception=True):
             serializer.save()
             response = create_response_data(
@@ -38,8 +42,9 @@ class CurriculumCreateView(APIView):
             )
             return Response(response, status=status.HTTP_200_OK)
 
+
 class CurriculumUploadView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser, IsInSameSchool]
     """
     This class is used to upload curriculum.
     """
@@ -54,7 +59,7 @@ class CurriculumUploadView(APIView):
             subject_name_code = serializer.validated_data.get('subject_name_code', '')
             curriculum_pdf_file = serializer.validated_data.get('curriculum_pdf_file', '')
             create_curriculum = Curriculum.objects.create(
-                academic_session=academic_session, exam_board=exam_board, class_name=class_name, section=section, subject_name_code=subject_name_code)
+                academic_session=academic_session, exam_board=exam_board, class_name=class_name, section=section, subject_name_code=subject_name_code, school_id=request.user.school_id)
             upload_curriculum = CurriculumPDF.objects.create(curriculum=create_curriculum, curriculum_pdf_file=curriculum_pdf_file)
             response_data = {
                 'id': create_curriculum.id,
@@ -74,14 +79,15 @@ class CurriculumUploadView(APIView):
         except KeyError as e:
             return Response(f"Missing key in request data: {e}", status=status.HTTP_400_BAD_REQUEST)
 
+
 class CurriculumlistView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser, IsInSameSchool]
     pagination_class = CustomPagination
     """
     This class is created to fetch the list of the curriculum.
     """
     def get(self,request):
-        queryset = Curriculum.objects.all()
+        queryset = Curriculum.objects.filter(school_id=request.user.school_id)
         for curriculum in queryset:
             if not curriculum.curriculum_name:
                 querset1 = CurriculumPDF.objects.all()
@@ -123,13 +129,13 @@ class CurriculumlistView(APIView):
 
 
 class CurriculumDeleteView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser, IsInSameSchool]
     """
     This class is created to delete the curriculum.
     """
     def delete(self, request, pk):
         try:
-            curriculum_detail = Curriculum.objects.get(id=pk)
+            curriculum_detail = Curriculum.objects.get(id=pk, school_id=request.user.school_id)
             curriculum_detail.delete()
             response_data = create_response_data(
                 status=status.HTTP_200_OK,
@@ -145,14 +151,15 @@ class CurriculumDeleteView(APIView):
             )
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
 
+
 class CurriculumFetchView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser, IsInSameSchool]
     """
     This class is created to fetch the detail of the curruiculum.
     """
     def get(self, request, pk):
         try:
-            data = Curriculum.objects.get(id=pk)
+            data = Curriculum.objects.get(id=pk, school_id=request.user.school_id)
             if not data.curriculum_name:
                 querset1 = CurriculumPDF.objects.get(curriculum=data.id)
                 data.curriculum_name = f"{settings.base_url}{settings.MEDIA_URL}{querset1.curriculum_pdf_file}"

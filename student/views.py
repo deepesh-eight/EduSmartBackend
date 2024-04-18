@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from authentication.models import User, Class, AddressDetails, StudentUser
-from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsStudentUser, IsTeacherUser
+from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsStudentUser, IsTeacherUser, IsInSameSchool
 from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage
 from curriculum.models import Curriculum
 from pagination import CustomPagination
@@ -23,7 +23,7 @@ from utils import create_response_data, create_response_list_data, get_student_t
 
 
 class StudentUserCreateView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser, IsInSameSchool]
     """
     This class is used to create student type user's.
     """
@@ -69,7 +69,7 @@ class StudentUserCreateView(APIView):
 
             if user_type == 'student' and serializer.is_valid() == True:
                 user = User.objects.create_user(
-                    name=name, email=email, user_type=user_type
+                    name=name, email=email, user_type=user_type, school_id=request.user.school_id
                 )
                 password = generate_random_password()
                 user.set_password(password)
@@ -109,11 +109,11 @@ class FetchStudentDetailView(APIView):
     """
     This class is created to fetch the detail of the student.
     """
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser, IsInSameSchool]
 
     def get(self, request, pk):
         try:
-            data = StudentUser.objects.get(id=pk)
+            data = StudentUser.objects.get(id=pk, user__school_id=request.user.school_id)
             if data.user.is_active == True:
                 serializer = StudentDetailSerializer(data)
                 response_data = create_response_data(
@@ -142,11 +142,11 @@ class StudentListView(APIView):
     """
     This class is created to fetch the list of the student's.
     """
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser,IsInSameSchool]
     pagination_class = CustomPagination
 
     def get(self, request):
-        queryset = StudentUser.objects.filter(user__is_active=True)
+        queryset = StudentUser.objects.filter(user__is_active=True, user__school_id=request.user.school_id)
         if request.query_params:
             name = request.query_params.get('name', None)
             page = request.query_params.get('page_size', None)
@@ -183,14 +183,14 @@ class StudentListView(APIView):
 
 
 class StudentDeleteView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser, IsInSameSchool]
     """
     This class is used to delete the student.
     """
 
     def delete(self, request, pk):
         try:
-            student = StudentUser.objects.get(id=pk)
+            student = StudentUser.objects.get(id=pk, user__school_id=request.user.school_id)
             user = User.objects.get(id=student.user_id)
             if student.user.user_type == "student":
                 user.is_active = False
@@ -211,15 +211,16 @@ class StudentDeleteView(APIView):
             )
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
 
+
 class StudentUpdateProfileView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser, IsInSameSchool]
     """
     This class is used to update the student profile.
     """
 
     def patch(self, request, pk):
         try:
-            student = StudentUser.objects.get(id=pk)
+            student = StudentUser.objects.get(id=pk, user__school_id=request.user.school_id)
             serializer = studentProfileSerializer(student, data=request.data, partial=True)
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
@@ -246,7 +247,7 @@ class StudentUpdateProfileView(APIView):
 
 
 class AttendanceCreateView(APIView):
-    permission_classes = [IsAdminUser, ]
+    permission_classes = [IsAdminUser, IsInSameSchool]
     """
     This class is used to create attendance of student's.
     """
@@ -273,12 +274,12 @@ class FetchAttendanceDetailView(APIView):
     """
     This class is created to fetch the detail of the student attendance.
     """
-    permission_classes = [IsAdminUser,]
+    permission_classes = [IsAdminUser, IsInSameSchool]
 
     def get(self, request, pk):
         try:
-            student = StudentUser.objects.get(id=pk)
-            data = StudentAttendence.objects.filter(student_id=pk).order_by('-date')
+            student = StudentUser.objects.get(id=pk, user__school_id=request.user.school_id)
+            data = StudentAttendence.objects.filter(student_id=pk, student__user__school_id=request.user.school_id).order_by('-date')
 
             filter_type = request.query_params.get('filter_type', None)
             if filter_type:
@@ -342,7 +343,7 @@ class FetchAttendanceListView(APIView):
     """
     This class is created to fetch the list of the student attendance according to class.
     """
-    permission_classes = [IsAdminUser, ]
+    permission_classes = [IsAdminUser, IsInSameSchool]
     pagination_class = CustomPagination
 
     def get(self, request):
@@ -385,7 +386,7 @@ class FetchStudentList(APIView):
     """
     This class is created to fetch the list of the student's according to section.
     """
-    permission_classes = [IsTeacherUser]
+    permission_classes = [IsTeacherUser, IsInSameSchool]
     pagination_class = CustomPagination
 
     def get(self, request):
@@ -414,7 +415,9 @@ class FetchStudentList(APIView):
         else:
             selected_date = None
 
-        students = StudentUser.objects.filter(class_enrolled=class_name, section=section)
+        students = StudentUser.objects.filter(
+            class_enrolled=class_name, section=section, user__school_id=request.user.school_id
+        )
         serializer = StudentListBySectionSerializer(students, many=True)
 
         if selected_date:
@@ -443,7 +446,7 @@ class StudentAttendanceCreateView(APIView):
     """
     This class is created to marked_attendance of the student's.
     """
-    permission_classes = [IsTeacherUser]
+    permission_classes = [IsTeacherUser, IsInSameSchool]
 
     def post(self, request):
         data_str = request.data.get('data')  # Assuming data is sent as form-data with key 'data'

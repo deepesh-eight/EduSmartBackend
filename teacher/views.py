@@ -11,7 +11,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from authentication.models import User, Class, TeacherUser, StudentUser, Certificate, TeachersSchedule, \
     TeacherAttendence, StaffUser
-from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsTeacherUser
+from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsTeacherUser, IsInSameSchool
 from authentication.serializers import UserLoginSerializer
 from authentication.views import NonTeachingStaffDetailView
 from constants import UserLoginMessage, UserResponseMessage, ScheduleMessage, AttendenceMarkedMessage
@@ -28,7 +28,7 @@ from utils import create_response_data, create_response_list_data, generate_rand
 # Create your views here.
 
 class TeacherUserCreateView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser, IsInSameSchool]
     """
     This class is used to create teacher type user's.
     """
@@ -60,7 +60,7 @@ class TeacherUserCreateView(APIView):
 
             if user_type == 'teacher' and serializer.is_valid() == True:
                 user = User.objects.create_user(
-                    name=full_name, email=email, phone=phone, user_type=user_type
+                    name=full_name, email=email, phone=phone, user_type=user_type, school_id=request.user.school_id
                 )
                 password = generate_random_password()
                 user.set_password(password)
@@ -101,11 +101,11 @@ class FetchTeacherDetailView(APIView):
     """
     This class is created to fetch the detail of the teacher.
     """
-    permission_classes = [IsAdminUser,]
+    permission_classes = [IsAdminUser, IsInSameSchool]
 
     def get(self, request, pk):
         try:
-            data = TeacherUser.objects.get(id=pk)
+            data = TeacherUser.objects.get(id=pk, user__school_id=request.user.school_id)
             if data.user.is_active == True:
                 serializer = TeacherDetailSerializer(data)
                 response_data = create_response_data(
@@ -134,11 +134,11 @@ class TeacherListView(APIView):
     """
     This class is created to fetch the list of the teacher's.
     """
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser, IsInSameSchool]
     pagination_class = CustomPagination
 
     def get(self, request):
-        queryset = TeacherUser.objects.filter(user__is_active=True)
+        queryset = TeacherUser.objects.filter(user__is_active=True, user__school_id=request.user.school_id)
         if request.query_params:
             name = request.query_params.get('full_name', None)
             page = request.query_params.get('page_size', None)
@@ -176,14 +176,14 @@ class TeacherListView(APIView):
 
 
 class TeacherDeleteView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser, IsInSameSchool]
     """
     This class is used to delete the teacher.
     """
 
     def delete(self, request, pk):
         try:
-            teacher = TeacherUser.objects.get(id=pk)
+            teacher = TeacherUser.objects.get(id=pk, user__school_id=request.user.school_id)
             user = User.objects.get(id=teacher.user_id)
             if teacher.user.user_type == "teacher":
                 user.is_active = False
@@ -206,7 +206,7 @@ class TeacherDeleteView(APIView):
 
 
 class TeacherUpdateProfileView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser, IsInSameSchool]
 
     def patch(self, request, pk):
         try:
@@ -236,7 +236,7 @@ class TeacherUpdateProfileView(APIView):
                 'highest_qualification': request.data.get('highest_qualification'),
                 'certificate_files': files_data
             }
-            teacher = TeacherUser.objects.get(id=pk)
+            teacher = TeacherUser.objects.get(id=pk, user__school_id=request.user.school_id)
             serializer = TeacherProfileSerializer(teacher, data=data, partial=True)
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
@@ -276,7 +276,7 @@ class TeacherUpdateProfileView(APIView):
 
 
 class UserLoginView(APIView):
-    permission_classes = [permissions.AllowAny, ]
+    permission_classes = [permissions.AllowAny, IsInSameSchool]
     """
     This class is used to login user.
     """
@@ -316,7 +316,7 @@ class UserLoginView(APIView):
 
 
 class TeacherScheduleCreateView(APIView):
-    permission_classes = [IsAdminUser, ]
+    permission_classes = [IsAdminUser, IsInSameSchool]
     """
     This class is used to create schedule for teacher's.
     """
@@ -338,11 +338,12 @@ class TeacherScheduleCreateView(APIView):
             )
             return Response(response, status=status.HTTP_200_OK)
 
+
 class TeacherScheduleDetailView(APIView):
     """
     This class is created to fetch the detail of the teacher schedule.
     """
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser, IsInSameSchool]
 
     def get(self, request, pk):
         try:
@@ -375,7 +376,7 @@ class TeacherScheduleListView(APIView):
     """
     This class is created to fetch the list of the teacher's schedule.
     """
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser, IsInSameSchool]
     pagination_class = CustomPagination
 
     def get(self, request):
@@ -422,7 +423,7 @@ class TeacherScheduleListView(APIView):
 
 
 class TeacherScheduleDeleteView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser, IsInSameSchool]
     """
     This class is used to delete the teacher schedule.
     """
@@ -451,7 +452,7 @@ class TeacherScheduleUpdateView(APIView):
     """
     This class is used to update the teacher schedule.
     """
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser, IsInSameSchool]
 
     def patch(self, request, pk):
         try:
@@ -489,7 +490,7 @@ class TeacherScheduleUpdateView(APIView):
 
 
 class TeacherAttendanceCreateView(APIView):
-    permission_classes = [IsAdminUser, ]
+    permission_classes = [IsAdminUser, IsInSameSchool]
     """
     This class is used to create attendance of teacher's.
     """
@@ -524,12 +525,12 @@ class FetchAttendanceDetailView(APIView):
     """
     This class is created to fetch the detail of the teacher attendance.
     """
-    permission_classes = [IsAdminUser,]
+    permission_classes = [IsAdminUser, IsInSameSchool]
 
     def get(self, request, pk):
         try:
-            teacher = TeacherUser.objects.get(id=pk)
-            data = TeacherAttendence.objects.filter(teacher_id=pk).order_by('-date')
+            teacher = TeacherUser.objects.get(id=pk, user__school_id=request.user.school_id)
+            data = TeacherAttendence.objects.filter(teacher_id=pk, teacher__user__school_id=request.user.school_id).order_by('-date')
 
             filter_type = request.query_params.get('filter_type', None)
             if filter_type:
@@ -595,11 +596,11 @@ class FetchAttendanceListView(APIView):
     """
     This class is created to fetch the list of the teacher's attendance.
     """
-    permission_classes = [IsAdminUser, ]
+    permission_classes = [IsAdminUser, IsInSameSchool]
     pagination_class = CustomPagination
 
     def get(self, request):
-        queryset = TeacherUser.objects.filter(user__is_active=True)
+        queryset = TeacherUser.objects.filter(user__is_active=True, user__school_id=request.user.school_id)
         if request.query_params:
             name = request.query_params.get('full_name', None)
             page = request.query_params.get('page_size', None)

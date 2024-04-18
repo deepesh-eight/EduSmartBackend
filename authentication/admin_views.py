@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsManagementUser, IsPayRollManagementUser, \
-    IsBoardingUser, IsStaffUser
+    IsBoardingUser, IsStaffUser, IsInSameSchool
 from authentication.serializers import UserSignupSerializer, UsersListSerializer, UpdateProfileSerializer, \
     UserLoginSerializer, StaffProfileSerializer, StaffUpdateProfileSerializer, StaffSignupSerializer
 from pagination import CustomPagination
@@ -61,7 +61,7 @@ class AdminStaffLoginView(APIView):
 
 
 class StaffListView(APIView):
-    permission_classes = [IsSuperAdminUser, ]
+    permission_classes = [IsSuperAdminUser]
 
     def get(self, request):
         serializer = StaffProfileSerializer(User.objects.filter(is_staff=True, is_active=True, user_type="admin"), many=True)
@@ -74,7 +74,7 @@ class StaffListView(APIView):
 
 
 class StaffProfileView(APIView):
-    permission_classes = [IsAdminUser, ]
+    permission_classes = [IsAdminUser, IsInSameSchool]
 
     def get(self, request):
         serializer = StaffProfileSerializer(request.user)
@@ -87,7 +87,7 @@ class StaffProfileView(APIView):
 
 
 class GetStaffView(APIView):
-    permission_classes = [IsSuperAdminUser, ]
+    permission_classes = [IsSuperAdminUser,]
 
     def get(self, request, pk):
         instance = User.objects.get(id=pk)
@@ -108,7 +108,7 @@ class GetStaffView(APIView):
 
 
 class StaffUpdateProfileView(APIView):
-    permission_classes = [IsSuperAdminUser, ]
+    permission_classes = [IsSuperAdminUser,]
 
     def patch(self, request, pk):
         user = User.objects.get(id=pk, is_staff=True)
@@ -132,7 +132,7 @@ class StaffUpdateProfileView(APIView):
 
 
 class AdminStaffDeleteView(APIView):
-    permission_classes = [IsSuperAdminUser, ]
+    permission_classes = [IsSuperAdminUser,]
 
     def delete(self, request, pk):
         user = User.objects.get(id=pk, is_staff=True)
@@ -164,9 +164,10 @@ class AdminStaffCreateView(APIView):
         password = serializer.validated_data['password']
         phone = serializer.validated_data['phone']
         user_type = serializer.validated_data['user_type']
+        school_id = serializer.validated_data['school_id']
         try:
             user = User.objects.create_admin_user(
-                name=name, email=email, password=password, phone=phone, user_type=user_type, is_staff=True
+                name=name, email=email, password=password, phone=phone, user_type=user_type, is_staff=True, school_id=school_id
             )
         except IntegrityError:
             response_data = create_response_data(

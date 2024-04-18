@@ -80,7 +80,7 @@ class User(AbstractUser):
     is_email_verified = models.BooleanField(default=False)
     is_blocked = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
-    school_id = models.CharField(max_length=100, default=1)
+    school_id = models.CharField(max_length=255, null=True, blank=True)
 
     EMAIL_FIELD = "email"
     USERNAME_FIELD = "email"

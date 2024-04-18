@@ -23,7 +23,7 @@ class CurriculumSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Curriculum
-        fields = ['id', 'academic_session', 'exam_board', 'subject_name_code', 'class_name', 'section', 'curriculum_name']
+        fields = ['id', 'academic_session', 'exam_board', 'subject_name_code', 'class_name', 'section', 'curriculum_name', 'school_id']
 
     def to_internal_value(self, data):
         ret = super().to_internal_value(data)

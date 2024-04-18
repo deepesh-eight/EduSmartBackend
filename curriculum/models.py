@@ -4,6 +4,7 @@ from django.db import models
 
 
 class Curriculum(models.Model):
+    school_id = models.CharField(max_length=255, null=True, blank=True)
     academic_session = models.CharField()
     exam_board = models.CharField(max_length=255, null=True, blank=True)
     subject_name_code = models.JSONField(default=list)

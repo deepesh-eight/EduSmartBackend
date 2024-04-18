@@ -101,6 +101,8 @@ class StaffSignupSerializer(serializers.Serializer):
     user_type = serializers.ChoiceField(
         choices=USER_TYPE_CHOICES
     )
+    school_id = serializers.CharField(max_length=255, required=True)
+
 
 class NonTeachingStaffSerializers(serializers.Serializer):
     image = serializers.ImageField(required=True)

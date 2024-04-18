@@ -1,6 +1,7 @@
 from rest_framework import permissions
 
 from authentication.models import User, SuperAdminUser
+from superadmin.models import SchoolProfile
 
 
 def is_superadmin_user(user):
@@ -33,6 +34,33 @@ def is_boarding_user(user):
 
 def is_staff_user(user):
     return user.is_authenticated and isinstance(user, User) and user.user_type == "non-teaching"
+
+
+def get_user_school(user):
+    if user.is_authenticated:
+        if user.school_id:
+            try:
+                return SchoolProfile.objects.get(school_id=user.school_id)
+            except SchoolProfile.DoesNotExist:
+                pass
+    return None
+
+
+class IsAuthenticatedUser(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated
+
+
+class IsInSameSchool(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if not IsAuthenticatedUser().has_permission(request, view):
+            return False
+        user_school = get_user_school(request.user)
+
+        if not user_school or user_school.school_id != request.user.school_id:
+            return False
+
+        return True
 
 
 class IsSuperAdminUser(permissions.BasePermission):

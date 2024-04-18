@@ -12,7 +12,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from authentication.models import User, AddressDetails, ErrorLogging, Certificate, StaffUser, StaffAttendence, \
     TeacherUser, StudentUser
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsManagementUser, IsPayRollManagementUser, \
-    IsBoardingUser
+    IsBoardingUser, IsInSameSchool
 from authentication.serializers import UserSignupSerializer, UsersListSerializer, UpdateProfileSerializer, \
     UserLoginSerializer, NonTeachingStaffSerializers, NonTeachingStaffListSerializers, \
     NonTeachingStaffDetailSerializers, NonTeachingStaffProfileSerializers, StaffAttendanceSerializer, \
@@ -244,7 +244,7 @@ class LoginView(APIView):
 
 
 class NonTeachingStaffCreateView(APIView):
-    permission_classes = [IsAdminUser,]
+    permission_classes = [IsAdminUser, IsInSameSchool]
     """
     This class is used to create non teaching staff type user's.
     """
@@ -272,7 +272,7 @@ class NonTeachingStaffCreateView(APIView):
             if serializer.is_valid() == True:
                 if user_type == 'non-teaching' or user_type == 'management' or user_type == 'payrollmanagement' or user_type == 'boarding':
                     user = User.objects.create_user(
-                        name=first_name, email=email, phone=phone, user_type=user_type
+                        name=first_name, email=email, phone=phone, user_type=user_type, school_id=request.user.school_id
                     )
                     user.save()
                     user_staff = StaffUser.objects.create(
@@ -310,15 +310,16 @@ class NonTeachingStaffCreateView(APIView):
         except IntegrityError as e:
             return Response("User already exist", status=status.HTTP_400_BAD_REQUEST)
 
+
 class NonTeachingStaffListView(APIView):
     """
     This class is created to fetch the list of the non teaching staff.
     """
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser, IsInSameSchool]
     pagination_class = CustomPagination
 
     def get(self, request):
-        queryset = StaffUser.objects.filter(user__is_active=True)
+        queryset = StaffUser.objects.filter(user__is_active=True, user__school_id=request.user.school_id)
         if request.query_params:
             name = request.query_params.get('first_name', None)
             page = request.query_params.get('page_size', None)
@@ -354,15 +355,16 @@ class NonTeachingStaffListView(APIView):
         )
         return Response(response, status=status.HTTP_200_OK)
 
+
 class NonTeachingStaffDetailView(APIView):
     """
     This class is created to fetch the detail of the non teaching staff.
     """
-    permission_classes = [IsAdminUser,]
+    permission_classes = [IsAdminUser, IsInSameSchool]
 
     def get(self, request, pk):
         try:
-            data = StaffUser.objects.get(id=pk)
+            data = StaffUser.objects.get(id=pk, user__school_id=request.user.school_id)
             if data.user.is_active == True:
                 serializer = NonTeachingStaffDetailSerializers(data)
                 response_data = create_response_data(
@@ -386,15 +388,16 @@ class NonTeachingStaffDetailView(APIView):
             )
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
 
+
 class NonTeachingStaffDeleteView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser, IsInSameSchool]
     """
     This class is used to delete the non teaching staff.
     """
 
     def delete(self, request, pk):
         try:
-            teacher = StaffUser.objects.get(id=pk)
+            teacher = StaffUser.objects.get(id=pk, user__school_id=request.user.school_id)
             user = User.objects.get(id=teacher.user_id)
             if teacher.user.user_type == "non-teaching":
                 user.is_active = False
@@ -415,11 +418,12 @@ class NonTeachingStaffDeleteView(APIView):
             )
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
 
+
 class NonTeachingStaffUpdateView(APIView):
     """
     This class is used to update the non teaching staff.
     """
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser, IsInSameSchool]
 
     def patch(self, request, pk):
         try:
@@ -446,7 +450,7 @@ class NonTeachingStaffUpdateView(APIView):
                 'highest_qualification': request.data.get('highest_qualification'),
                 'certificate_files': files_data
             }
-            staff = StaffUser.objects.get(id=pk)
+            staff = StaffUser.objects.get(id=pk, user__school_id=request.user.school_id)
             serializer = NonTeachingStaffProfileSerializers(staff, data=data, partial=True)
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
@@ -477,8 +481,9 @@ class NonTeachingStaffUpdateView(APIView):
             )
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
 
+
 class AttendanceCreateView(APIView):
-    permission_classes = [IsAdminUser, ]
+    permission_classes = [IsAdminUser, IsInSameSchool]
     """
     This class is used to marked non-teaching staff attendance.
     """
@@ -513,7 +518,7 @@ class FetchAttendanceDetailView(APIView):
     """
     This class is created to fetch the detail of the teacher attendance.
     """
-    permission_classes = [IsAdminUser,]
+    permission_classes = [IsAdminUser, IsInSameSchool]
 
     def get(self, request, pk):
         try:
@@ -582,7 +587,7 @@ class FetchAttendanceListView(APIView):
     """
     This class is created to fetch the list of the teacher's attendance.
     """
-    permission_classes = [IsAdminUser, ]
+    permission_classes = [IsAdminUser, IsInSameSchool]
     pagination_class = CustomPagination
 
     def get(self, request):
