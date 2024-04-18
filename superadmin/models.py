@@ -1,3 +1,4 @@
+from django.contrib.auth.hashers import make_password
 from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
 # Create your models here.
@@ -23,6 +24,9 @@ class SchoolProfile(models.Model):
         if not self.contact_no:
             return None
         return str(self.contact_no.as_national.lstrip('0').strip().replace(' ', ''))
+
+    def set_password(self, raw_password):
+        self.password = make_password(raw_password)
 
 
 class SchoolProfilePassword(models.Model):

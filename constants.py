@@ -109,3 +109,4 @@ class SchoolMessage:
     SCHOOL_CREATED_SUCCESSFULLY = "School created successfully."
     SCHOOL_DETAIL_MESSAGE = "School profile fetch successfully."
     SCHOOL_DOES_NOT_EXISTS = "School does not exists."
+    SCHOOL_PROFILE_UPDATED_SUCCESSFULLY = "School profile updated successfully"

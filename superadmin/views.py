@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 from authentication.permissions import IsSuperAdminUser
 from constants import SchoolMessage
 from superadmin.models import SchoolProfile
-from superadmin.serializers import SchoolCreateSerializer, SchoolProfileSerializer
+from superadmin.serializers import SchoolCreateSerializer, SchoolProfileSerializer, SchoolProfileUpdateSerializer
 from utils import create_response_data
 
 
@@ -24,7 +24,7 @@ class SchoolCreateView(APIView):
             response = create_response_data(
                 status=status.HTTP_201_CREATED,
                 message=SchoolMessage.SCHOOL_CREATED_SUCCESSFULLY,
-                data={}
+                data=serializer.data
             )
             return Response(response, status=status.HTTP_200_OK)
         else:
@@ -52,6 +52,33 @@ class SchoolProfileView(APIView):
             )
             return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=SchoolMessage.SCHOOL_DOES_NOT_EXISTS,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+
+
+class SchoolProfileUpdateView(APIView):
+    """
+    This class is created to update profile of the school.
+    """
+    permission_classes = [IsSuperAdminUser]
+
+    def patch(self, request, pk):
+        try:
+            school_data = SchoolProfile.objects.get(id=pk)
+            serializer = SchoolProfileUpdateSerializer(school_data, data=request.data, partial=True)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                response_data = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=SchoolMessage.SCHOOL_PROFILE_UPDATED_SUCCESSFULLY,
+                    data={}
+                )
+                return Response(response_data, status=status.HTTP_200_OK)
+        except SchoolProfile.DoesNotExist:
             response_data = create_response_data(
                 status=status.HTTP_404_NOT_FOUND,
                 message=SchoolMessage.SCHOOL_DOES_NOT_EXISTS,
