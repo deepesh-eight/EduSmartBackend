@@ -150,3 +150,11 @@ class SchoolProfileUpdateView(APIView):
                 data={}
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        except IntegrityError:
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message="Email already exist.",
+                data={}
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+

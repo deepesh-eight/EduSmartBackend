@@ -30,6 +30,8 @@ class SchoolCreateSerializer(serializers.Serializer):
 
 class SchoolProfileSerializer(serializers.ModelSerializer):
     logo = serializers.SerializerMethodField()
+    email = serializers.SerializerMethodField()
+    principle_name = serializers.SerializerMethodField()
     password = serializers.CharField()
     decrypted_password = serializers.CharField(read_only=True, source='get_decrypted_password')
     class Meta:
@@ -45,6 +47,11 @@ class SchoolProfileSerializer(serializers.ModelSerializer):
                 return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.logo)}'
         return None
 
+    def get_principle_name(self, obj):
+        return obj.user.name
+
+    def get_email(self, obj):
+        return obj.user.email
 
 class UserUpdateSerializer(serializers.ModelSerializer):
 
@@ -54,30 +61,32 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 
 
 class SchoolProfileUpdateSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
-    logo = ImageFieldStringAndFile(required=False)
-
+    email = serializers.CharField(write_only=True)
+    school_id = serializers.CharField(write_only=True)
+    principle_name = serializers.CharField(max_length=255)
     class Meta:
         model = SchoolProfile
         fields = ['logo', 'school_name', 'address', 'city', 'state', 'established_year', 'school_type',
                   'principle_name', 'contact_no', 'email', 'school_website', 'school_id', 'password', 'description']
 
-    def validate(self, data):
-        # Custom validation logic if needed (e.g., unique school ID)
-        return data
-
     def update(self, instance, validated_data):
-        user_data = validated_data.pop('user', {})
-        school_profile_data = validated_data
+        # Extract data for User model
+        user_data = {
+            'email': validated_data.pop('email', None),
+            'school_id': validated_data.pop('school_id', None),
+            'name': validated_data.pop('principle_name', None),
+        }
 
-        # Update User data (name, email, password)
-        user_serializer = UserUpdateSerializer(instance.user, data=user_data, partial=True)
-        user_serializer.is_valid(raise_exception=True)
-        user_serializer.save()
+        # Update User model
+        user = instance.user
+        for attr, value in user_data.items():
+            if value is not None:  # Only update if value is provided
+                setattr(user, attr, value)
+        user.save()
 
-        # Update SchoolProfile data (school_id, principle_name, ...)
-        for field, value in school_profile_data.items():
-            setattr(instance, field, value)
+        # Update SchoolProfile model
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
         instance.save()
 
         return instance
