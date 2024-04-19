@@ -37,7 +37,7 @@ class StudentUserCreateView(APIView):
             user_type = serializer.validated_data.get('user_type', '')
 
             dob = serializer.validated_data['dob']
-            image = serializer.validated_data.get('image', '')
+            image = serializer.validated_data['image']
             father_name = serializer.validated_data.get('father_name', '')
             father_phone_number = serializer.validated_data.get('father_phone_number', '')
             mother_name = serializer.validated_data.get('mother_name', '')

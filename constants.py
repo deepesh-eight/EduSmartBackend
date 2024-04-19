@@ -110,3 +110,4 @@ class SchoolMessage:
     SCHOOL_DETAIL_MESSAGE = "School profile fetch successfully."
     SCHOOL_DOES_NOT_EXISTS = "School does not exists."
     SCHOOL_PROFILE_UPDATED_SUCCESSFULLY = "School profile updated successfully"
+    SCHOOL_EMAIL_ALREADY_EXIST = "School with this email already exist."
