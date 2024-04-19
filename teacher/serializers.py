@@ -264,8 +264,9 @@ class ScheduleDetailSerializer(serializers.ModelSerializer):
     def get_teacher(self, obj):
         schedule_data = obj.schedule_data
         if schedule_data:
-            teacher_name = schedule_data[0]['teacher'] if schedule_data else None
-            return teacher_name
+            teacher_id = schedule_data[0]['teacher'] if schedule_data else None
+            teacher_data = TeacherUser.objects.get(id=teacher_id)
+            return teacher_data.full_name
         return None
 
     def get_schedule_date(self, obj):
@@ -317,21 +318,31 @@ class ScheduleListSerializer(serializers.ModelSerializer):
 
     def get_teacher_role(self, teacher_name):
         try:
-            teacher = TeacherUser.objects.get(full_name=teacher_name)
+            teacher = TeacherUser.objects.get(user__email=teacher_name)
             return teacher.role  # Assuming 'role' is the field you want to retrieve
         except TeacherUser.DoesNotExist:
             return None
 
-    def get_teacher(self, obj):
+    def get_teacher_email(self, obj):
         schedule_data = obj.schedule_data
         if schedule_data:
             teacher_name = schedule_data[0]['teacher'] if schedule_data else None
-            return teacher_name
+            teacher_data = TeacherUser.objects.get(id=teacher_name)
+            return teacher_data.user.email
+        return None
+
+    def get_teacher(self,obj):
+
+        schedule_data = obj.schedule_data
+        if schedule_data:
+            teacher_id = schedule_data[0]['teacher'] if schedule_data else None
+            teacher_data = TeacherUser.objects.get(id=teacher_id)
+            return teacher_data.full_name
         return None
 
     def get_role(self, obj):
-        teacher_name = self.get_teacher(obj)
-        return self.get_teacher_role(teacher_name) if teacher_name else None
+        teacher_email = self.get_teacher_email(obj)
+        return self.get_teacher_role(teacher_email) if teacher_email else None
 
     def get_total_classes(self, obj):
         schedule_data = obj.schedule_data
