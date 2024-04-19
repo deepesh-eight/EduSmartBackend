@@ -276,7 +276,7 @@ class TeacherUpdateProfileView(APIView):
 
 
 class UserLoginView(APIView):
-    permission_classes = [permissions.AllowAny, IsInSameSchool]
+    permission_classes = [permissions.AllowAny, ]
     """
     This class is used to login user.
     """
@@ -310,6 +310,7 @@ class UserLoginView(APIView):
             data={
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
+                'user_type': user.user_type
             }
         )
         return Response(response_data, status=status.HTTP_201_CREATED)

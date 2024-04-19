@@ -401,7 +401,7 @@ class FetchStudentList(APIView):
                 data={}
             )
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
-
+        all_mark = True
         if selected_date_str:
             try:
                 selected_date = datetime.datetime.strptime(selected_date_str, '%Y-%m-%d').date()
@@ -431,14 +431,15 @@ class FetchStudentList(APIView):
                     student_data['date'] = attendance_data['date']
                     student_data['mark_attendence'] = attendance_data['mark_attendence']
                 else:
+                    all_mark = False
                     student_data['date'] = selected_date
                     student_data['mark_attendence'] = None
-
-        response = create_response_data(
-            status=status.HTTP_200_OK,
-            message="Student list fetched successfully.",
-            data=serializer.data
-        )
+        response ={
+            'status': status.HTTP_200_OK,
+            'message': "Student list fetched successfully.",
+            'all_attendance_marked': all_mark,
+            'data': serializer.data
+        }
         return Response(response, status=status.HTTP_200_OK)
 
 
