@@ -255,3 +255,59 @@ class StudentAttendanceCreateSerializer(serializers.ModelSerializer):
             except serializers.ValidationError:
                 raise serializers.ValidationError({"date": ["Date must be in YYYY-MM-DD format"]})
         return data
+
+
+class StudentUserProfileSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+    email = serializers.SerializerMethodField()
+    curriculum = serializers.SerializerMethodField()
+    subjects = serializers.SerializerMethodField()
+    exam_board = serializers.SerializerMethodField()
+    age = serializers.SerializerMethodField()
+    roll_number = serializers.SerializerMethodField()
+    total_attendance = serializers.SerializerMethodField()
+
+    class Meta:
+        model = StudentUser
+        fields = ['id', 'roll_number', 'name', 'image', 'class_enrolled', 'section', 'admission_date', 'dob', 'age', 'gender', 'religion', 'blood_group',
+                  'school_fee','bus_fee', 'canteen_fee', 'other_fee', 'due_fee', 'total_fee', 'father_name', 'father_phone_number',
+                  'father_occupation', 'mother_name', 'mother_phone_number', 'mother_occupation', 'email', 'permanent_address', 'curriculum',
+                   'subjects', 'bus_number', 'bus_route', 'exam_board', 'total_attendance']
+
+
+    def get_curriculum(self,obj):
+        return obj.curriculum.id if hasattr(obj, 'curriculum') else None
+
+    def get_image(self, obj):
+        if obj.image:
+            if obj.image.name.startswith(settings.base_url + settings.MEDIA_URL):
+                return str(obj.image)
+            else:
+                return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.image)}'
+        return None
+
+    def get_email(self, obj):
+        return obj.user.email if hasattr(obj, 'user') else None
+
+    def get_subjects(self, obj):
+        return obj.curriculum.subject_name_code if hasattr(obj, 'curriculum') else None
+
+    def get_exam_board(self, obj):
+        return obj.curriculum.exam_board if hasattr(obj, 'curriculum') else None
+
+    def get_age(self, obj):
+        if obj.dob:
+            today = datetime.date.today()
+            age = today.year - obj.dob.year - ((today.month, today.day) < (obj.dob.month, obj.dob.day))
+            return age
+        return None
+
+    def get_roll_number(self, obj):
+        return "001"
+
+    def get_total_attendance(self, obj):
+        year = datetime.date.today().year
+        total_attendance = StudentAttendence.objects.filter(
+            student=obj.id, date__year=year, mark_attendence='P').count()
+        return total_attendance
+

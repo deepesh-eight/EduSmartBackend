@@ -19,7 +19,7 @@ from authentication.serializers import UserSignupSerializer, UsersListSerializer
     StaffAttendanceDetailSerializer, StaffAttendanceListSerializer, LogoutSerializer
 from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage
 from pagination import CustomPagination
-from student.serializers import StudentDetailSerializer
+from student.serializers import StudentDetailSerializer, StudentUserProfileSerializer
 from teacher.serializers import TeacherDetailSerializer, TeacherProfileSerializer, TeacherUserProfileSerializer
 from utils import create_response_data, create_response_list_data, get_staff_total_attendance, \
     get_staff_monthly_attendance, get_staff_total_absent, get_staff_monthly_absent
@@ -659,7 +659,7 @@ class UserProfileView(APIView):
                 user_detail = TeacherUserProfileSerializer(teacher_user)
             elif user.user_type == "student":
                 student_user = StudentUser.objects.get(user=user)
-                user_detail = StudentDetailSerializer(student_user)
+                user_detail = StudentUserProfileSerializer(student_user)
             elif user.user_type == "non-teaching":
                 staff_user = StaffUser.objects.get(user=user)
                 user_detail = NonTeachingStaffDetailSerializers(staff_user)
