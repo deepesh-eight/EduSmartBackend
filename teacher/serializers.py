@@ -525,3 +525,55 @@ class TeacherUserProfileSerializer(serializers.ModelSerializer):
                 }
                 data.append(curriculum_data)
         return data
+
+
+class TeacherUserScheduleSerializer(serializers.ModelSerializer):
+    schedule_date = serializers.SerializerMethodField()
+    teacher = serializers.SerializerMethodField()
+    schedule_data = serializers.ListField(child=serializers.DictField(), required=False)
+
+    class Meta:
+        model = TeachersSchedule
+        fields = ['schedule_date', 'teacher', 'schedule_data']
+
+    def get_teacher(self, obj):
+        schedule_data = obj.schedule_data
+        if schedule_data:
+            teacher_id = schedule_data[0]['teacher'] if schedule_data else None
+            teacher_data = TeacherUser.objects.get(id=teacher_id)
+            return teacher_data.full_name
+        return None
+
+    def get_schedule_date(self, obj):
+        return f'{obj.start_date} to {obj.end_date}'
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        schedule_data = representation.get('schedule_data', [])
+
+        # Iterate through each schedule item and modify its representation
+        for item in schedule_data:
+            # Add class_timing_duration field
+            class_timing = item.get('class_timing', '')
+            class_duration = item.get('class_duration', '')
+
+            # Add lecture_type field
+            alter_nate_day = item.get('alternate_day_lecture', '0')
+            select_day = item.get('select_day_lectures', '0')
+            select_days = item.get('select_days', [])
+            if select_day == '1':
+                lecture_type = f'Selected Day({select_days})'
+            elif alter_nate_day == '1':
+                lecture_type = f'Alternate Day({select_days})'
+            else:
+                lecture_type = "Daily"
+            item['lecture_type'] = lecture_type
+
+            # Remove unnecessary fields
+            item.pop('select_day_lecture', None)
+            item.pop('select_days', None)
+            item.pop('teacher', None)
+            item.pop('daily_lecture', None)
+            item.pop('alternate_day_lecture', None)
+
+        return representation

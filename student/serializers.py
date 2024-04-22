@@ -290,7 +290,9 @@ class StudentUserProfileSerializer(serializers.ModelSerializer):
         return obj.user.email if hasattr(obj, 'user') else None
 
     def get_subjects(self, obj):
-        return obj.curriculum.subject_name_code if hasattr(obj, 'curriculum') else None
+        subjects_list = obj.curriculum.subject_name_code if hasattr(obj, 'curriculum') else []
+        subject_names = ", ".join(subject['subject_name'] for subject in subjects_list)
+        return subject_names
 
     def get_exam_board(self, obj):
         return obj.curriculum.exam_board if hasattr(obj, 'curriculum') else None

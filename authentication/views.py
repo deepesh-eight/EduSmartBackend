@@ -10,17 +10,18 @@ from rest_framework_simplejwt.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from authentication.models import User, AddressDetails, ErrorLogging, Certificate, StaffUser, StaffAttendence, \
-    TeacherUser, StudentUser
+    TeacherUser, StudentUser, TeachersSchedule
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsManagementUser, IsPayRollManagementUser, \
     IsBoardingUser, IsInSameSchool
 from authentication.serializers import UserSignupSerializer, UsersListSerializer, UpdateProfileSerializer, \
     UserLoginSerializer, NonTeachingStaffSerializers, NonTeachingStaffListSerializers, \
     NonTeachingStaffDetailSerializers, NonTeachingStaffProfileSerializers, StaffAttendanceSerializer, \
     StaffAttendanceDetailSerializer, StaffAttendanceListSerializer, LogoutSerializer
-from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage
+from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage, ScheduleMessage
 from pagination import CustomPagination
 from student.serializers import StudentDetailSerializer, StudentUserProfileSerializer
-from teacher.serializers import TeacherDetailSerializer, TeacherProfileSerializer, TeacherUserProfileSerializer
+from teacher.serializers import TeacherDetailSerializer, TeacherProfileSerializer, TeacherUserProfileSerializer, \
+    TeacherUserScheduleSerializer
 from utils import create_response_data, create_response_list_data, get_staff_total_attendance, \
     get_staff_monthly_attendance, get_staff_total_absent, get_staff_monthly_absent
 
@@ -677,3 +678,36 @@ class UserProfileView(APIView):
         )
         return Response(response_data, status=status.HTTP_201_CREATED)
 
+
+class TeacherUserScheduleView(APIView):
+    """
+    This class is created to fetch schedule of the teacher.
+    """
+    def get(self, request):
+        try:
+            user = request.user
+            if user.user_type == 'teacher':
+                teacher = TeacherUser.objects.get(user=user.id)
+                data = TeachersSchedule.objects.get(schedule_data__contains=[{"teacher": teacher.id}])
+                if data:
+                    serializer = TeacherUserScheduleSerializer(data)
+                    response_data = create_response_data(
+                        status=status.HTTP_200_OK,
+                        message=ScheduleMessage.SCHEDULE_FETCHED_SUCCESSFULLY,
+                        data=serializer.data
+                    )
+                    return Response(response_data, status=status.HTTP_200_OK)
+                else:
+                    response_data = create_response_data(
+                        status=status.HTTP_404_NOT_FOUND,
+                        message=ScheduleMessage.SCHEDULE_NOT_FOUND,
+                        data={}
+                    )
+                return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=ScheduleMessage.SCHEDULE_NOT_FOUND,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
