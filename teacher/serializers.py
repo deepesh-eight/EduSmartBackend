@@ -8,6 +8,7 @@ from EduSmart import settings
 from authentication.models import TeacherUser, Certificate, TeachersSchedule, TeacherAttendence
 from constants import USER_TYPE_CHOICES, GENDER_CHOICES, RELIGION_CHOICES, BLOOD_GROUP_CHOICES, CLASS_CHOICES, \
     SUBJECT_CHOICES, ROLE_CHOICES, ATTENDENCE_CHOICE
+from curriculum.models import Curriculum
 
 
 class CertificateSerializer(serializers.ModelSerializer):
@@ -433,3 +434,94 @@ class TeacherAttendanceListSerializer(serializers.ModelSerializer):
 
     def get_section(self, obj):
         return obj.class_subject_section_details[0].get("section") if obj.role == 'class_teacher' else None
+
+
+class CertificateUserProfileSerializer(serializers.ModelSerializer):
+    certificate_file = serializers.SerializerMethodField()
+    certificate_name = serializers.SerializerMethodField()
+    class Meta:
+        model = Certificate
+        fields = ['certificate_file', 'certificate_name']
+
+    def get_certificate_file(self, obj):
+        # Assuming 'image' field stores the file path or URL
+        if obj.certificate_file:
+            # Assuming media URL is configured in settings
+            return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.certificate_file)}'
+        return None
+
+    def get_certificate_name(self, obj):
+        if obj.certificate_file:
+            # Assuming media URL is configured in settings
+            return str(obj.certificate_file)
+        return None
+
+
+class TeacherUserProfileSerializer(serializers.ModelSerializer):
+    email = serializers.SerializerMethodField()
+    phone = serializers.SerializerMethodField()
+    image = serializers.SerializerMethodField()
+    certificates = serializers.SerializerMethodField()
+    class_teacher = serializers.SerializerMethodField()
+    age = serializers.SerializerMethodField()
+    class_subject_section_details = serializers.SerializerMethodField()
+
+    class Meta:
+        model = TeacherUser
+        fields = ['id', 'full_name', 'gender', 'dob', 'age', 'blood_group', 'phone', 'address', 'email', 'religion',
+                  'role', 'joining_date', 'experience', 'ctc', 'class_subject_section_details', 'image', 'certificates', 'highest_qualification', 'class_teacher']
+
+    def get_name(self, obj):
+        return obj.user.name if hasattr(obj, 'user') else None
+
+    def get_email(self, obj):
+        return obj.user.email if hasattr(obj, 'user') else None
+
+    def get_phone(self, obj):
+        phone_number = obj.user.phone
+        if phone_number:
+            return str(phone_number)
+        return None
+
+    def get_image(self, obj):
+        if obj.image:
+            if obj.image.name.startswith(settings.base_url + settings.MEDIA_URL):
+                return str(obj.image)
+            else:
+                return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.image)}'
+        return None
+
+    def get_certificates(self, obj):
+        # Fetch and serialize certificates associated with the user
+        certificates = Certificate.objects.filter(user=obj.user)
+        serializer = CertificateUserProfileSerializer(certificates, many=True)
+        return serializer.data
+
+    def get_class_teacher(self, obj):
+        if obj.role == 'class_teacher':
+            class_teacher = obj.class_subject_section_details[0]
+            return class_teacher
+        return None
+
+    def get_age(self, obj):
+        if obj.dob:
+            today = date.today()
+            age = today.year - obj.dob.year - ((today.month, today.day) < (obj.dob.month, obj.dob.day))
+            return age
+        return None
+
+    def get_class_subject_section_details(self, obj):
+        data = []
+        for detail in obj.class_subject_section_details:
+            # Find the matching curriculum based on class and section
+            matching_curriculum = Curriculum.objects.filter(class_name=detail.get('class'),
+                                                            section=detail.get('section')).first()
+            if matching_curriculum:
+                curriculum_data = {
+                    "class": detail.get('class'),
+                    "section": detail.get('section'),
+                    "subject": detail.get('subject'),
+                    "curriculum": matching_curriculum.exam_board
+                }
+                data.append(curriculum_data)
+        return data
