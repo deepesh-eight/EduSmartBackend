@@ -687,10 +687,11 @@ class TeacherUserScheduleView(APIView):
         try:
             user = request.user
             if user.user_type == 'teacher':
+                today = datetime.date.today()
                 teacher = TeacherUser.objects.get(user=user.id)
-                data = TeachersSchedule.objects.get(schedule_data__contains=[{"teacher": teacher.id}])
+                data = TeachersSchedule.objects.filter(schedule_data__contains=[{"teacher": teacher.id}], start_date__lte=today, end_date__gte=today)
                 if data:
-                    serializer = TeacherUserScheduleSerializer(data)
+                    serializer = TeacherUserScheduleSerializer(data[0])
                     response_data = create_response_data(
                         status=status.HTTP_200_OK,
                         message=ScheduleMessage.SCHEDULE_FETCHED_SUCCESSFULLY,
@@ -706,8 +707,8 @@ class TeacherUserScheduleView(APIView):
                 return Response(response_data, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             response_data = create_response_data(
-                status=status.HTTP_404_NOT_FOUND,
-                message=ScheduleMessage.SCHEDULE_NOT_FOUND,
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
                 data={}
             )
-            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)

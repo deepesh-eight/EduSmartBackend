@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta, datetime
 import json
 
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -553,11 +553,35 @@ class TeacherUserScheduleSerializer(serializers.ModelSerializer):
 
         # Iterate through each schedule item and modify its representation
         for item in schedule_data:
-            # Add class_timing_duration field
+
             class_timing = item.get('class_timing', '')
+            if ':' in class_timing and ' ' in class_timing:
+                # If already in the desired format, keep it unchanged
+                pass
+            else:
+                # If not in the desired format, convert it
+                class_timing = datetime.strptime(class_timing, '%I:%M%p').strftime('%I:%M %p')
+                item['class_timing'] = class_timing
+
             class_duration = item.get('class_duration', '')
 
-            # Add lecture_type field
+            if class_timing and class_duration:
+                # Extract hours and minutes from class_duration
+                duration_minutes = int(class_duration.split()[0])
+
+                # Convert class_timing to datetime object
+                start_time = datetime.strptime(class_timing, '%I:%M %p')
+
+                # Calculate end time
+                end_time = start_time + timedelta(minutes=duration_minutes)
+
+                # Format the time range
+                time_range = f"{class_timing}-{end_time.strftime('%I:%M %p')}"
+                item['class_time_range'] = time_range
+            else:
+                item['class_time_range'] = None
+
+            # Modify lecture_type field as before
             alter_nate_day = item.get('alternate_day_lecture', '0')
             select_day = item.get('select_day_lectures', '0')
             select_days = item.get('select_days', [])
