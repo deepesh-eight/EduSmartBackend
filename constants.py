@@ -111,3 +111,9 @@ class SchoolMessage:
     SCHOOL_DOES_NOT_EXISTS = "School does not exists."
     SCHOOL_PROFILE_UPDATED_SUCCESSFULLY = "School profile updated successfully"
     SCHOOL_EMAIL_ALREADY_EXIST = "School with this email already exist."
+
+
+class DayReviewMessage:
+    DAY_REVIEW_CREATED_SUCCESSFULLY = "Day and reviw created successfully."
+    DAY_REVIEW_FETCHED_SUCCESSFULLY = "Day and review detail fetch successfully."
+    DAY_REVIEW_NOT_FOUND = "Day and review not found."

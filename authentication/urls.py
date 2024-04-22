@@ -36,5 +36,7 @@ urlpatterns = [
     path('users/logout/', LogoutView.as_view(), name='user_logout'),
     path('user/profile/', UserProfileView.as_view(), name='user_profile'),
     path('teacher/schedule/', TeacherUserScheduleView.as_view(), name='teacher_user_schedule'),
-    path('curriculum/list/', TeacherCurriculumListView.as_view(), name='teacher_curriculum_list')
+    path('curriculum/list/', TeacherCurriculumListView.as_view(), name='teacher_curriculum_list'),
+    path('teacher/day/review/', TeacherDayReviewView.as_view(), name='teacher_day_review'),
+    path('teacher/day/review/detail/<int:pk>/', TeacherDayReviewDetailView.as_view(), name='teacher_day_review_detail'),
 ]

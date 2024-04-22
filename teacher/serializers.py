@@ -5,7 +5,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
 from EduSmart import settings
-from authentication.models import TeacherUser, Certificate, TeachersSchedule, TeacherAttendence
+from authentication.models import TeacherUser, Certificate, TeachersSchedule, TeacherAttendence, DayReview
 from constants import USER_TYPE_CHOICES, GENDER_CHOICES, RELIGION_CHOICES, BLOOD_GROUP_CHOICES, CLASS_CHOICES, \
     SUBJECT_CHOICES, ROLE_CHOICES, ATTENDENCE_CHOICE
 from curriculum.models import Curriculum
@@ -604,6 +604,29 @@ class TeacherUserScheduleSerializer(serializers.ModelSerializer):
 
 
 class CurriculumTeacherListerializer(serializers.ModelSerializer):
+    school_id = serializers.CharField(required=False)
     class Meta:
         model = Curriculum
         fields = ['id', 'subject_name_code', 'class_name', 'section']
+
+
+class DayReviewSerializer(serializers.ModelSerializer):
+    school_id = serializers.CharField(required=False)
+
+    class Meta:
+        model = DayReview
+        fields = ['class_name', 'section', 'subject', 'discription', 'school_id']
+
+
+class DayReviewDetailSerializer(serializers.ModelSerializer):
+    updated_at = serializers.SerializerMethodField()
+
+    class Meta:
+        model = DayReview
+        fields = ['id', 'class_name', 'section', 'subject', 'discription', 'school_id', 'updated_at']
+
+    def get_updated_at(self, obj):
+        cleaned_date_str = str(obj.updated_at).split('.')[0]
+        date_obj = datetime.strptime(cleaned_date_str, "%Y-%m-%d %H:%M:%S")
+        formatted_date = date_obj.strftime("%Y-%m-%d")
+        return formatted_date

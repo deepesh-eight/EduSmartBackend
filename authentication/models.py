@@ -260,3 +260,13 @@ class EventsCalender(models.Model):
     end_time = models.TimeField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+
+class DayReview(models.Model):
+    school_id = models.CharField(max_length=255, null=True, blank=True)
+    class_name = models.CharField(max_length=100)
+    section = models.CharField(max_length=150)
+    subject = models.CharField(max_length=255)
+    discription = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)

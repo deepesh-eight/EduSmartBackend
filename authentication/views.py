@@ -10,19 +10,20 @@ from rest_framework_simplejwt.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from authentication.models import User, AddressDetails, ErrorLogging, Certificate, StaffUser, StaffAttendence, \
-    TeacherUser, StudentUser, TeachersSchedule
+    TeacherUser, StudentUser, TeachersSchedule, DayReview
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsManagementUser, IsPayRollManagementUser, \
-    IsBoardingUser, IsInSameSchool
+    IsBoardingUser, IsInSameSchool, IsTeacherUser
 from authentication.serializers import UserSignupSerializer, UsersListSerializer, UpdateProfileSerializer, \
     UserLoginSerializer, NonTeachingStaffSerializers, NonTeachingStaffListSerializers, \
     NonTeachingStaffDetailSerializers, NonTeachingStaffProfileSerializers, StaffAttendanceSerializer, \
     StaffAttendanceDetailSerializer, StaffAttendanceListSerializer, LogoutSerializer
-from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage, ScheduleMessage, CurriculumMessage
+from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage, ScheduleMessage, \
+    CurriculumMessage, DayReviewMessage
 from curriculum.models import Curriculum
 from pagination import CustomPagination
 from student.serializers import StudentDetailSerializer, StudentUserProfileSerializer
 from teacher.serializers import TeacherDetailSerializer, TeacherProfileSerializer, TeacherUserProfileSerializer, \
-    TeacherUserScheduleSerializer, CurriculumTeacherListerializer
+    TeacherUserScheduleSerializer, CurriculumTeacherListerializer, DayReviewSerializer, DayReviewDetailSerializer
 from utils import create_response_data, create_response_list_data, get_staff_total_attendance, \
     get_staff_monthly_attendance, get_staff_total_absent, get_staff_monthly_absent
 
@@ -727,7 +728,7 @@ class TeacherCurriculumListView(APIView):
         try:
             user = request.user
             if user.user_type == 'teacher':
-                curriculum = Curriculum.objects.filter(school_id=request.user.school_id)
+                curriculum = Curriculum.objects.filter()
                 serializer = CurriculumTeacherListerializer(curriculum, many=True)
 
                 classes = list(set([item['class_name'] for item in serializer.data]))
@@ -759,3 +760,76 @@ class TeacherCurriculumListView(APIView):
                 data={}
             )
             return Response(response_data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class TeacherDayReviewView(APIView):
+    """
+    This class is Used to create teacher day & review.
+    """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+
+    def post(self, request):
+        try:
+            user = request.user
+            if user.user_type == "teacher":
+
+                serializer = DayReviewSerializer(data=request.data)
+                if serializer.is_valid(raise_exception=True):
+                    serializer.save(school_id=request.user.school_id)
+                    response_data = create_response_data(
+                        status=status.HTTP_201_CREATED,
+                        message=DayReviewMessage.DAY_REVIEW_CREATED_SUCCESSFULLY,
+                        data=serializer.data,
+                    )
+                    return Response(response_data, status=status.HTTP_201_CREATED)
+            else:
+                response = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message='you are not an teacher user.',
+                    data={}
+                )
+                return Response(response, status=status.HTTP_200_OK)
+        except ValidationError as e:
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response, status=status.HTTP_200_OK)
+
+
+class TeacherDayReviewDetailView(APIView):
+    """
+    This colass is used to fetch detail of teacher day & review.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, pk):
+        try:
+            data = DayReview.objects.get(id=pk, school_id=request.user.school_id)
+            serializer = DayReviewDetailSerializer(data)
+            response_data = create_response_data(
+                        status=status.HTTP_201_CREATED,
+                        message=DayReviewMessage.DAY_REVIEW_FETCHED_SUCCESSFULLY,
+                        data=serializer.data,
+                    )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except DayReview.DoesNotExist:
+            resposne = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=DayReviewMessage.DAY_REVIEW_NOT_FOUND,
+                data={}
+            )
+            return Response(resposne, status=status.HTTP_400_BAD_REQUEST)
+        except ValidationError as e:
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+

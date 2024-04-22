@@ -27,7 +27,7 @@ class CurriculumCreateView(APIView):
         mutable_data['school_id'] = request.user.school_id
         serializer = CurriculumSerializer(data=mutable_data)
         if serializer.is_valid(raise_exception=True):
-            serializer.save()
+            serializer.save(school_id=request.user.school_id)
             response = create_response_data(
                 status=status.HTTP_201_CREATED,
                 message=CurriculumMessage.CURRICULUM_CREATED_SUCCESSFULLY,
