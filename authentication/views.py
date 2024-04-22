@@ -830,6 +830,38 @@ class TeacherDayReviewDetailView(APIView):
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
 
+class TeacherDayReviewListView(APIView):
+    """
+    This class is created to fetch the list of the teacher's day & review.
+    """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+    pagination_class = CustomPagination
 
+    def get(self, request):
+        queryset = DayReview.objects.all()
+        if request.query_params:
+            updated_date = request.query_params.get('updated_date', None)
+            if updated_date:
+                queryset = queryset.filter(updated_date__gte=updated_date)
 
+            # Paginate the queryset
+            paginator = self.pagination_class()
+            paginated_queryset = paginator.paginate_queryset(queryset, request)
 
+            serializers = DayReviewDetailSerializer(paginated_queryset, many=True)
+            response_data = {
+                'status': status.HTTP_200_OK,
+                'count': len(serializers.data),
+                'message': ScheduleMessage.SCHEDULE_LIST_MESSAGE,
+                'data': serializers.data,
+            }
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        serializer = DayReviewDetailSerializer(queryset, many=True)
+        response = create_response_list_data(
+            status=status.HTTP_200_OK,
+            count=len(serializer.data),
+            message=ScheduleMessage.SCHEDULE_LIST_MESSAGE,
+            data=serializer.data,
+        )
+        return Response(response, status=status.HTTP_200_OK)

@@ -39,4 +39,5 @@ urlpatterns = [
     path('curriculum/list/', TeacherCurriculumListView.as_view(), name='teacher_curriculum_list'),
     path('teacher/day/review/', TeacherDayReviewView.as_view(), name='teacher_day_review'),
     path('teacher/day/review/detail/<int:pk>/', TeacherDayReviewDetailView.as_view(), name='teacher_day_review_detail'),
+    path('teacher/day/review/list/', TeacherDayReviewListView.as_view(), name='teacher_day_review_list'),
 ]

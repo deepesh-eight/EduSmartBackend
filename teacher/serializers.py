@@ -604,7 +604,6 @@ class TeacherUserScheduleSerializer(serializers.ModelSerializer):
 
 
 class CurriculumTeacherListerializer(serializers.ModelSerializer):
-    school_id = serializers.CharField(required=False)
     class Meta:
         model = Curriculum
         fields = ['id', 'subject_name_code', 'class_name', 'section']
