@@ -601,3 +601,9 @@ class TeacherUserScheduleSerializer(serializers.ModelSerializer):
             item.pop('alternate_day_lecture', None)
 
         return representation
+
+
+class CurriculumTeacherListerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Curriculum
+        fields = ['id', 'subject_name_code', 'class_name', 'section']

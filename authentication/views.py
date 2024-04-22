@@ -17,11 +17,12 @@ from authentication.serializers import UserSignupSerializer, UsersListSerializer
     UserLoginSerializer, NonTeachingStaffSerializers, NonTeachingStaffListSerializers, \
     NonTeachingStaffDetailSerializers, NonTeachingStaffProfileSerializers, StaffAttendanceSerializer, \
     StaffAttendanceDetailSerializer, StaffAttendanceListSerializer, LogoutSerializer
-from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage, ScheduleMessage
+from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage, ScheduleMessage, CurriculumMessage
+from curriculum.models import Curriculum
 from pagination import CustomPagination
 from student.serializers import StudentDetailSerializer, StudentUserProfileSerializer
 from teacher.serializers import TeacherDetailSerializer, TeacherProfileSerializer, TeacherUserProfileSerializer, \
-    TeacherUserScheduleSerializer
+    TeacherUserScheduleSerializer, CurriculumTeacherListerializer
 from utils import create_response_data, create_response_list_data, get_staff_total_attendance, \
     get_staff_monthly_attendance, get_staff_total_absent, get_staff_monthly_absent
 
@@ -683,6 +684,8 @@ class TeacherUserScheduleView(APIView):
     """
     This class is created to fetch schedule of the teacher.
     """
+    permission_classes = [permissions.IsAuthenticated]
+
     def get(self, request):
         try:
             user = request.user
@@ -712,3 +715,47 @@ class TeacherUserScheduleView(APIView):
                 data={}
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TeacherCurriculumListView(APIView):
+    """
+    This class is created to fetch the list of classes, sections, and subject.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        try:
+            user = request.user
+            if user.user_type == 'teacher':
+                curriculum = Curriculum.objects.filter(school_id=request.user.school_id)
+                serializer = CurriculumTeacherListerializer(curriculum, many=True)
+
+                classes = list(set([item['class_name'] for item in serializer.data]))
+                sections = list(set([item['section'] for item in serializer.data]))
+                subject_names = list(set([subject['subject_name'] for item in serializer.data for subject in item['subject_name_code']]))
+
+                response = {
+                    'classes': classes,
+                    'sections': sections,
+                    'subjects': subject_names
+                }
+                response_data = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=CurriculumMessage.CURRICULUM_LIST_MESSAGE,
+                    data=response
+                )
+                return Response(response_data, status=status.HTTP_200_OK)
+            else:
+                response_data = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message="you are not an teacher user.",
+                    data={}
+                )
+                return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
