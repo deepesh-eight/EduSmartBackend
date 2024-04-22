@@ -6,8 +6,8 @@ from rest_framework import status
 from rest_framework.views import APIView
 
 from authentication.models import User
-from authentication.permissions import IsSuperAdminUser
-from constants import SchoolMessage
+from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsInSameSchool
+from constants import SchoolMessage, UserLoginMessage
 from superadmin.models import SchoolProfile
 from superadmin.serializers import SchoolCreateSerializer, SchoolProfileSerializer, SchoolProfileUpdateSerializer
 from utils import create_response_data
@@ -158,3 +158,29 @@ class SchoolProfileUpdateView(APIView):
             )
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
+
+class SchoolAdminProfileView(APIView):
+    """
+    This class is created to view school profile.
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            user = request.user
+            if user.user_type == 'admin':
+                teacher_user = SchoolProfile.objects.get(user=user)
+                user_detail = SchoolProfileSerializer(teacher_user)
+        except SchoolProfile.DoesNotExist:
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=UserLoginMessage.USER_DOES_NOT_EXISTS,
+                data={}
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        response_data = create_response_data(
+            status=status.HTTP_201_CREATED,
+            message=UserLoginMessage.USER_LOGIN_SUCCESSFUL,
+            data= user_detail.data
+        )
+        return Response(response_data, status=status.HTTP_201_CREATED)
