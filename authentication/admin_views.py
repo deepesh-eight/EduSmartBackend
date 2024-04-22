@@ -54,7 +54,7 @@ class AdminStaffLoginView(APIView):
                 'name': user.name,
                 'email': user.email,
                 'phone': str(user.phone),
-                'is_email_verified': user.is_email_verified
+                'user_type': user.user_type
             }
         )
         return Response(response_data, status=status.HTTP_201_CREATED)
