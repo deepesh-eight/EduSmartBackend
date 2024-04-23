@@ -841,9 +841,9 @@ class TeacherDayReviewListView(APIView):
     def get(self, request):
         queryset = DayReview.objects.all()
         if request.query_params:
-            updated_date = request.query_params.get('updated_date', None)
-            if updated_date:
-                queryset = queryset.filter(updated_date__gte=updated_date)
+            updated_at = request.query_params.get('updated_at', None)
+            if updated_at:
+                queryset = queryset.filter(updated_at__gte=updated_at)
 
             # Paginate the queryset
             paginator = self.pagination_class()

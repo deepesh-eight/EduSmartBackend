@@ -6,4 +6,5 @@ urlpatterns = [
         path('school/profile/<int:pk>/', SchoolProfileView.as_view(), name='fetch_school_profile'),
         path('school/profile/update/<int:pk>/', SchoolProfileUpdateView.as_view(), name='schedule_update'),
         path('school/profile/', SchoolAdminProfileView.as_view(), name='schedule_profile'),
+        path('school/list/', SchoolAdminListView.as_view(), name='school_list')
 ]

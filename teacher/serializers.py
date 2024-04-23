@@ -282,6 +282,8 @@ class ScheduleDetailSerializer(serializers.ModelSerializer):
             # Add class_timing_duration field
             class_timing = item.get('class_timing', '')
             class_duration = item.get('class_duration', '')
+            select_days = item.get('select_days', [])
+            class_teach = item.get('class', '')
 
             # Add lecture_type field
             alter_nate_day = item.get('alternate_day_lecture', '0')
@@ -297,7 +299,6 @@ class ScheduleDetailSerializer(serializers.ModelSerializer):
 
             # Remove unnecessary fields
             item.pop('select_day_lecture', None)
-            item.pop('select_days', None)
             item.pop('teacher', None)
             item.pop('daily_lecture', None)
             item.pop('alternate_day_lecture', None)

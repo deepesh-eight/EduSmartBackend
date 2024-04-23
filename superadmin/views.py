@@ -8,6 +8,7 @@ from rest_framework.views import APIView
 from authentication.models import User
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsInSameSchool
 from constants import SchoolMessage, UserLoginMessage
+from pagination import CustomPagination
 from superadmin.models import SchoolProfile
 from superadmin.serializers import SchoolCreateSerializer, SchoolProfileSerializer, SchoolProfileUpdateSerializer
 from utils import create_response_data
@@ -184,3 +185,43 @@ class SchoolAdminProfileView(APIView):
             data= user_detail.data
         )
         return Response(response_data, status=status.HTTP_201_CREATED)
+
+
+class SchoolAdminListView(APIView):
+    """
+    This class is created to fetch list of school's.
+    """
+    permission_classes = [IsSuperAdminUser]
+    pagination_class = CustomPagination
+
+    def get(self, request):
+        try:
+            data = SchoolProfile.objects.all()
+            if request.query_params:
+                school_name = request.query_params.get('school_name', None)
+                if school_name:
+                    data = data.filter(school_name=school_name)
+            paginator = self.pagination_class()
+            paginated_queryset = paginator.paginate_queryset(data, request)
+            serializer = SchoolProfileSerializer(paginated_queryset, many=True)
+            response_data = {
+                'status': status.HTTP_200_OK,
+                'count': len(serializer.data),
+                'message': SchoolMessage.SCHOOL_DETAIL_MESSAGE,
+                'data': serializer.data,
+                'pagination': {
+                    'page_size': paginator.page_size,
+                    'next': paginator.get_next_link(),
+                    'previous': paginator.get_previous_link(),
+                    'total_pages': paginator.page.paginator.num_pages,
+                    'current_page': paginator.page.number,
+                }
+            }
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
