@@ -82,6 +82,7 @@ class UserResponseMessage:
     USER_DELETE_MESSAGE = "User deleted successfully."
     PROFILE_UPDATED_SUCCESSFULLY = "User profile updated successfully"
     EMAIL_ALREADY_EXIST = "Email already exist."
+    TOKEN_HAS_EXPIRED = "Token has expired."
 
 
 class CurriculumMessage:

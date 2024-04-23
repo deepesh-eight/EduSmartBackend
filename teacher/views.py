@@ -7,6 +7,7 @@ from rest_framework import status, permissions
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from authentication.models import User, Class, TeacherUser, StudentUser, Certificate, TeachersSchedule, \
@@ -302,8 +303,15 @@ class UserLoginView(APIView):
                 data={}
             )
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
-
-        refresh = RefreshToken.for_user(user)
+        try:
+            refresh = RefreshToken.for_user(user)
+        except TokenError as e:
+            response = create_response_data(
+                status=status.HTTP_401_UNAUTHORIZED,
+                message= UserResponseMessage.TOKEN_HAS_EXPIRED,
+                data={}
+            )
+            return Response(response, status=status.HTTP_401_UNAUTHORIZED)
         response_data = create_response_data(
             status=status.HTTP_201_CREATED,
             message=UserLoginMessage.USER_LOGIN_SUCCESSFUL,
