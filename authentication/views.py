@@ -10,7 +10,7 @@ from rest_framework_simplejwt.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from authentication.models import User, AddressDetails, ErrorLogging, Certificate, StaffUser, StaffAttendence, \
-    TeacherUser, StudentUser, TeachersSchedule, DayReview
+    TeacherUser, StudentUser, TeachersSchedule, DayReview, TeacherAttendence
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsManagementUser, IsPayRollManagementUser, \
     IsBoardingUser, IsInSameSchool, IsTeacherUser
 from authentication.serializers import UserSignupSerializer, UsersListSerializer, UpdateProfileSerializer, \
@@ -23,7 +23,8 @@ from curriculum.models import Curriculum
 from pagination import CustomPagination
 from student.serializers import StudentDetailSerializer, StudentUserProfileSerializer
 from teacher.serializers import TeacherDetailSerializer, TeacherProfileSerializer, TeacherUserProfileSerializer, \
-    TeacherUserScheduleSerializer, CurriculumTeacherListerializer, DayReviewSerializer, DayReviewDetailSerializer
+    TeacherUserScheduleSerializer, CurriculumTeacherListerializer, DayReviewSerializer, DayReviewDetailSerializer, \
+    TeacherUserAttendanceListSerializer
 from utils import create_response_data, create_response_list_data, get_staff_total_attendance, \
     get_staff_monthly_attendance, get_staff_total_absent, get_staff_monthly_absent
 
@@ -865,3 +866,43 @@ class TeacherDayReviewListView(APIView):
             data=serializer.data,
         )
         return Response(response, status=status.HTTP_200_OK)
+
+
+class FetchTeacherAttendanceView(APIView):
+    """
+    This class is used to fetch attendance list of teacher according to provided month
+    """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+    pagination_class = CustomPagination
+
+    def get(self, request):
+        try:
+            user = request.user
+            teacher = TeacherUser.objects.get(user=user.id)
+            month = request.query_params.get('month', None)
+
+            if month:
+                month = int(month)
+                current_year = datetime.date.today().year
+
+                _, last_day = calendar.monthrange(current_year, month)
+                start_date = datetime.date(current_year, month, 1)
+                end_date = datetime.date(current_year, month, last_day)
+                data = TeacherAttendence.objects.filter(teacher_id=teacher.id, date__range=[start_date, end_date], teacher__user__school_id=request.user.school_id)
+            else:
+                data = TeacherAttendence.objects.filter(teacher_id=teacher.id, teacher__user__school_id=request.user.school_id)
+            serializer = TeacherUserAttendanceListSerializer(data, many=True)
+
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=AttendenceMarkedMessage.ATTENDANCE_FETCHED_SUCCESSFULLY,
+                data=serializer.data,
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=str(e),
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)

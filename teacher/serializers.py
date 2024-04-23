@@ -635,3 +635,14 @@ class DayReviewDetailSerializer(serializers.ModelSerializer):
         date_obj = datetime.strptime(cleaned_date_str, "%Y-%m-%d %H:%M:%S")
         formatted_date = date_obj.strftime("%Y-%m-%d")
         return formatted_date
+
+
+class TeacherUserAttendanceListSerializer(serializers.ModelSerializer):
+    day = serializers.SerializerMethodField()
+
+    class Meta:
+        model = TeacherAttendence
+        fields = ['date', 'mark_attendence', 'day']
+
+    def get_day(self, obj):
+        return obj.date.strftime('%A')
