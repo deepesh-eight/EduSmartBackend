@@ -2,6 +2,7 @@ from datetime import date, timedelta, datetime
 import json
 
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
 from EduSmart import settings
@@ -225,14 +226,15 @@ class TeacherProfileSerializer(serializers.ModelSerializer):
 
         return value
 
-class ScheduleCreateSerializer(serializers.ModelSerializer):
+
+class ScheduleCreateSerializer(serializers.Serializer):
     start_date = serializers.DateField(required=True)
     end_date = serializers.DateField(required=True)
-    schedule_data = serializers.CharField(required=True)
-
-    class Meta:
-        model = TeachersSchedule
-        fields = ['start_date', 'end_date', 'schedule_data']
+    teacher = serializers.CharField(required=True)
+    schedule_data = serializers.ListField(
+        child=serializers.CharField(),
+        required=True
+    )
 
     def to_internal_value(self, data):
         ret = super().to_internal_value(data)
@@ -263,12 +265,8 @@ class ScheduleDetailSerializer(serializers.ModelSerializer):
         fields = ['schedule_date', 'teacher', 'schedule_data']
 
     def get_teacher(self, obj):
-        schedule_data = obj.schedule_data
-        if schedule_data:
-            teacher_id = schedule_data[0]['teacher'] if schedule_data else None
-            teacher_data = TeacherUser.objects.get(id=teacher_id)
-            return teacher_data.full_name
-        return None
+        teacher_data = TeacherUser.objects.get(id=obj.teacher_id)
+        return teacher_data.full_name
 
     def get_schedule_date(self, obj):
         return f'{obj.start_date} to {obj.end_date}'
@@ -325,21 +323,12 @@ class ScheduleListSerializer(serializers.ModelSerializer):
             return None
 
     def get_teacher_email(self, obj):
-        schedule_data = obj.schedule_data
-        if schedule_data:
-            teacher_name = schedule_data[0]['teacher'] if schedule_data else None
-            teacher_data = TeacherUser.objects.get(id=teacher_name)
-            return teacher_data.user.email
-        return None
+        teacher_data = TeacherUser.objects.get(id=obj.teacher_id)
+        return teacher_data.user.email
 
     def get_teacher(self,obj):
-
-        schedule_data = obj.schedule_data
-        if schedule_data:
-            teacher_id = schedule_data[0]['teacher'] if schedule_data else None
-            teacher_data = TeacherUser.objects.get(id=teacher_id)
-            return teacher_data.full_name
-        return None
+        teacher_data = TeacherUser.objects.get(id=obj.teacher_id)
+        return teacher_data.full_name
 
     def get_role(self, obj):
         teacher_email = self.get_teacher_email(obj)
@@ -354,19 +343,25 @@ class ScheduleListSerializer(serializers.ModelSerializer):
         return schedule_data[0]['class_duration'] if schedule_data else 0
 
 
+class ScheduleDataSerializer(serializers.Serializer):
+    class_name = serializers.CharField(required=True)  # Assuming class name instead of "class"
+    section = serializers.CharField(required=True)
+    subject = serializers.CharField(required=True)
+    select_days = serializers.ListField(child=serializers.CharField(max_length=3), required=True)
+    class_timing = serializers.CharField(required=True)
+    daily_lecture = serializers.CharField(required=True)
+    class_duration = serializers.CharField(required=True)
+
+
 class ScheduleUpdateSerializer(serializers.ModelSerializer):
     start_date = serializers.DateField(required=True)
     end_date = serializers.DateField(required=True)
-    schedule_data = serializers.ListField(
-        child=serializers.DictField(
-            child=serializers.CharField(max_length=100)  # Adjust max_length as needed
-        ),
-        allow_empty=True
-    )
+    teacher = serializers.CharField(required=True)
+    schedule_data = ScheduleDataSerializer(many=True)
 
     class Meta:
         model = TeachersSchedule
-        fields = ['start_date', 'end_date', 'schedule_data']
+        fields = ['start_date', 'end_date', 'teacher', 'schedule_data']
 
     def validate(self, data):
         start_date = data.get('start_date')
@@ -379,8 +374,19 @@ class ScheduleUpdateSerializer(serializers.ModelSerializer):
         # Update the instance with the validated data
         instance.start_date = validated_data.get('start_date', instance.start_date)
         instance.end_date = validated_data.get('end_date', instance.end_date)
+
+        # Fetch the TeacherUser instance based on the provided ID
+        teacher_id = validated_data.get('teacher')
+        if teacher_id:
+            try:
+                teacher_instance = TeacherUser.objects.get(id=teacher_id)
+                instance.teacher = teacher_instance
+            except TeacherUser.DoesNotExist:
+                # Handle the case where the TeacherUser instance does not exist
+                raise serializers.ValidationError("TeacherUser with ID {} does not exist.".format(teacher_id))
+
         instance.schedule_data = validated_data.get('schedule_data', instance.schedule_data)
-        instance.save()  # Save the changes to the database
+        instance.save()
         return instance
 
 

@@ -236,6 +236,7 @@ class ErrorLogging(models.Model):
 class TeachersSchedule(models.Model):
     start_date = models.DateField(default=datetime.date.today)
     end_date = models.DateField(default=datetime.date.today)
+    teacher = models.ForeignKey(TeacherUser, on_delete=models.CASCADE, blank=True, null=True)
     schedule_data = models.JSONField(null=True)
 
 class TeacherAttendence(models.Model):

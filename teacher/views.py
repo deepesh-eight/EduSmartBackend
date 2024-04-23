@@ -330,22 +330,45 @@ class TeacherScheduleCreateView(APIView):
     This class is used to create schedule for teacher's.
     """
     def post(self, request):
-        serializer = ScheduleCreateSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            serializer.save()
+        try:
+            serializer = ScheduleCreateSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            start_date = serializer.validated_data['start_date']
+            end_date = serializer.validated_data['end_date']
+            schedule_data = serializer.validated_data['schedule_data']
+            teacher = serializer.validated_data['teacher']
+
+            try:
+                teacher = TeacherUser.objects.get(id=teacher, user__school_id=request.user.school_id)
+            except TeacherUser.DoesNotExist:
+                response = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message="Teacher with id {} does not exist.".format(teacher),
+                    data={}
+                )
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
+            schedule_data = TeachersSchedule.objects.create(
+                teacher=teacher, start_date=start_date, end_date=end_date, schedule_data=schedule_data)
             response_data = create_response_data(
-                status=status.HTTP_201_CREATED,
-                message=ScheduleMessage.SCHEDULE_CREATED_SUCCESSFULLY,
+                    status=status.HTTP_201_CREATED,
+                    message=ScheduleMessage.SCHEDULE_CREATED_SUCCESSFULLY,
+                    data={},
+                )
+            return Response(response_data, status=status.HTTP_201_CREATED)
+        except KeyError as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
                 data={},
             )
-            return Response(response_data, status=status.HTTP_201_CREATED)
-        else:
-            response = create_response_data(
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        except ValidationError as er:
+            response_data = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
-                message=serializer.errors,
-                data=serializer.errors
+                message=er.args[0],
+                data={},
             )
-            return Response(response, status=status.HTTP_200_OK)
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
 
 class TeacherScheduleDetailView(APIView):
@@ -465,12 +488,15 @@ class TeacherScheduleUpdateView(APIView):
 
     def patch(self, request, pk):
         try:
+            teacher_id = int(request.data.get('teacher'))
+            teacher = TeacherUser.objects.get(id=teacher_id, user__school_id=request.user.school_id)
             schedule_data_details = request.data.get('schedule_data')
             schedule_data_str = json.loads(schedule_data_details)
             data = {
                 'start_date': request.data.get('start_date'),
                 'end_date': request.data.get('end_date'),
-                'schedule_data':schedule_data_str
+                'teacher': teacher.id,
+                'schedule_data': schedule_data_str
             }
             staff = TeachersSchedule.objects.get(id=pk)
             serializer = ScheduleUpdateSerializer(staff, data=data, partial=True)
@@ -493,6 +519,13 @@ class TeacherScheduleUpdateView(APIView):
             response_data = create_response_data(
                 status=status.HTTP_404_NOT_FOUND,
                 message=ScheduleMessage.SCHEDULE_NOT_FOUND,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+        except TeacherUser.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=ScheduleMessage.USER_DOES_NOT_EXISTS,
                 data={}
             )
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
