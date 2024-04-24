@@ -937,10 +937,10 @@ class NotificationListView(APIView):
     """
     This class is used to fetch the list of the notification.
     """
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated, IsInSameSchool]
 
     def get(self, request):
-        data = Notification.objects.all()
+        data = Notification.objects.filter(reciver_id=request.user.id, is_read__in=[0, 1])
         data.update(is_read=1)
         serializer = NotificationListSerializer(data, many=True)
         response_data = create_response_data(
@@ -950,9 +950,22 @@ class NotificationListView(APIView):
             )
         return Response(response_data, status=status.HTTP_200_OK)
 
+
 class NotificationDeleteView(APIView):
     """
     This class is used to clear notifications.
     """
+    permission_classes = [permissions.IsAuthenticated, IsInSameSchool]
+
     def post(self, request):
-        None
+        receiver = request.user
+
+        notifications = Notification.objects.filter(reciver_id=receiver.id)
+        notifications.update(is_read=2)
+        response_data = create_response_data(
+            status=status.HTTP_201_CREATED,
+            message="All notifications cleared successfully.",
+            data={},
+        )
+        return Response(response_data, status=status.HTTP_200_OK)
+

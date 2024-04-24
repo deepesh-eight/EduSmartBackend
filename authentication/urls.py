@@ -35,7 +35,7 @@ urlpatterns = [
     # Notification
     path('notification/create/', NotificationCreateView.as_view(), name='notification_create'),
     path('notification/get/', NotificationListView.as_view(), name='notification_get'),
-    path('notification/delete/', NotificationDeleteView.as_view(), name='notification_delete'),
+    path('notification/clear/', NotificationDeleteView.as_view(), name='notification_delete'),
 
     #Mobile App
     path('users/logout/', LogoutView.as_view(), name='user_logout'),
