@@ -667,6 +667,10 @@ class UserProfileView(APIView):
             elif user.user_type == "non-teaching":
                 staff_user = StaffUser.objects.get(user=user)
                 user_detail = NonTeachingStaffDetailSerializers(staff_user)
+            # Fetch unread notifications for the user
+            notifications = Notification.objects.filter(reciver_id=user.id, is_read__in=[0,1])
+            # Serialize notifications
+            notification_serializer = NotificationSerializer(notifications, many=True)
         except (StudentUser.DoesNotExist, TeacherUser.DoesNotExist, StaffUser.DoesNotExist):
             response = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
@@ -674,11 +678,12 @@ class UserProfileView(APIView):
                 data={}
             )
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
-        response_data = create_response_data(
-            status=status.HTTP_201_CREATED,
-            message=UserLoginMessage.USER_LOGIN_SUCCESSFUL,
-            data= user_detail.data
-        )
+        response_data = {
+            "status": status.HTTP_201_CREATED,
+            "message": UserLoginMessage.USER_LOGIN_SUCCESSFUL,
+            "notification": len(notification_serializer.data),
+            "data": user_detail.data
+        }
         return Response(response_data, status=status.HTTP_201_CREATED)
 
 

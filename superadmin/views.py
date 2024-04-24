@@ -147,14 +147,14 @@ class SchoolProfileUpdateView(APIView):
         except ValidationError as e:
             response_data = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
-                message=SchoolMessage.SCHOOL_EMAIL_ALREADY_EXIST,
+                message=e.args[0],
                 data={}
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
         except IntegrityError:
             response = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
-                message="Email already exist.",
+                message=SchoolMessage.SCHOOL_EMAIL_ALREADY_EXIST,
                 data={}
             )
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
