@@ -225,3 +225,28 @@ class SchoolAdminListView(APIView):
                 data={}
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SchoolAdminDeleteView(APIView):
+    """
+    This class is used to delete school profile.
+    """
+    permission_classes = [IsSuperAdminUser]
+
+    def delete(self, request, pk):
+        try:
+            school_profile = SchoolProfile.objects.get(id=pk)
+            school_profile.delete()
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=SchoolMessage.SCHOOL_DELETED_SCCCESSFULLY,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except SchoolProfile.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=SchoolMessage.SCHOOL_DOES_NOT_EXISTS,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
