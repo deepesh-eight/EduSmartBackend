@@ -491,12 +491,12 @@ class TeacherScheduleUpdateView(APIView):
             teacher_id = int(request.data.get('teacher'))
             teacher = TeacherUser.objects.get(id=teacher_id, user__school_id=request.user.school_id)
             schedule_data_details = request.data.get('schedule_data')
-            schedule_data_str = json.loads(schedule_data_details)
+            # schedule_data_str = json.loads(schedule_data_details)
             data = {
                 'start_date': request.data.get('start_date'),
                 'end_date': request.data.get('end_date'),
                 'teacher': teacher.id,
-                'schedule_data': schedule_data_str
+                'schedule_data': schedule_data_details
             }
             staff = TeachersSchedule.objects.get(id=pk)
             serializer = ScheduleUpdateSerializer(staff, data=data, partial=True)
