@@ -18,13 +18,15 @@ from authentication.serializers import UserSignupSerializer, UsersListSerializer
     NonTeachingStaffDetailSerializers, NonTeachingStaffProfileSerializers, StaffAttendanceSerializer, \
     StaffAttendanceDetailSerializer, StaffAttendanceListSerializer, LogoutSerializer
 from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage, ScheduleMessage, \
-    CurriculumMessage, DayReviewMessage, NotificationMessage
+    CurriculumMessage, DayReviewMessage, NotificationMessage, AnnouncementMessage
 from curriculum.models import Curriculum
 from pagination import CustomPagination
 from student.serializers import StudentDetailSerializer, StudentUserProfileSerializer
+from superadmin.models import Announcement
 from teacher.serializers import TeacherDetailSerializer, TeacherProfileSerializer, TeacherUserProfileSerializer, \
     TeacherUserScheduleSerializer, CurriculumTeacherListerializer, DayReviewSerializer, DayReviewDetailSerializer, \
-    TeacherUserAttendanceListSerializer, NotificationSerializer, NotificationListSerializer
+    TeacherUserAttendanceListSerializer, NotificationSerializer, NotificationListSerializer, \
+    AnnouncementCreateSerializer
 from utils import create_response_data, create_response_list_data, get_staff_total_attendance, \
     get_staff_monthly_attendance, get_staff_total_absent, get_staff_monthly_absent
 
@@ -974,3 +976,45 @@ class NotificationDeleteView(APIView):
         )
         return Response(response_data, status=status.HTTP_200_OK)
 
+
+class AnnouncementCreateView(APIView):
+    """
+    This class is used to create announcement.
+    """
+    permission_classes = [IsSuperAdminUser]
+
+    def post(self, request):
+
+        serializer = AnnouncementCreateSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+            response_data = create_response_data(
+                status=status.HTTP_201_CREATED,
+                message=AnnouncementMessage.ANNOUNCEMENT_CREATED_SUCCESSFULLE,
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_201_CREATED)
+        else:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=serializer.errors,
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AnnouncementListView(APIView):
+    """
+    This class is used to fetch the list of the Announcement.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        data = Announcement.objects.all()
+        serializer = AnnouncementCreateSerializer(data, many=True)
+        response_data = create_response_data(
+                status=status.HTTP_201_CREATED,
+                message=AnnouncementMessage.ANNOUNCEMENT_FETCHED_SUCCESSFULLE,
+                data=serializer.data,
+            )
+        return Response(response_data, status=status.HTTP_200_OK)

@@ -11,6 +11,7 @@ from authentication.models import TeacherUser, Certificate, TeachersSchedule, Te
 from constants import USER_TYPE_CHOICES, GENDER_CHOICES, RELIGION_CHOICES, BLOOD_GROUP_CHOICES, CLASS_CHOICES, \
     SUBJECT_CHOICES, ROLE_CHOICES, ATTENDENCE_CHOICE
 from curriculum.models import Curriculum
+from superadmin.models import Announcement
 
 
 class CertificateSerializer(serializers.ModelSerializer):
@@ -667,6 +668,30 @@ class NotificationListSerializer(serializers.ModelSerializer):
         model = Notification
         fields = ['title', 'description', 'date', 'time', 'sender', 'type', 'is_read', 'reciver_id', 'class_id']
 
+
+    def get_date(self, obj):
+        ist = pytz.timezone('Asia/Kolkata')
+        date_time_ist = obj.date_time.astimezone(ist)
+        return date_time_ist.strftime("%Y-%m-%d")
+
+    def get_time(self, obj):
+        ist = pytz.timezone('Asia/Kolkata')
+        date_time_ist = obj.date_time.astimezone(ist)
+        return date_time_ist.strftime("%H:%M:%S")
+
+
+class AnnouncementCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Announcement
+        fields = ['creator_name', 'role', 'date_time', 'announcement_title', 'description']
+
+
+class AnnouncementCreateSerializer(serializers.ModelSerializer):
+    date = serializers.SerializerMethodField()
+    time = serializers.SerializerMethodField()
+    class Meta:
+        model = Announcement
+        fields = ['id', 'creator_name', 'role', 'date', 'time', 'announcement_title', 'description']
 
     def get_date(self, obj):
         ist = pytz.timezone('Asia/Kolkata')
