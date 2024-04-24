@@ -271,3 +271,17 @@ class DayReview(models.Model):
     discription = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+
+class Notification(models.Model):
+    title = models.CharField(max_length=100, blank=True, null=True)
+    description = models.TextField()
+    date_time = models.DateTimeField(auto_now=True)  # Automatically set to the current time on every save
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
+    type = models.CharField(max_length=255, blank=True, null=True)
+    is_read = models.CharField(max_length=100, default=0)
+    reciver_id = models.CharField(max_length=100, null=True)
+    class_id = models.CharField(max_length=255, null=True)
+
+    def __str__(self):
+        return self.title

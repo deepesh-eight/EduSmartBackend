@@ -10,7 +10,7 @@ from rest_framework_simplejwt.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from authentication.models import User, AddressDetails, ErrorLogging, Certificate, StaffUser, StaffAttendence, \
-    TeacherUser, StudentUser, TeachersSchedule, DayReview, TeacherAttendence
+    TeacherUser, StudentUser, TeachersSchedule, DayReview, TeacherAttendence, Notification
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsManagementUser, IsPayRollManagementUser, \
     IsBoardingUser, IsInSameSchool, IsTeacherUser
 from authentication.serializers import UserSignupSerializer, UsersListSerializer, UpdateProfileSerializer, \
@@ -18,13 +18,13 @@ from authentication.serializers import UserSignupSerializer, UsersListSerializer
     NonTeachingStaffDetailSerializers, NonTeachingStaffProfileSerializers, StaffAttendanceSerializer, \
     StaffAttendanceDetailSerializer, StaffAttendanceListSerializer, LogoutSerializer
 from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage, ScheduleMessage, \
-    CurriculumMessage, DayReviewMessage
+    CurriculumMessage, DayReviewMessage, NotificationMessage
 from curriculum.models import Curriculum
 from pagination import CustomPagination
 from student.serializers import StudentDetailSerializer, StudentUserProfileSerializer
 from teacher.serializers import TeacherDetailSerializer, TeacherProfileSerializer, TeacherUserProfileSerializer, \
     TeacherUserScheduleSerializer, CurriculumTeacherListerializer, DayReviewSerializer, DayReviewDetailSerializer, \
-    TeacherUserAttendanceListSerializer
+    TeacherUserAttendanceListSerializer, NotificationSerializer, NotificationListSerializer
 from utils import create_response_data, create_response_list_data, get_staff_total_attendance, \
     get_staff_monthly_attendance, get_staff_total_absent, get_staff_monthly_absent
 
@@ -694,7 +694,7 @@ class TeacherUserScheduleView(APIView):
             if user.user_type == 'teacher':
                 today = datetime.date.today()
                 teacher = TeacherUser.objects.get(user=user.id)
-                data = TeachersSchedule.objects.filter(schedule_data__contains=[{"teacher": teacher.id}], start_date__lte=today, end_date__gte=today)
+                data = TeachersSchedule.objects.filter(teacher=teacher.id, start_date__lte=today, end_date__gte=today)
                 if data:
                     serializer = TeacherUserScheduleSerializer(data[0])
                     response_data = create_response_data(
@@ -843,7 +843,7 @@ class TeacherDayReviewListView(APIView):
         if request.query_params:
             updated_at = request.query_params.get('updated_at', None)
             if updated_at:
-                queryset = queryset.filter(updated_at__gte=updated_at)
+                queryset = queryset.filter(updated_at__date=updated_at)
 
             # Paginate the queryset
             paginator = self.pagination_class()
@@ -906,3 +906,53 @@ class FetchTeacherAttendanceView(APIView):
                 data={},
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class NotificationCreateView(APIView):
+    """
+    This class is used to create notification.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        serializer = NotificationSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+            response_data = create_response_data(
+                status=status.HTTP_201_CREATED,
+                message=NotificationMessage.NOTIFICATION_CREATED_SUCCESSFULLY,
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_201_CREATED)
+        else:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=serializer.errors,
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class NotificationListView(APIView):
+    """
+    This class is used to fetch the list of the notification.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        data = Notification.objects.all()
+        data.update(is_read=1)
+        serializer = NotificationListSerializer(data, many=True)
+        response_data = create_response_data(
+                status=status.HTTP_201_CREATED,
+                message=NotificationMessage.NOTIFICATION_FETCHED_SUCCESSFULLY,
+                data=serializer.data,
+            )
+        return Response(response_data, status=status.HTTP_200_OK)
+
+class NotificationDeleteView(APIView):
+    """
+    This class is used to clear notifications.
+    """
+    def post(self, request):
+        None

@@ -1,12 +1,13 @@
 from datetime import date, timedelta, datetime
 import json
 
+import pytz
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
 from EduSmart import settings
-from authentication.models import TeacherUser, Certificate, TeachersSchedule, TeacherAttendence, DayReview
+from authentication.models import TeacherUser, Certificate, TeachersSchedule, TeacherAttendence, DayReview, Notification
 from constants import USER_TYPE_CHOICES, GENDER_CHOICES, RELIGION_CHOICES, BLOOD_GROUP_CHOICES, CLASS_CHOICES, \
     SUBJECT_CHOICES, ROLE_CHOICES, ATTENDENCE_CHOICE
 from curriculum.models import Curriculum
@@ -552,12 +553,8 @@ class TeacherUserScheduleSerializer(serializers.ModelSerializer):
         fields = ['schedule_date', 'teacher', 'schedule_data']
 
     def get_teacher(self, obj):
-        schedule_data = obj.schedule_data
-        if schedule_data:
-            teacher_id = schedule_data[0]['teacher'] if schedule_data else None
-            teacher_data = TeacherUser.objects.get(id=teacher_id)
-            return teacher_data.full_name
-        return None
+        teacher_data = TeacherUser.objects.get(id=obj.teacher.id)
+        return teacher_data.full_name
 
     def get_schedule_date(self, obj):
         return f'{obj.start_date} to {obj.end_date}'
@@ -655,3 +652,28 @@ class TeacherUserAttendanceListSerializer(serializers.ModelSerializer):
 
     def get_day(self, obj):
         return obj.date.strftime('%A')
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = ['title', 'description', 'date_time', 'sender', 'type', 'is_read', 'reciver_id', 'class_id']
+
+
+class NotificationListSerializer(serializers.ModelSerializer):
+    date = serializers.SerializerMethodField()
+    time = serializers.SerializerMethodField()
+    class Meta:
+        model = Notification
+        fields = ['title', 'description', 'date', 'time', 'sender', 'type', 'is_read', 'reciver_id', 'class_id']
+
+
+    def get_date(self, obj):
+        ist = pytz.timezone('Asia/Kolkata')
+        date_time_ist = obj.date_time.astimezone(ist)
+        return date_time_ist.strftime("%Y-%m-%d")
+
+    def get_time(self, obj):
+        ist = pytz.timezone('Asia/Kolkata')
+        date_time_ist = obj.date_time.astimezone(ist)
+        return date_time_ist.strftime("%H:%M:%S")

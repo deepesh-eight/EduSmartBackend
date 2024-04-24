@@ -32,6 +32,11 @@ urlpatterns = [
     path('attendance/detail/<int:pk>/', FetchAttendanceDetailView.as_view(), name='fetch_attendance_detail'),
     path('attendance/list/',  FetchAttendanceListView.as_view(), name='fetch_attendance_list'),
 
+    # Notification
+    path('notification/create/', NotificationCreateView.as_view(), name='notification_create'),
+    path('notification/get/', NotificationListView.as_view(), name='notification_get'),
+    path('notification/delete/', NotificationDeleteView.as_view(), name='notification_delete'),
+
     #Mobile App
     path('users/logout/', LogoutView.as_view(), name='user_logout'),
     path('user/profile/', UserProfileView.as_view(), name='user_profile'),

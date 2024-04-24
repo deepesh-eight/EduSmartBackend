@@ -46,7 +46,7 @@ class AdminStaffLoginView(APIView):
         refresh = RefreshToken.for_user(user)
         response_data = create_response_data(
             status=status.HTTP_201_CREATED,
-            message=UserLoginMessage.SIGNUP_SUCCESSFUL,
+            message=UserLoginMessage.USER_LOGIN_SUCCESSFUL,
             data={
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
