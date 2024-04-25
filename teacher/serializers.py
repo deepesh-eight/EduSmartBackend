@@ -712,7 +712,6 @@ class CreateTimeTableSerializer(serializers.ModelSerializer):
         choices=EXAME_TYPE_CHOICE
     )
     exam_month = serializers.DateField(required=True)
-    status = serializers.CharField(required=False)
     more_subject = serializers.ListField(
         child=serializers.DictField(
             child=serializers.CharField(max_length=255)  # Adjust max_length as needed
@@ -722,7 +721,7 @@ class CreateTimeTableSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TimeTable
-        fields = ['class_name', 'class_section', 'exam_type', 'exam_month', 'more_subject', 'status']
+        fields = ['class_name', 'class_section', 'exam_type', 'exam_month', 'more_subject']
 
 
 class TimeTableListSerializer(serializers.ModelSerializer):
@@ -730,7 +729,7 @@ class TimeTableListSerializer(serializers.ModelSerializer):
     exam_end_date = serializers.SerializerMethodField()
     class Meta:
         model = TimeTable
-        fields = ['class_name', 'class_section', 'exam_type', 'exam_start_date', 'exam_end_date']
+        fields = ['id', 'class_name', 'class_section', 'exam_type', 'exam_start_date', 'exam_end_date']
 
     def get_exam_start_date(self, obj):
         more_subjects = obj.more_subject
@@ -751,3 +750,22 @@ class TimeTableDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = TimeTable
         fields = ['id', 'class_name', 'class_section', 'exam_type', 'exam_month', 'more_subject']
+
+
+class TimeTableUpdateSerializer(serializers.ModelSerializer):
+    class_name = serializers.CharField(required=True)
+    class_section = serializers.CharField(required=True)
+    exam_type = serializers.ChoiceField(
+        choices=EXAME_TYPE_CHOICE
+    )
+    exam_month = serializers.DateField(required=True)
+    more_subject = serializers.ListField(
+        child=serializers.DictField(
+            child=serializers.CharField(max_length=255)  # Adjust max_length as needed
+        ),
+        allow_empty=False
+    )
+
+    class Meta:
+        model = TimeTable
+        fields = ['class_name', 'class_section', 'exam_type', 'exam_month', 'more_subject']

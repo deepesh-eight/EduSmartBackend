@@ -28,7 +28,7 @@ from teacher.serializers import TeacherDetailSerializer, TeacherProfileSerialize
     TeacherUserScheduleSerializer, CurriculumTeacherListerializer, DayReviewSerializer, DayReviewDetailSerializer, \
     TeacherUserAttendanceListSerializer, NotificationSerializer, NotificationListSerializer, \
     AnnouncementCreateSerializer, CreateTimeTableSerializer, AnnouncementListSerializer, TimeTableListSerializer, \
-    TimeTableDetailSerializer
+    TimeTableDetailSerializer, TimeTableUpdateSerializer
 from utils import create_response_data, create_response_list_data, get_staff_total_attendance, \
     get_staff_monthly_attendance, get_staff_total_absent, get_staff_monthly_absent
 
@@ -1038,7 +1038,6 @@ class CreateTimetableView(APIView):
                     "class_section": request.data.get("class_section"),
                     "exam_type": request.data.get("exam_type"),
                     "exam_month": request.data.get("exam_month"),
-                    "status": request.data.get("status"),
                     "more_subject": more_subject_str,
                 }
 
@@ -1172,3 +1171,78 @@ class TimetableDeleteView(APIView):
                 data={}
             )
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+
+
+class TimetableUpdateView(APIView):
+    """
+    This class is used to update the timetable.
+    """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+
+    def patch(self, request, pk):
+        try:
+            student = TimeTable.objects.get(id=pk, school_id=request.user.school_id)
+            more_subject = request.data.get('more_subject')
+            more_subject_str = json.loads(more_subject)
+            data = {
+                "class_name": request.data.get("class_name"),
+                "class_section": request.data.get("class_section"),
+                "exam_type": request.data.get("exam_type"),
+                "exam_month": request.data.get("exam_month"),
+                "more_subject": more_subject_str,
+            }
+            serializer = TimeTableUpdateSerializer(student, data=data, partial=True)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                response = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=TimeTableMessage.TIMETABLE_UPDATED_SUCCESSFULLY,
+                    data=serializer.data
+                )
+                return Response(response, status=status.HTTP_200_OK)
+            else:
+                response = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=serializer.errors,
+                    data=serializer.errors
+                )
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        except TimeTable.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=TimeTableMessage.TIMETABLE_NOT_EXIST,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class DeclareTimetableView(APIView):
+    """
+    This class is used to declare timetable.
+    """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+
+    def post(self, request):
+        try:
+            data = TimeTable.objects.filter(status=0, school_id=request.user.school_id)
+            data.update(status=1)
+            response_data = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=TimeTableMessage.TIMETABLE_DECLARE_SUCCESSFULLY,
+                    data={},
+                )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)

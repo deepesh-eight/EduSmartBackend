@@ -38,8 +38,8 @@ urlpatterns = [
     path('notification/clear/', NotificationDeleteView.as_view(), name='notification_delete'),
 
     # Announcement
-    path('announcement /create/', AnnouncementCreateView.as_view(), name='announcement_create'),
-    path('announcement /list/', AnnouncementListView.as_view(), name='announcement_create'),
+    path('announcement/create/', AnnouncementCreateView.as_view(), name='announcement_create'),
+    path('announcement/list/', AnnouncementListView.as_view(), name='announcement_create'),
 
     #Mobile App
     path('users/logout/', LogoutView.as_view(), name='user_logout'),
@@ -55,4 +55,6 @@ urlpatterns = [
     path('declared/timetable/list/', DeclaredTimetableView.as_view(), name='declared_timetable_list'),
     path('timetable/detail/<int:pk>/', TimetableDetailView.as_view(), name='timetable_detail'),
     path('timetable/delete/<int:pk>/', TimetableDeleteView.as_view(), name='timetable_delete'),
+    path('timetable/update/<int:pk>/', TimetableUpdateView.as_view(), name='timetable_update'),
+    path('declare/timetable/', DeclareTimetableView.as_view(), name='declare_timetable'),
 ]

@@ -232,7 +232,7 @@ class StudentUpdateProfileView(APIView):
                 return Response(response, status=status.HTTP_200_OK)
             else:
                 response = create_response_data(
-                    status=status.HTTP_200_OK,
+                    status=status.HTTP_400_BAD_REQUEST,
                     message=serializer.errors,
                     data=serializer.errors
                 )
