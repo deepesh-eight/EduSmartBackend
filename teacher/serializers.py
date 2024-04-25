@@ -745,3 +745,9 @@ class TimeTableListSerializer(serializers.ModelSerializer):
             exam_dates = [subject['date'] for subject in more_subjects]
             return max(exam_dates)
         return None
+
+
+class TimeTableDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TimeTable
+        fields = ['id', 'class_name', 'class_section', 'exam_type', 'exam_month', 'more_subject']

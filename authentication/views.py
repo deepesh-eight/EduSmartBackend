@@ -27,7 +27,8 @@ from superadmin.models import Announcement
 from teacher.serializers import TeacherDetailSerializer, TeacherProfileSerializer, TeacherUserProfileSerializer, \
     TeacherUserScheduleSerializer, CurriculumTeacherListerializer, DayReviewSerializer, DayReviewDetailSerializer, \
     TeacherUserAttendanceListSerializer, NotificationSerializer, NotificationListSerializer, \
-    AnnouncementCreateSerializer, CreateTimeTableSerializer, AnnouncementListSerializer, TimeTableListSerializer
+    AnnouncementCreateSerializer, CreateTimeTableSerializer, AnnouncementListSerializer, TimeTableListSerializer, \
+    TimeTableDetailSerializer
 from utils import create_response_data, create_response_list_data, get_staff_total_attendance, \
     get_staff_monthly_attendance, get_staff_total_absent, get_staff_monthly_absent
 
@@ -1105,6 +1106,30 @@ class DeclaredTimetableView(APIView):
                     message=TimeTableMessage.DECLARED_TIMETABLE_FETCHED_SUCCESSFULLY,
                     data=serializer.data,
                 )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class TimetableDetailView(APIView):
+    """
+    This class is used to fetch the detail of the timetable according to provided id.
+    """
+    def get(self, request, pk):
+        try:
+            data = TimeTable.objects.get(id=pk)
+            serializer = TimeTableDetailSerializer(data)
+            response_data = create_response_data(
+                        status=status.HTTP_200_OK,
+                        message=TimeTableMessage.TIMETABLE_FETCHED_SUCCESSFULLY,
+                        data=serializer.data,
+                    )
             return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
             response_data = create_response_data(
