@@ -10,7 +10,7 @@ from EduSmart import settings
 from authentication.models import TeacherUser, Certificate, TeachersSchedule, TeacherAttendence, DayReview, \
     Notification, TimeTable
 from constants import USER_TYPE_CHOICES, GENDER_CHOICES, RELIGION_CHOICES, BLOOD_GROUP_CHOICES, CLASS_CHOICES, \
-    SUBJECT_CHOICES, ROLE_CHOICES, ATTENDENCE_CHOICE
+    SUBJECT_CHOICES, ROLE_CHOICES, ATTENDENCE_CHOICE, EXAME_TYPE_CHOICE
 from curriculum.models import Curriculum
 from superadmin.models import Announcement
 
@@ -708,7 +708,9 @@ class AnnouncementListSerializer(serializers.ModelSerializer):
 class CreateTimeTableSerializer(serializers.ModelSerializer):
     class_name = serializers.CharField(required=True)
     class_section = serializers.CharField(required=True)
-    exam_type = serializers.CharField(required=True)
+    exam_type = serializers.ChoiceField(
+        choices=EXAME_TYPE_CHOICE
+    )
     exam_month = serializers.DateField(required=True)
     status = serializers.CharField(required=False)
     more_subject = serializers.ListField(

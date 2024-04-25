@@ -66,6 +66,12 @@ ATTENDENCE_CHOICE = [
     ("L", "On_leave")
 ]
 
+EXAME_TYPE_CHOICE = [
+    ('Annual Exams', 'Annual Exams'),
+    ('Half Yearly Exams', 'Half Yearly Exams'),
+    ('Quarterly Exams', 'Quarterly Exams'),
+    ('Pre-Board Exams', 'Pre-Board Exams'),
+]
 class UserLoginMessage:
     USER_DOES_NOT_EXISTS = "User does not exists."
     INCORRECT_PASSWORD = "Incorrect password, please try again."
