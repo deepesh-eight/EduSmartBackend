@@ -34,7 +34,7 @@ class SchoolProfilePassword(models.Model):
 
 class Announcement(models.Model):
     creator_name = models.CharField(max_length=255)
-    role = models.CharField(max_length=255)
+    role = models.CharField(max_length=255, default="super admin")
     date_time = models.DateTimeField(auto_now=True)
     announcement_title = models.CharField(max_length=255)
     description = models.TextField()

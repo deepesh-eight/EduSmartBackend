@@ -27,7 +27,7 @@ from superadmin.models import Announcement
 from teacher.serializers import TeacherDetailSerializer, TeacherProfileSerializer, TeacherUserProfileSerializer, \
     TeacherUserScheduleSerializer, CurriculumTeacherListerializer, DayReviewSerializer, DayReviewDetailSerializer, \
     TeacherUserAttendanceListSerializer, NotificationSerializer, NotificationListSerializer, \
-    AnnouncementCreateSerializer, CreateTimeTableSerializer
+    AnnouncementCreateSerializer, CreateTimeTableSerializer, AnnouncementListSerializer
 from utils import create_response_data, create_response_list_data, get_staff_total_attendance, \
     get_staff_monthly_attendance, get_staff_total_absent, get_staff_monthly_absent
 
@@ -1012,7 +1012,7 @@ class AnnouncementListView(APIView):
 
     def get(self, request):
         data = Announcement.objects.all()
-        serializer = AnnouncementCreateSerializer(data, many=True)
+        serializer = AnnouncementListSerializer(data, many=True)
         response_data = create_response_data(
                 status=status.HTTP_201_CREATED,
                 message=AnnouncementMessage.ANNOUNCEMENT_FETCHED_SUCCESSFULLE,

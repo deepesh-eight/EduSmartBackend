@@ -293,3 +293,4 @@ class TimeTable(models.Model):
     exam_type = models.CharField(max_length=255)
     exam_month = models.DateField()
     more_subject = models.JSONField()
+    status = models.CharField(max_length=100,default=0)

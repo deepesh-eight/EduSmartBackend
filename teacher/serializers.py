@@ -684,15 +684,15 @@ class NotificationListSerializer(serializers.ModelSerializer):
 class AnnouncementCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Announcement
-        fields = ['creator_name', 'role', 'date_time', 'announcement_title', 'description']
+        fields = ['creator_name', 'date_time', 'announcement_title', 'description']
 
 
-class AnnouncementCreateSerializer(serializers.ModelSerializer):
+class AnnouncementListSerializer(serializers.ModelSerializer):
     date = serializers.SerializerMethodField()
     time = serializers.SerializerMethodField()
     class Meta:
         model = Announcement
-        fields = ['id', 'creator_name', 'role', 'date', 'time', 'announcement_title', 'description']
+        fields = ['id', 'creator_name', 'date', 'time', 'announcement_title', 'description', 'role']
 
     def get_date(self, obj):
         ist = pytz.timezone('Asia/Kolkata')
@@ -710,6 +710,7 @@ class CreateTimeTableSerializer(serializers.ModelSerializer):
     class_section = serializers.CharField(required=True)
     exam_type = serializers.CharField(required=True)
     exam_month = serializers.DateField(required=True)
+    status = serializers.CharField(required=False)
     more_subject = serializers.ListField(
         child=serializers.DictField(
             child=serializers.CharField(max_length=255)  # Adjust max_length as needed
@@ -719,4 +720,4 @@ class CreateTimeTableSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TimeTable
-        fields = ['class_name', 'class_section', 'exam_type', 'exam_month', 'more_subject']
+        fields = ['class_name', 'class_section', 'exam_type', 'exam_month', 'more_subject', 'status']
