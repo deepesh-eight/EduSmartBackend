@@ -285,3 +285,11 @@ class Notification(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class TimeTable(models.Model):
+    class_name = models.CharField(max_length=255)
+    class_section = models.CharField(max_length=150)
+    exam_type = models.CharField(max_length=255)
+    exam_month = models.DateField()
+    more_subject = models.JSONField()

@@ -49,5 +49,6 @@ urlpatterns = [
     path('teacher/day/review/', TeacherDayReviewView.as_view(), name='teacher_day_review'),
     path('teacher/day/review/detail/<int:pk>/', TeacherDayReviewDetailView.as_view(), name='teacher_day_review_detail'),
     path('teacher/day/review/list/', TeacherDayReviewListView.as_view(), name='teacher_day_review_list'),
-    path('teacher/attendance/', FetchTeacherAttendanceView.as_view(), name='fetch_teacher_attendance')
+    path('teacher/attendance/', FetchTeacherAttendanceView.as_view(), name='fetch_teacher_attendance'),
+    path('create/timetable/', CreateTimetableView.as_view(), name='create_timetable'),
 ]

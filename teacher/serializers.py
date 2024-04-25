@@ -7,7 +7,8 @@ from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
 from EduSmart import settings
-from authentication.models import TeacherUser, Certificate, TeachersSchedule, TeacherAttendence, DayReview, Notification
+from authentication.models import TeacherUser, Certificate, TeachersSchedule, TeacherAttendence, DayReview, \
+    Notification, TimeTable
 from constants import USER_TYPE_CHOICES, GENDER_CHOICES, RELIGION_CHOICES, BLOOD_GROUP_CHOICES, CLASS_CHOICES, \
     SUBJECT_CHOICES, ROLE_CHOICES, ATTENDENCE_CHOICE
 from curriculum.models import Curriculum
@@ -702,3 +703,20 @@ class AnnouncementCreateSerializer(serializers.ModelSerializer):
         ist = pytz.timezone('Asia/Kolkata')
         date_time_ist = obj.date_time.astimezone(ist)
         return date_time_ist.strftime("%H:%M:%S")
+
+
+class CreateTimeTableSerializer(serializers.ModelSerializer):
+    class_name = serializers.CharField(required=True)
+    class_section = serializers.CharField(required=True)
+    exam_type = serializers.CharField(required=True)
+    exam_month = serializers.DateField(required=True)
+    more_subject = serializers.ListField(
+        child=serializers.DictField(
+            child=serializers.CharField(max_length=255)  # Adjust max_length as needed
+        ),
+        allow_empty=False
+    )
+
+    class Meta:
+        model = TimeTable
+        fields = ['class_name', 'class_section', 'exam_type', 'exam_month', 'more_subject']

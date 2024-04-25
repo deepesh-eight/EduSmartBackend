@@ -1,5 +1,6 @@
 import calendar
 import datetime
+import json
 
 from django.db import IntegrityError
 from rest_framework import status, permissions
@@ -18,7 +19,7 @@ from authentication.serializers import UserSignupSerializer, UsersListSerializer
     NonTeachingStaffDetailSerializers, NonTeachingStaffProfileSerializers, StaffAttendanceSerializer, \
     StaffAttendanceDetailSerializer, StaffAttendanceListSerializer, LogoutSerializer
 from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage, ScheduleMessage, \
-    CurriculumMessage, DayReviewMessage, NotificationMessage, AnnouncementMessage
+    CurriculumMessage, DayReviewMessage, NotificationMessage, AnnouncementMessage, TimeTableMessage
 from curriculum.models import Curriculum
 from pagination import CustomPagination
 from student.serializers import StudentDetailSerializer, StudentUserProfileSerializer
@@ -26,7 +27,7 @@ from superadmin.models import Announcement
 from teacher.serializers import TeacherDetailSerializer, TeacherProfileSerializer, TeacherUserProfileSerializer, \
     TeacherUserScheduleSerializer, CurriculumTeacherListerializer, DayReviewSerializer, DayReviewDetailSerializer, \
     TeacherUserAttendanceListSerializer, NotificationSerializer, NotificationListSerializer, \
-    AnnouncementCreateSerializer
+    AnnouncementCreateSerializer, CreateTimeTableSerializer
 from utils import create_response_data, create_response_list_data, get_staff_total_attendance, \
     get_staff_monthly_attendance, get_staff_total_absent, get_staff_monthly_absent
 
@@ -1018,3 +1019,47 @@ class AnnouncementListView(APIView):
                 data=serializer.data,
             )
         return Response(response_data, status=status.HTTP_200_OK)
+
+
+class CreateTimetableView(APIView):
+    """
+    This class is used to create exam timetable for the students.
+    """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+
+    def post(self, request):
+        try:
+            more_subject = request.data.get('more_subject')
+            more_subject_str = json.loads(more_subject)
+            data = {
+                "class_name": request.data.get("class_name"),
+                "class_section": request.data.get("class_section"),
+                "exam_type": request.data.get("exam_type"),
+                "exam_month": request.data.get("exam_month"),
+                "more_subject": more_subject_str
+            }
+
+            serializer = CreateTimeTableSerializer(data=data)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                response_data = create_response_data(
+                    status=status.HTTP_201_CREATED,
+                    message=TimeTableMessage.TIMETABLE_CREATED_SUCCESSFULLY,
+                    data=serializer.data,
+                )
+                return Response(response_data, status=status.HTTP_201_CREATED)
+            else:
+                response_data = create_response_data(
+                    status=status.HTTP_201_CREATED,
+                    message=serializer.errors,
+                    data={},
+                )
+                return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+

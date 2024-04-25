@@ -130,3 +130,7 @@ class NotificationMessage:
 class AnnouncementMessage:
     ANNOUNCEMENT_CREATED_SUCCESSFULLE = "Announcement created successfully."
     ANNOUNCEMENT_FETCHED_SUCCESSFULLE = "Announcement fetched successfully."
+
+
+class TimeTableMessage:
+    TIMETABLE_CREATED_SUCCESSFULLY = "Timetable created successfully."
