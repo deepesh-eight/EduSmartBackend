@@ -1147,3 +1147,28 @@ class TimetableDetailView(APIView):
                 data={},
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TimetableDeleteView(APIView):
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+    """
+    This class is used to delete the timetable.
+    """
+
+    def delete(self, request, pk):
+        try:
+            time_table_data = TimeTable.objects.get(id=pk, school_id=request.user.school_id)
+            time_table_data.delete()
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=TimeTableMessage.TIMETABLE_DELETED_SUCCESSFULLY,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except TimeTable.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=TimeTableMessage.TIMETABLE_NOT_EXIST,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)

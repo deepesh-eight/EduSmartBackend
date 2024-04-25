@@ -144,3 +144,4 @@ class TimeTableMessage:
     DECLARED_TIMETABLE_FETCHED_SUCCESSFULLY = "declared timetable fetched successfully."
     TIMETABLE_FETCHED_SUCCESSFULLY = "Timetable fetched successfully."
     TIMETABLE_NOT_EXIST = "Timetable does not exist."
+    TIMETABLE_DELETED_SUCCESSFULLY = "Timetable deleted successfully."

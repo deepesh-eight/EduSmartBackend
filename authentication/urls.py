@@ -54,4 +54,5 @@ urlpatterns = [
     path('undeclared/timetable/list/', UndeclaredTimetableView.as_view(), name='undeclared_timetable_list'),
     path('declared/timetable/list/', DeclaredTimetableView.as_view(), name='declared_timetable_list'),
     path('timetable/detail/<int:pk>/', TimetableDetailView.as_view(), name='timetable_detail'),
+    path('timetable/delete/<int:pk>/', TimetableDeleteView.as_view(), name='timetable_delete'),
 ]
