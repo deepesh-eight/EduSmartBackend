@@ -798,7 +798,7 @@ class TeacherDayReviewView(APIView):
                     message='you are not an teacher user.',
                     data={}
                 )
-                return Response(response, status=status.HTTP_200_OK)
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
         except ValidationError as e:
             response = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
@@ -1030,33 +1030,41 @@ class CreateTimetableView(APIView):
 
     def post(self, request):
         try:
-            more_subject = request.data.get('more_subject')
-            more_subject_str = json.loads(more_subject)
-            data = {
-                "class_name": request.data.get("class_name"),
-                "class_section": request.data.get("class_section"),
-                "exam_type": request.data.get("exam_type"),
-                "exam_month": request.data.get("exam_month"),
-                "status": request.data.get("status"),
-                "more_subject": more_subject_str
-            }
+            if request.user.user_type == 'teacher':
+                more_subject = request.data.get('more_subject')
+                more_subject_str = json.loads(more_subject)
+                data = {
+                    "class_name": request.data.get("class_name"),
+                    "class_section": request.data.get("class_section"),
+                    "exam_type": request.data.get("exam_type"),
+                    "exam_month": request.data.get("exam_month"),
+                    "status": request.data.get("status"),
+                    "more_subject": more_subject_str,
+                }
 
-            serializer = CreateTimeTableSerializer(data=data)
-            if serializer.is_valid(raise_exception=True):
-                serializer.save()
-                response_data = create_response_data(
-                    status=status.HTTP_201_CREATED,
-                    message=TimeTableMessage.TIMETABLE_CREATED_SUCCESSFULLY,
-                    data=serializer.data,
-                )
-                return Response(response_data, status=status.HTTP_201_CREATED)
+                serializer = CreateTimeTableSerializer(data=data)
+                if serializer.is_valid(raise_exception=True):
+                    serializer.save(school_id=request.user.school_id)
+                    response_data = create_response_data(
+                        status=status.HTTP_201_CREATED,
+                        message=TimeTableMessage.TIMETABLE_CREATED_SUCCESSFULLY,
+                        data=serializer.data,
+                    )
+                    return Response(response_data, status=status.HTTP_201_CREATED)
+                else:
+                    response_data = create_response_data(
+                        status=status.HTTP_201_CREATED,
+                        message=serializer.errors,
+                        data={},
+                    )
+                    return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
             else:
-                response_data = create_response_data(
-                    status=status.HTTP_201_CREATED,
-                    message=serializer.errors,
-                    data={},
+                response = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message='you are not an teacher user.',
+                    data={}
                 )
-                return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             response_data = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
@@ -1074,7 +1082,7 @@ class UndeclaredTimetableView(APIView):
 
     def get(self, request):
         try:
-            data = TimeTable.objects.filter(status=0)
+            data = TimeTable.objects.filter(status=0, school_id=request.user.school_id)
             serializer = TimeTableListSerializer(data, many=True)
             response_data = create_response_data(
                     status=status.HTTP_200_OK,
@@ -1099,7 +1107,7 @@ class DeclaredTimetableView(APIView):
 
     def get(self, request):
         try:
-            data = TimeTable.objects.filter(status=1)
+            data = TimeTable.objects.filter(status=1, school_id=request.user.school_id)
             serializer = TimeTableListSerializer(data, many=True)
             response_data = create_response_data(
                     status=status.HTTP_200_OK,
@@ -1116,14 +1124,15 @@ class DeclaredTimetableView(APIView):
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
 
-
 class TimetableDetailView(APIView):
     """
     This class is used to fetch the detail of the timetable according to provided id.
     """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+
     def get(self, request, pk):
         try:
-            data = TimeTable.objects.get(id=pk)
+            data = TimeTable.objects.get(id=pk, school_id=request.user.school_id)
             serializer = TimeTableDetailSerializer(data)
             response_data = create_response_data(
                         status=status.HTTP_200_OK,
@@ -1134,7 +1143,7 @@ class TimetableDetailView(APIView):
         except Exception as e:
             response_data = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
-                message=e.args[0],
+                message=TimeTableMessage.TIMETABLE_NOT_EXIST,
                 data={},
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)

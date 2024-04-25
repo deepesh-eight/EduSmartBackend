@@ -143,3 +143,4 @@ class TimeTableMessage:
     UNDECLARED_TIMETABLE_FETCHED_SUCCESSFULLY = "Undeclared timetable fetched successfully."
     DECLARED_TIMETABLE_FETCHED_SUCCESSFULLY = "declared timetable fetched successfully."
     TIMETABLE_FETCHED_SUCCESSFULLY = "Timetable fetched successfully."
+    TIMETABLE_NOT_EXIST = "Timetable does not exist."
