@@ -134,3 +134,5 @@ class AnnouncementMessage:
 
 class TimeTableMessage:
     TIMETABLE_CREATED_SUCCESSFULLY = "Timetable created successfully."
+    UNDECLARED_TIMETABLE_FETCHED_SUCCESSFULLY = "Undeclared timetable fetched successfully."
+    DECLARED_TIMETABLE_FETCHED_SUCCESSFULLY = "declared timetable fetched successfully."

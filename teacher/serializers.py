@@ -721,3 +721,25 @@ class CreateTimeTableSerializer(serializers.ModelSerializer):
     class Meta:
         model = TimeTable
         fields = ['class_name', 'class_section', 'exam_type', 'exam_month', 'more_subject', 'status']
+
+
+class TimeTableListSerializer(serializers.ModelSerializer):
+    exam_start_date = serializers.SerializerMethodField()
+    exam_end_date = serializers.SerializerMethodField()
+    class Meta:
+        model = TimeTable
+        fields = ['class_name', 'class_section', 'exam_type', 'exam_start_date', 'exam_end_date']
+
+    def get_exam_start_date(self, obj):
+        more_subjects = obj.more_subject
+        if more_subjects:
+            exam_dates = [subject['date'] for subject in more_subjects]
+            return min(exam_dates)
+        return None
+    #
+    def get_exam_end_date(self, obj):
+        more_subjects = obj.more_subject
+        if more_subjects:
+            exam_dates = [subject['date'] for subject in more_subjects]
+            return max(exam_dates)
+        return None

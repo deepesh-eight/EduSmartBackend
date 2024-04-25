@@ -11,7 +11,7 @@ from rest_framework_simplejwt.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from authentication.models import User, AddressDetails, ErrorLogging, Certificate, StaffUser, StaffAttendence, \
-    TeacherUser, StudentUser, TeachersSchedule, DayReview, TeacherAttendence, Notification
+    TeacherUser, StudentUser, TeachersSchedule, DayReview, TeacherAttendence, Notification, TimeTable
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsManagementUser, IsPayRollManagementUser, \
     IsBoardingUser, IsInSameSchool, IsTeacherUser
 from authentication.serializers import UserSignupSerializer, UsersListSerializer, UpdateProfileSerializer, \
@@ -27,7 +27,7 @@ from superadmin.models import Announcement
 from teacher.serializers import TeacherDetailSerializer, TeacherProfileSerializer, TeacherUserProfileSerializer, \
     TeacherUserScheduleSerializer, CurriculumTeacherListerializer, DayReviewSerializer, DayReviewDetailSerializer, \
     TeacherUserAttendanceListSerializer, NotificationSerializer, NotificationListSerializer, \
-    AnnouncementCreateSerializer, CreateTimeTableSerializer, AnnouncementListSerializer
+    AnnouncementCreateSerializer, CreateTimeTableSerializer, AnnouncementListSerializer, TimeTableListSerializer
 from utils import create_response_data, create_response_list_data, get_staff_total_attendance, \
     get_staff_monthly_attendance, get_staff_total_absent, get_staff_monthly_absent
 
@@ -1036,6 +1036,7 @@ class CreateTimetableView(APIView):
                 "class_section": request.data.get("class_section"),
                 "exam_type": request.data.get("exam_type"),
                 "exam_month": request.data.get("exam_month"),
+                "status": request.data.get("status"),
                 "more_subject": more_subject_str
             }
 
@@ -1063,3 +1064,52 @@ class CreateTimetableView(APIView):
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
+
+class UndeclaredTimetableView(APIView):
+    """
+    This class is used to fetch the list of the undeclared timetable.
+    """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            data = TimeTable.objects.filter(status=0)
+            serializer = TimeTableListSerializer(data, many=True)
+            response_data = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=TimeTableMessage.UNDECLARED_TIMETABLE_FETCHED_SUCCESSFULLY,
+                    data=serializer.data,
+                )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class DeclaredTimetableView(APIView):
+    """
+    This class is used to fetch the list of the declared timetable.
+    """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            data = TimeTable.objects.filter(status=1)
+            serializer = TimeTableListSerializer(data, many=True)
+            response_data = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=TimeTableMessage.DECLARED_TIMETABLE_FETCHED_SUCCESSFULLY,
+                    data=serializer.data,
+                )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
