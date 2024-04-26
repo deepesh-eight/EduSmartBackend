@@ -111,6 +111,7 @@ class ScheduleMessage:
 class AttendenceMarkedMessage:
     ATTENDENCE_MARKED_SUCCESSFULLY = "Attendence marked successfully."
     ATTENDANCE_FETCHED_SUCCESSFULLY = 'Attendance fetched successfully.'
+    STUDENT_ATTENDANCE_FETCHED_SUCCESSFULLY = 'Student attendance fetched successfully.'
 
 
 class SchoolMessage:

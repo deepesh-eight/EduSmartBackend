@@ -196,7 +196,7 @@ class SchoolAdminListView(APIView):
 
     def get(self, request):
         try:
-            data = SchoolProfile.objects.all()
+            data = SchoolProfile.objects.all().order_by('-id')
             if request.query_params:
                 school_name = request.query_params.get('school_name', None)
                 if school_name:

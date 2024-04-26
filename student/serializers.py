@@ -197,35 +197,13 @@ class StudentAttendanceDetailSerializer(serializers.ModelSerializer):
 
 
 class StudentAttendanceListSerializer(serializers.ModelSerializer):
-    roll_number = serializers.SerializerMethodField()
-    name = serializers.SerializerMethodField()
     percentage = serializers.SerializerMethodField()
-    class_enrolled = serializers.SerializerMethodField()
-    section = serializers.SerializerMethodField()
-    class_strength = serializers.SerializerMethodField()
+    total_attendance = serializers.SerializerMethodField()
+    student = serializers.SerializerMethodField()
     class Meta:
         model = StudentAttendence
-        fields = ['name', 'roll_number', 'date', 'class_enrolled', 'section', 'mark_attendence', 'percentage', 'class_strength']
+        fields = ['student', 'mark_attendence', 'percentage', 'total_attendance']
 
-    def get_roll_number(self, obj):
-        student_id = obj.get('student__id')
-        if student_id:
-            return student_id
-
-    def get_name(self, obj):
-        student_name = obj.get('student__name')
-        if student_name:
-            return student_name
-
-    def get_class_enrolled(self, obj):
-        student_class = obj.get('student__class_enrolled')
-        if student_class:
-            return student_class
-
-    def get_section(self, obj):
-        student_section = obj.get('student__section')
-        if student_section:
-            return student_section
 
     def get_percentage(self, obj):
         year = datetime.date.today().year
@@ -234,6 +212,15 @@ class StudentAttendanceListSerializer(serializers.ModelSerializer):
         total_school_days = 365
         attendence_percentage = (total_attendance / total_school_days) * 100
         return f"{round(attendence_percentage)}%"
+
+    def get_student(self, obj):
+        return obj.student
+
+    def get_total_attendance(self, obj):
+        year = datetime.date.today().year
+        total_attendance = StudentAttendence.objects.filter(
+            student=obj.student.id, date__year=year, mark_attendence__in=['A', 'P', 'L']).count()
+        return total_attendance
 
 
 class StudentListBySectionSerializer(serializers.ModelSerializer):

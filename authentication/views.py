@@ -721,6 +721,13 @@ class TeacherUserScheduleView(APIView):
                         data={}
                     )
                 return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+            else:
+                response = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message='you are not an teacher user.',
+                    data={}
+                )
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             response_data = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
