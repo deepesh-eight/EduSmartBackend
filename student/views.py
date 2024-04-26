@@ -52,7 +52,7 @@ class StudentUserCreateView(APIView):
             other_fee = serializer.validated_data.get('other_fee', '')
             due_fee = serializer.validated_data.get('due_fee', '')
             total_fee = serializer.validated_data.get('total_fee', '')
-            religion = serializer.validated_data.get('religion', '')
+            religion = serializer.validated_data['religion']
             blood_group = serializer.validated_data.get('blood_group', '')
             class_enrolled = serializer.validated_data['class_enrolled']
             section = serializer.validated_data['section']
@@ -60,6 +60,8 @@ class StudentUserCreateView(APIView):
             bus_number = serializer.validated_data.get('bus_number', '')
             bus_route = serializer.validated_data.get('bus_route', '')
             curriculum_data = serializer.validated_data['curriculum']
+            enrollment_no = serializer.validated_data.get('enrollment_no', '')
+            roll_no = serializer.validated_data.get('roll_no', '')
 
             try:
                 curriculum = Curriculum.objects.get(id=curriculum_data)
@@ -81,7 +83,7 @@ class StudentUserCreateView(APIView):
                     school_fee=school_fee, bus_fee=bus_fee, canteen_fee=canteen_fee, other_fee=other_fee,
                     total_fee=total_fee, blood_group=blood_group, class_enrolled=class_enrolled, father_phone_number=father_phone_number,
                     mother_occupation=mother_occupation, mother_phone_number=mother_phone_number, section=section, permanent_address=permanent_address,
-                    bus_number=bus_number, bus_route=bus_route, due_fee=due_fee, curriculum=curriculum
+                    bus_number=bus_number, bus_route=bus_route, due_fee=due_fee, curriculum=curriculum, enrollment_no=enrollment_no, roll_no=roll_no
                 )
             else:
                 raise ValidationError("Invalid user_type. Expected 'student'.")

@@ -19,16 +19,18 @@ from authentication.serializers import UserSignupSerializer, UsersListSerializer
     NonTeachingStaffDetailSerializers, NonTeachingStaffProfileSerializers, StaffAttendanceSerializer, \
     StaffAttendanceDetailSerializer, StaffAttendanceListSerializer, LogoutSerializer
 from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage, ScheduleMessage, \
-    CurriculumMessage, DayReviewMessage, NotificationMessage, AnnouncementMessage, TimeTableMessage
+    CurriculumMessage, DayReviewMessage, NotificationMessage, AnnouncementMessage, TimeTableMessage, ReportCardMesssage
 from curriculum.models import Curriculum
 from pagination import CustomPagination
+from student.models import ExmaReportCard
 from student.serializers import StudentDetailSerializer, StudentUserProfileSerializer
 from superadmin.models import Announcement
 from teacher.serializers import TeacherDetailSerializer, TeacherProfileSerializer, TeacherUserProfileSerializer, \
     TeacherUserScheduleSerializer, CurriculumTeacherListerializer, DayReviewSerializer, DayReviewDetailSerializer, \
     TeacherUserAttendanceListSerializer, NotificationSerializer, NotificationListSerializer, \
     AnnouncementCreateSerializer, CreateTimeTableSerializer, AnnouncementListSerializer, TimeTableListSerializer, \
-    TimeTableDetailSerializer, TimeTableUpdateSerializer
+    TimeTableDetailSerializer, TimeTableUpdateSerializer, ExamReportCreateSerializer, ExamReportListSerializer, \
+    ExamReportCardViewSerializer, ExamReportcardUpdateSerializer
 from utils import create_response_data, create_response_list_data, get_staff_total_attendance, \
     get_staff_monthly_attendance, get_staff_total_absent, get_staff_monthly_absent
 
@@ -1012,7 +1014,7 @@ class AnnouncementListView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        data = Announcement.objects.all()
+        data = Announcement.objects.all().order_by('-id')
         serializer = AnnouncementListSerializer(data, many=True)
         response_data = create_response_data(
                 status=status.HTTP_201_CREATED,
@@ -1052,7 +1054,7 @@ class CreateTimetableView(APIView):
                     return Response(response_data, status=status.HTTP_201_CREATED)
                 else:
                     response_data = create_response_data(
-                        status=status.HTTP_201_CREATED,
+                        status=status.HTTP_400_BAD_REQUEST,
                         message=serializer.errors,
                         data={},
                     )
@@ -1081,7 +1083,7 @@ class UndeclaredTimetableView(APIView):
 
     def get(self, request):
         try:
-            data = TimeTable.objects.filter(status=0, school_id=request.user.school_id)
+            data = TimeTable.objects.filter(status=0, school_id=request.user.school_id).order_by('-id')
             serializer = TimeTableListSerializer(data, many=True)
             response_data = create_response_data(
                     status=status.HTTP_200_OK,
@@ -1106,7 +1108,7 @@ class DeclaredTimetableView(APIView):
 
     def get(self, request):
         try:
-            data = TimeTable.objects.filter(status=1, school_id=request.user.school_id)
+            data = TimeTable.objects.filter(status=1, school_id=request.user.school_id).order_by('-id')
             serializer = TimeTableListSerializer(data, many=True)
             response_data = create_response_data(
                     status=status.HTTP_200_OK,
@@ -1244,5 +1246,248 @@ class DeclareTimetableView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
                 message=e.args[0],
                 data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CreateExamReportView(APIView):
+    """
+    This class is used to create exam report of the students.
+    """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+
+    def post(self, request):
+        try:
+            if request.user.user_type == 'teacher':
+                mark_grade = request.data.get('marks_grades')
+                marks_grades_str = json.loads(mark_grade)
+
+                data = {
+                    "class_name": request.data.get("class_name"),
+                    "class_section": request.data.get("class_section"),
+                    "student_name": request.data.get("student_name"),
+                    "roll_no": request.data.get("roll_no"),
+                    "exam_type": request.data.get("exam_type"),
+                    "exam_month": request.data.get("exam_month"),
+                    "overall_grades": request.data.get("overall_grades"),
+                    "total_marks": request.data.get("total_marks"),
+                    "marks_grades": marks_grades_str,
+                }
+
+                serializer = ExamReportCreateSerializer(data=data)
+                if serializer.is_valid(raise_exception=True):
+                    serializer.save(school_id=request.user.school_id)
+                    response_data = create_response_data(
+                        status=status.HTTP_201_CREATED,
+                        message=ReportCardMesssage.REPORT_CARD_CREATED_SUCCESSFULLY,
+                        data=serializer.data,
+                    )
+                    return Response(response_data, status=status.HTTP_201_CREATED)
+                else:
+                    response_data = create_response_data(
+                        status=status.HTTP_400_BAD_REQUEST,
+                        message=serializer.errors,
+                        data={},
+                    )
+                    return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                response = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message='you are not an teacher user.',
+                    data={}
+                )
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class DeclareExamReportView(APIView):
+    """
+    This class is used to declare exam report.
+    """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+
+    def post(self, request):
+        try:
+            data = ExmaReportCard.objects.filter(status=0, school_id=request.user.school_id)
+            data.update(status=1)
+            response_data = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=ReportCardMesssage.REPORT_CARD_DECLARE_SUCCESSFULLY,
+                    data={},
+                )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class DeclaredExamReportListView(APIView):
+    """
+    This class is used to fetch the list of the declared exam report.
+    """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            data = ExmaReportCard.objects.filter(status=1, school_id=request.user.school_id).order_by('-id')
+            serializer = ExamReportListSerializer(data, many=True)
+            response_data = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=ReportCardMesssage.DECLARED_REPORT_CARD_FETCHED_SUCCESSFULLY,
+                    data=serializer.data,
+                )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UndeclaredExamReportListView(APIView):
+    """
+    This class is used to fetch the list of the undeclared exam report.
+    """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            data = ExmaReportCard.objects.filter(status=0, school_id=request.user.school_id).order_by('-id')
+            serializer = ExamReportListSerializer(data, many=True)
+            response_data = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=ReportCardMesssage.UNDECLARED_REPORT_CARD_FETCHED_SUCCESSFULLY,
+                    data=serializer.data,
+                )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ExamReportCardDeleteView(APIView):
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+    """
+    This class is used to delete the exam report card.
+    """
+
+    def delete(self, request, pk):
+        try:
+            report_card_data = ExmaReportCard.objects.get(id=pk, school_id=request.user.school_id)
+            report_card_data.delete()
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=ReportCardMesssage.REPORT_CARD_DELETED_SUCCESSFULLY,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except ExmaReportCard.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=ReportCardMesssage.REPORT_CARD_NOT_EXIST,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+
+
+class ExamReportCardDetailView(APIView):
+    """
+    This class is used to fetch the detail of the exam report card according to provided id.
+    """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+
+    def get(self, request, pk):
+        try:
+            data = ExmaReportCard.objects.get(id=pk, school_id=request.user.school_id)
+            serializer = ExamReportCardViewSerializer(data)
+            response_data = create_response_data(
+                        status=status.HTTP_200_OK,
+                        message=ReportCardMesssage.REPORT_CARD_FETCHED_SUCCESSFULLY,
+                        data=serializer.data,
+                    )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except ExmaReportCard.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=ReportCardMesssage.REPORT_CARD_NOT_EXIST,
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ExamReportCardUpdateView(APIView):
+    """
+    This class is used to update the exam report card.
+    """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+
+    def patch(self, request, pk):
+        try:
+            exam_report_card = ExmaReportCard.objects.get(id=pk, school_id=request.user.school_id)
+            mark_grade = request.data.get('marks_grades')
+            marks_grades_str = json.loads(mark_grade)
+
+            data = {
+                "class_name": request.data.get("class_name"),
+                "class_section": request.data.get("class_section"),
+                "student_name": request.data.get("student_name"),
+                "roll_no": request.data.get("roll_no"),
+                "exam_type": request.data.get("exam_type"),
+                "exam_month": request.data.get("exam_month"),
+                "overall_grades": request.data.get("overall_grades"),
+                "total_marks": request.data.get("total_marks"),
+                "marks_grades": marks_grades_str,
+            }
+            serializer = ExamReportcardUpdateSerializer(exam_report_card, data=data, partial=True)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                response = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=ReportCardMesssage.REPORT_CARD_UPDATED_SUCCESSFULLY,
+                    data=serializer.data
+                )
+                return Response(response, status=status.HTTP_200_OK)
+            else:
+                response = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=serializer.errors,
+                    data=serializer.errors
+                )
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        except ExmaReportCard.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=ReportCardMesssage.REPORT_CARD_NOT_EXIST,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)

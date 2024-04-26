@@ -8,10 +8,11 @@ from rest_framework import serializers
 
 from EduSmart import settings
 from authentication.models import TeacherUser, Certificate, TeachersSchedule, TeacherAttendence, DayReview, \
-    Notification, TimeTable
+    Notification, TimeTable, StudentUser
 from constants import USER_TYPE_CHOICES, GENDER_CHOICES, RELIGION_CHOICES, BLOOD_GROUP_CHOICES, CLASS_CHOICES, \
     SUBJECT_CHOICES, ROLE_CHOICES, ATTENDENCE_CHOICE, EXAME_TYPE_CHOICE
 from curriculum.models import Curriculum
+from student.models import ExmaReportCard
 from superadmin.models import Announcement
 
 
@@ -769,3 +770,62 @@ class TimeTableUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = TimeTable
         fields = ['class_name', 'class_section', 'exam_type', 'exam_month', 'more_subject']
+
+
+class ExamReportCreateSerializer(serializers.ModelSerializer):
+    class_name = serializers.CharField(required=True)
+    class_section = serializers.CharField(required=True)
+    student_name = serializers.CharField(required=True)
+    roll_no = serializers.CharField(required=True)
+    exam_type = serializers.CharField(required=True)
+    exam_month = serializers.DateField(required=True)
+    total_marks = serializers.CharField(required=True)
+    overall_grades = serializers.CharField(required=True)
+    marks_grades = serializers.ListField(
+        child=serializers.DictField(
+            child=serializers.CharField(max_length=255)  # Adjust max_length as needed
+        ),
+        allow_empty=False
+    )
+
+    class Meta:
+        model = ExmaReportCard
+        fields = ['class_name', 'class_section', 'student_name', 'roll_no', 'exam_type', 'exam_month', 'marks_grades', 'total_marks', 'overall_grades']
+
+
+class ExamReportListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ExmaReportCard
+        fields = ['id', 'class_name', 'class_section', 'student_name', 'roll_no', 'exam_type']
+
+
+class ExamReportCardViewSerializer(serializers.ModelSerializer):
+    father_name = serializers.SerializerMethodField()
+    mother_name = serializers.SerializerMethodField()
+    teacher_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ExmaReportCard
+        fields = ['id', 'class_name', 'class_section', 'student_name', 'roll_no', 'exam_type', 'exam_month', 'marks_grades', 'total_marks', 'overall_grades', 'father_name', 'mother_name', 'teacher_name']
+
+    def get_father_name(self, obj):
+        father_name = StudentUser.objects.get(roll_no=obj.roll_no)
+        return father_name.father_name
+
+    def get_mother_name(self, obj):
+        father_name = StudentUser.objects.get(roll_no=obj.roll_no)
+        return father_name.mother_name
+
+    def get_teacher_name(self, obj):
+        class_name = obj.class_name
+        if class_name:
+            teacher = TeacherUser.objects.filter(class_subject_section_details__0__class=class_name).first()
+            if teacher:
+                return teacher.full_name
+        return None
+
+
+class ExamReportcardUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ExmaReportCard
+        fields = ['class_name', 'class_section', 'student_name', 'roll_no', 'exam_type', 'exam_month', 'marks_grades', 'total_marks', 'overall_grades']

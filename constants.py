@@ -147,3 +147,15 @@ class TimeTableMessage:
     TIMETABLE_DELETED_SUCCESSFULLY = "Timetable deleted successfully."
     TIMETABLE_UPDATED_SUCCESSFULLY = "Timetable updated successfully."
     TIMETABLE_DECLARE_SUCCESSFULLY = "Timetable declare successfully."
+
+
+class ReportCardMesssage:
+    REPORT_CARD_CREATED_SUCCESSFULLY = "Report card created successfully."
+    REPORT_CARD_FETCHED_SUCCESSFULLY = "Report card fetched successfully."
+    REPORT_CARD_DELETED_SUCCESSFULLY = "Report card deleted successfully."
+    REPORT_CARD_UPDATED_SUCCESSFULLY = "Report card updated successfully."
+    REPORT_CARD_list_SUCCESSFULLY = "All report card fetched successfully."
+    REPORT_CARD_DECLARE_SUCCESSFULLY = "Report card declare successfully."
+    UNDECLARED_REPORT_CARD_FETCHED_SUCCESSFULLY = "Undeclared report card fetched successfully."
+    DECLARED_REPORT_CARD_FETCHED_SUCCESSFULLY = "declared report card fetched successfully."
+    REPORT_CARD_NOT_EXIST = "Report card does not exist."

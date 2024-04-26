@@ -33,7 +33,7 @@ class StudentUserSignupSerializer(serializers.Serializer):
     other_fee = serializers.DecimalField(max_digits=10, decimal_places=2, default=0.0)
     due_fee = serializers.DecimalField(max_digits=10, decimal_places=2, default=0.0)
     total_fee = serializers.DecimalField(max_digits=10, decimal_places=2, default=0.0)
-    religion = serializers.CharField(required=False, default='')
+    religion = serializers.CharField(required=True)
     blood_group = serializers.CharField(required=False, default='')
     class_enrolled = serializers.CharField(required=True)
     section = serializers.CharField(required=True)
@@ -41,7 +41,8 @@ class StudentUserSignupSerializer(serializers.Serializer):
     permanent_address = serializers.CharField(max_length=255, required=False, default='')
     bus_number = serializers.CharField(required=False, default='')
     bus_route = serializers.IntegerField(required=False, default='')
-
+    enrollment_no = serializers.CharField(default='')
+    roll_no = serializers.CharField(default='')
 
 
 class StudentDetailSerializer(serializers.ModelSerializer):
@@ -56,7 +57,7 @@ class StudentDetailSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'image', 'class_enrolled', 'section', 'admission_date', 'dob', 'gender', 'religion', 'blood_group',
                   'school_fee','bus_fee', 'canteen_fee', 'other_fee', 'due_fee', 'total_fee', 'father_name', 'father_phone_number',
                   'father_occupation', 'mother_name', 'mother_phone_number', 'mother_occupation', 'email', 'permanent_address', 'curriculum',
-                   'subjects', 'bus_number', 'bus_route', 'exam_board']
+                   'subjects', 'bus_number', 'bus_route', 'exam_board', 'enrollment_no', 'roll_no']
 
 
     def get_curriculum(self,obj):

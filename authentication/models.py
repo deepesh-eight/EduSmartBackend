@@ -195,6 +195,8 @@ class StudentUser(models.Model):
     permanent_address = models.TextField(blank=True, null=True)
     bus_number = models.CharField(max_length=255)
     bus_route = models.IntegerField()
+    enrollment_no = models.CharField(max_length=255, null=True, blank=True)
+    roll_no = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self) -> str:
         return f'{self.id}'

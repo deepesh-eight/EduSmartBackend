@@ -57,4 +57,11 @@ urlpatterns = [
     path('timetable/delete/<int:pk>/', TimetableDeleteView.as_view(), name='timetable_delete'),
     path('timetable/update/<int:pk>/', TimetableUpdateView.as_view(), name='timetable_update'),
     path('declare/timetable/', DeclareTimetableView.as_view(), name='declare_timetable'),
+    path('create/exam/report/', CreateExamReportView.as_view(), name='create_exam_report'),
+    path('declare/exam/report/', DeclareExamReportView.as_view(), name='declare_exam_report'),
+    path('declared/exam/report/list/', DeclaredExamReportListView.as_view(), name='declared_exam_report_list'),
+    path('undeclared/exam/report/list/', UndeclaredExamReportListView.as_view(), name='undeclared_exam_report_list'),
+    path('exam/report/card/delete/<int:pk>/', ExamReportCardDeleteView.as_view(), name='exam_report_delete'),
+    path('exam/report/card/detail/<int:pk>/', ExamReportCardDetailView.as_view(), name='exam_report_detail'),
+    path('exam/report/card/update/<int:pk>/', ExamReportCardUpdateView.as_view(), name='exam_report_update'),
 ]
