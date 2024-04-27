@@ -1545,10 +1545,11 @@ class ZoomLinkListView(APIView):
     def get(self, request):
         try:
             current_date_time_ist = timezone.localtime(timezone.now(), pytz_timezone('Asia/Kolkata'))
-            current_time = current_date_time_ist.strftime("%I:%M %p")
+            # current_time = current_date_time_ist.strftime("%I:%M %p")
 
             current_date = current_date_time_ist.date()
-            data = ZoomLink.objects.filter(school_id=request.user.school_id, date__gte=current_date).order_by("date")
+            currunt_time_str = current_date_time_ist.time()
+            data = ZoomLink.objects.filter(school_id=request.user.school_id, date__gte=current_date, end_time__gt=currunt_time_str).order_by("date")
 
             # sorted(data, key=lambda x: abs((x.date - current_date).days))
             serializer = ZoomLinkListSerializer(data, many=True)
