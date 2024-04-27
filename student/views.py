@@ -256,62 +256,72 @@ class ClassStudentListView(APIView):
     This class is used to create attendance of student's.
     """
     def get(self, request):
-        curriculum_data = Curriculum.objects.filter(school_id=request.user.school_id).values('class_name', 'section').distinct()
-        class_teacher_info = []
-        for data in curriculum_data:
-            class_name = data['class_name']
-            section = data['section']
-            teacher_info = TeacherUser.objects.filter(class_subject_section_details__0__class=class_name, class_subject_section_details__0__section=section,
-                                                      user__school_id=request.user.school_id).values('full_name')
-            class_teacher_info.append({
-                'class_name': class_name,
-                'section': section,
-                'teachers': [teacher['full_name'] for teacher in teacher_info]
-            })
+        try:
+            current_date = timezone.now().date()
+            curriculum_data = Curriculum.objects.filter(school_id=request.user.school_id).values('class_name', 'section').distinct()
+            class_teacher_info = []
+            for data in curriculum_data:
+                class_name = data['class_name']
+                section = data['section']
+                teacher_info = TeacherUser.objects.filter(class_subject_section_details__0__class=class_name, class_subject_section_details__0__section=section,
+                                                          user__school_id=request.user.school_id).values('full_name')
+                class_teacher_info.append({
+                    'class_name': class_name,
+                    'section': section,
+                    'teachers': [teacher['full_name'] for teacher in teacher_info]
+                })
 
-        class_student_count = []
-        for data in curriculum_data:
-            class_name = data['class_name']
-            section = data['section']
-            student_count = StudentUser.objects.filter(class_enrolled=class_name, section=section, user__school_id=request.user.school_id).count()
-            class_student_count.append({
-                'class_name': class_name,
-                'section': section,
-                'student_count': student_count
-            })
-        class_attendance_info = []
-        for data in curriculum_data:
-            class_name = data['class_name']
-            section = data['section']
-            total_present = StudentAttendence.objects.filter(student__class_enrolled=class_name, student__section=section,
-                                                             mark_attendence='P').count()
-            total_absent = StudentAttendence.objects.filter(student__class_enrolled=class_name, student__section=section,
-                                                            mark_attendence='A').count()
-            class_attendance_info.append({
-                'class_name': class_name,
-                'section': section,
-                'total_present': total_present,
-                'total_absent': total_absent
-            })
+            class_student_count = []
+            for data in curriculum_data:
+                class_name = data['class_name']
+                section = data['section']
+                student_count = StudentUser.objects.filter(class_enrolled=class_name, section=section, user__school_id=request.user.school_id).count()
+                class_student_count.append({
+                    'class_name': class_name,
+                    'section': section,
+                    'student_count': student_count
+                })
+            class_attendance_info = []
+            for data in curriculum_data:
+                class_name = data['class_name']
+                section = data['section']
+                total_present = StudentAttendence.objects.filter(date=current_date, student__class_enrolled=class_name, student__section=section,
+                                                                 mark_attendence='P').count()
+                total_absent = StudentAttendence.objects.filter(date=current_date, student__class_enrolled=class_name, student__section=section,
+                                                                mark_attendence='A').count()
+                class_attendance_info.append({
+                    'class_name': class_name,
+                    'section': section,
+                    'total_present': total_present,
+                    'total_absent': total_absent
+                })
 
-        response_data = []
-        for curriculum_info, teacher_info, student_info, attendance_info in zip(curriculum_data, class_teacher_info,
-                                                               class_student_count, class_attendance_info):
-            response_data.append({
-                'class': curriculum_info['class_name'],
-                'section': curriculum_info['section'],
-                'class_teacher': teacher_info['teachers'],
-                'class_strength': student_info['student_count'],
-                'total_present': attendance_info['total_present'],
-                'total_absent': attendance_info['total_absent']
-            })
+            response_data = []
+            for curriculum_info, teacher_info, student_info, attendance_info in zip(curriculum_data, class_teacher_info,
+                                                                   class_student_count, class_attendance_info):
+                response_data.append({
+                    'class': curriculum_info['class_name'],
+                    'section': curriculum_info['section'],
+                    'class_teacher': teacher_info['teachers'],
+                    'class_strength': student_info['student_count'],
+                    'total_present': attendance_info['total_present'],
+                    'total_absent': attendance_info['total_absent']
+                })
 
-        response = {
-            "status": status.HTTP_200_OK,
-            "message": CurriculumMessage.CURRICULUM_LIST_MESSAGE,
-            "data": response_data
-        }
-        return Response(response, status=status.HTTP_200_OK)
+            response = {
+                "status": status.HTTP_200_OK,
+                "message": CurriculumMessage.CURRICULUM_LIST_MESSAGE,
+                "date": current_date,
+                "data": response_data
+            }
+            return Response(response, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
 
 class FetchAttendanceDetailView(APIView):

@@ -41,15 +41,25 @@ urlpatterns = [
     path('announcement/create/', AnnouncementCreateView.as_view(), name='announcement_create'),
     path('announcement/list/', AnnouncementListView.as_view(), name='announcement_create'),
 
-    #Mobile App
+    # Mobile App user profile
     path('users/logout/', LogoutView.as_view(), name='user_logout'),
     path('user/profile/', UserProfileView.as_view(), name='user_profile'),
+
+    # Mobile App teacher schedule
     path('teacher/schedule/', TeacherUserScheduleView.as_view(), name='teacher_user_schedule'),
+
+    # Mobile App teacher curriculum list
     path('curriculum/list/', TeacherCurriculumListView.as_view(), name='teacher_curriculum_list'),
+
+    # Mobile App teacher day & review
     path('teacher/day/review/', TeacherDayReviewView.as_view(), name='teacher_day_review'),
     path('teacher/day/review/detail/<int:pk>/', TeacherDayReviewDetailView.as_view(), name='teacher_day_review_detail'),
     path('teacher/day/review/list/', TeacherDayReviewListView.as_view(), name='teacher_day_review_list'),
+
+    # Mobile App teacher attendance
     path('teacher/attendance/', FetchTeacherAttendanceView.as_view(), name='fetch_teacher_attendance'),
+
+    # Mobile App student timetable created by teacher
     path('create/timetable/', CreateTimetableView.as_view(), name='create_timetable'),
     path('undeclared/timetable/list/', UndeclaredTimetableView.as_view(), name='undeclared_timetable_list'),
     path('declared/timetable/list/', DeclaredTimetableView.as_view(), name='declared_timetable_list'),
@@ -57,6 +67,8 @@ urlpatterns = [
     path('timetable/delete/<int:pk>/', TimetableDeleteView.as_view(), name='timetable_delete'),
     path('timetable/update/<int:pk>/', TimetableUpdateView.as_view(), name='timetable_update'),
     path('declare/timetable/', DeclareTimetableView.as_view(), name='declare_timetable'),
+
+    # Mobile App student exam report card created by teacher
     path('create/exam/report/', CreateExamReportView.as_view(), name='create_exam_report'),
     path('declare/exam/report/', DeclareExamReportView.as_view(), name='declare_exam_report'),
     path('declared/exam/report/list/', DeclaredExamReportListView.as_view(), name='declared_exam_report_list'),
@@ -64,4 +76,8 @@ urlpatterns = [
     path('exam/report/card/delete/<int:pk>/', ExamReportCardDeleteView.as_view(), name='exam_report_delete'),
     path('exam/report/card/detail/<int:pk>/', ExamReportCardDetailView.as_view(), name='exam_report_detail'),
     path('exam/report/card/update/<int:pk>/', ExamReportCardUpdateView.as_view(), name='exam_report_update'),
+
+    # Mobile App zoom link
+    path('create/zoomlink/', CreateZoomLinkView.as_view(), name='create_zoom_link'),
+    path('zoomlink/list/', ZoomLinkListView.as_view(), name='zoom_link_list'),
 ]

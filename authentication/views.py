@@ -3,6 +3,8 @@ import datetime
 import json
 
 from django.db import IntegrityError
+from django.utils import timezone
+from pytz import timezone as pytz_timezone
 from rest_framework import status, permissions
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
@@ -19,10 +21,11 @@ from authentication.serializers import UserSignupSerializer, UsersListSerializer
     NonTeachingStaffDetailSerializers, NonTeachingStaffProfileSerializers, StaffAttendanceSerializer, \
     StaffAttendanceDetailSerializer, StaffAttendanceListSerializer, LogoutSerializer
 from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage, ScheduleMessage, \
-    CurriculumMessage, DayReviewMessage, NotificationMessage, AnnouncementMessage, TimeTableMessage, ReportCardMesssage
+    CurriculumMessage, DayReviewMessage, NotificationMessage, AnnouncementMessage, TimeTableMessage, ReportCardMesssage, \
+    ZoomLinkMessage
 from curriculum.models import Curriculum
 from pagination import CustomPagination
-from student.models import ExmaReportCard
+from student.models import ExmaReportCard, ZoomLink
 from student.serializers import StudentDetailSerializer, StudentUserProfileSerializer
 from superadmin.models import Announcement
 from teacher.serializers import TeacherDetailSerializer, TeacherProfileSerializer, TeacherUserProfileSerializer, \
@@ -30,7 +33,7 @@ from teacher.serializers import TeacherDetailSerializer, TeacherProfileSerialize
     TeacherUserAttendanceListSerializer, NotificationSerializer, NotificationListSerializer, \
     AnnouncementCreateSerializer, CreateTimeTableSerializer, AnnouncementListSerializer, TimeTableListSerializer, \
     TimeTableDetailSerializer, TimeTableUpdateSerializer, ExamReportCreateSerializer, ExamReportListSerializer, \
-    ExamReportCardViewSerializer, ExamReportcardUpdateSerializer
+    ExamReportCardViewSerializer, ExamReportcardUpdateSerializer, ZoomLinkCreateSerializer, ZoomLinkListSerializer
 from utils import create_response_data, create_response_list_data, get_staff_total_attendance, \
     get_staff_monthly_attendance, get_staff_total_absent, get_staff_monthly_absent
 
@@ -1041,16 +1044,16 @@ class CreateTimetableView(APIView):
         try:
             if request.user.user_type == 'teacher':
                 more_subject = request.data.get('more_subject')
-                more_subject_str = json.loads(more_subject)
-                data = {
-                    "class_name": request.data.get("class_name"),
-                    "class_section": request.data.get("class_section"),
-                    "exam_type": request.data.get("exam_type"),
-                    "exam_month": request.data.get("exam_month"),
-                    "more_subject": more_subject_str,
-                }
+                # more_subject_str = json.loads(more_subject)
+                # data = {
+                #     "class_name": request.data.get("class_name"),
+                #     "class_section": request.data.get("class_section"),
+                #     "exam_type": request.data.get("exam_type"),
+                #     "exam_month": request.data.get("exam_month"),
+                #     "more_subject": more_subject_str,
+                # }
 
-                serializer = CreateTimeTableSerializer(data=data)
+                serializer = CreateTimeTableSerializer(data=request.data)
                 if serializer.is_valid(raise_exception=True):
                     serializer.save(school_id=request.user.school_id)
                     response_data = create_response_data(
@@ -1498,3 +1501,66 @@ class ExamReportCardUpdateView(APIView):
                 data={}
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CreateZoomLinkView(APIView):
+    """
+    This class is used to create zoom link.
+    """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+
+    def post(self, request):
+        try:
+            serializer = ZoomLinkCreateSerializer(data=request.data)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save(school_id=request.user.school_id)
+                response_data = create_response_data(
+                status=status.HTTP_201_CREATED,
+                message=ZoomLinkMessage.ZOOM_LINK_UPLOADED_SUCCESSFULLY,
+                data={}
+                )
+                return Response(response_data, status=status.HTTP_201_CREATED)
+            else:
+                response_data = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=serializer.errors,
+                    data={}
+                )
+                return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ZoomLinkListView(APIView):
+    """
+    This class is used to fetch list of the uploaded zoom link's.
+    """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            current_date_time_ist = timezone.localtime(timezone.now(), pytz_timezone('Asia/Kolkata'))
+            current_time = current_date_time_ist.strftime("%I:%M %p")
+
+            current_date = current_date_time_ist.date()
+            data = ZoomLink.objects.filter(school_id=request.user.school_id, date__gte=current_date).order_by("date")
+
+            # sorted(data, key=lambda x: abs((x.date - current_date).days))
+            serializer = ZoomLinkListSerializer(data, many=True)
+            response_data = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=ZoomLinkMessage.ZOOM_LINK_FETCHED_SUCCESSFULLY,
+                    data=serializer.data
+                    )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            create_response_data(
+                status=status.HTTP_200_OK,
+                message=e.args[0],
+                data={}
+            )

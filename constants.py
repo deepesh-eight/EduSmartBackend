@@ -160,3 +160,8 @@ class ReportCardMesssage:
     UNDECLARED_REPORT_CARD_FETCHED_SUCCESSFULLY = "Undeclared report card fetched successfully."
     DECLARED_REPORT_CARD_FETCHED_SUCCESSFULLY = "declared report card fetched successfully."
     REPORT_CARD_NOT_EXIST = "Report card does not exist."
+
+
+class ZoomLinkMessage:
+    ZOOM_LINK_UPLOADED_SUCCESSFULLY = "Zoom link uploaded successfully."
+    ZOOM_LINK_FETCHED_SUCCESSFULLY = "Zoom link fetched successfully."

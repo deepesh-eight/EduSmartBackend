@@ -12,7 +12,7 @@ from authentication.models import TeacherUser, Certificate, TeachersSchedule, Te
 from constants import USER_TYPE_CHOICES, GENDER_CHOICES, RELIGION_CHOICES, BLOOD_GROUP_CHOICES, CLASS_CHOICES, \
     SUBJECT_CHOICES, ROLE_CHOICES, ATTENDENCE_CHOICE, EXAME_TYPE_CHOICE
 from curriculum.models import Curriculum
-from student.models import ExmaReportCard
+from student.models import ExmaReportCard, ZoomLink
 from superadmin.models import Announcement
 
 
@@ -829,3 +829,40 @@ class ExamReportcardUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ExmaReportCard
         fields = ['class_name', 'class_section', 'student_name', 'roll_no', 'exam_type', 'exam_month', 'marks_grades', 'total_marks', 'overall_grades']
+
+
+class ZoomLinkCreateSerializer(serializers.ModelSerializer):
+    zoom_link = serializers.URLField(max_length=500)
+
+    def to_internal_value(self, data):
+        mutable_data = data.copy()
+        for field in ['start_time', 'end_time']:  # Loop through start_time and end_time fields
+            if field in mutable_data:
+                try:
+                    # Parse the time and convert to 24-hour format
+                    time_obj = datetime.strptime(mutable_data[field], "%I:%M %p")
+                    mutable_data[field] = time_obj.strftime("%H:%M")
+                except ValueError:
+                    raise serializers.ValidationError(
+                        f"Invalid {field} format. Please provide time in 12-hour format (hh:mm AM/PM).")
+
+        return super().to_internal_value(mutable_data)
+
+    class Meta:
+        model = ZoomLink
+        fields = ['class_name', 'section', 'subject', 'date', 'start_time', 'end_time', 'zoom_link']
+
+
+class ZoomLinkListSerializer(serializers.ModelSerializer):
+    start_time = serializers.SerializerMethodField()
+    end_time = serializers.SerializerMethodField()
+    class Meta:
+        model = ZoomLink
+        fields = ['class_name', 'section', 'subject', 'date', 'start_time', 'end_time', 'zoom_link']
+
+    def get_start_time(self, obj):
+        return obj.start_time.strftime("%I:%M %p")
+
+    def get_end_time(self, obj):
+        return obj.end_time.strftime("%I:%M %p")
+
