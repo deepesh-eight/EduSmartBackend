@@ -1194,16 +1194,16 @@ class TimetableUpdateView(APIView):
     def patch(self, request, pk):
         try:
             student = TimeTable.objects.get(id=pk, school_id=request.user.school_id)
-            more_subject = request.data.get('more_subject')
-            more_subject_str = json.loads(more_subject)
-            data = {
-                "class_name": request.data.get("class_name"),
-                "class_section": request.data.get("class_section"),
-                "exam_type": request.data.get("exam_type"),
-                "exam_month": request.data.get("exam_month"),
-                "more_subject": more_subject_str,
-            }
-            serializer = TimeTableUpdateSerializer(student, data=data, partial=True)
+            # more_subject = request.data.get('more_subject')
+            # more_subject_str = json.loads(more_subject)
+            # data = {
+            #     "class_name": request.data.get("class_name"),
+            #     "class_section": request.data.get("class_section"),
+            #     "exam_type": request.data.get("exam_type"),
+            #     "exam_month": request.data.get("exam_month"),
+            #     "more_subject": more_subject_str,
+            # }
+            serializer = TimeTableUpdateSerializer(student, data=request.data, partial=True)
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
                 response = create_response_data(
