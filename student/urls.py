@@ -9,7 +9,7 @@ urlpatterns = [
         path('student/update-profile/<int:pk>/', StudentUpdateProfileView.as_view(), name='update_student_profile'),
 
         #Student attendence API's
-        path('attendance/create/', AttendanceCreateView.as_view(), name='attendance_create'),
+        path('class/student/list/', ClassStudentListView.as_view(), name='class_attendance_list'),
         path('attendance/detail/<int:pk>/', FetchAttendanceDetailView.as_view(), name='fetch_attendance_detail'),
         path('attendance/list/',  FetchAttendanceListView.as_view(), name='fetch_attendance_list'),
         path('attendance/filter/list/',  FetchAttendanceFilterListView.as_view(), name='fetch_attendance_filter_list'),

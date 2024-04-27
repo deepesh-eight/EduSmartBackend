@@ -11,14 +11,14 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from authentication.models import User, Class, AddressDetails, StudentUser
+from authentication.models import User, Class, AddressDetails, StudentUser, TeacherUser
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsStudentUser, IsTeacherUser, IsInSameSchool
-from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage
+from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage, CurriculumMessage
 from curriculum.models import Curriculum
 from pagination import CustomPagination
 from student.models import StudentAttendence
 from student.serializers import StudentUserSignupSerializer, StudentDetailSerializer, StudentListSerializer, \
-    studentProfileSerializer, StudentAttendanceSerializer, StudentAttendanceDetailSerializer, \
+    studentProfileSerializer, StudentAttendanceDetailSerializer, \
     StudentAttendanceListSerializer, StudentListBySectionSerializer, StudentAttendanceCreateSerializer
 from utils import create_response_data, create_response_list_data, get_student_total_attendance, \
     get_student_total_absent, get_student_attendence_percentage, generate_random_password
@@ -250,28 +250,68 @@ class StudentUpdateProfileView(APIView):
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
 
 
-class AttendanceCreateView(APIView):
+class ClassStudentListView(APIView):
     permission_classes = [IsAdminUser, IsInSameSchool]
     """
     This class is used to create attendance of student's.
     """
-    def post(self, request):
-        serializer = StudentAttendanceSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            serializer.save()
-            response_data = create_response_data(
-                status=status.HTTP_201_CREATED,
-                message=AttendenceMarkedMessage.ATTENDENCE_MARKED_SUCCESSFULLY,
-                data=serializer.data,
-            )
-            return Response(response_data, status=status.HTTP_201_CREATED)
-        else:
-            response = create_response_data(
-                status=status.HTTP_400_BAD_REQUEST,
-                message=serializer.errors,
-                data=serializer.errors
-            )
-            return Response(response, status=status.HTTP_200_OK)
+    def get(self, request):
+        curriculum_data = Curriculum.objects.filter(school_id=request.user.school_id).values('class_name', 'section').distinct()
+        class_teacher_info = []
+        for data in curriculum_data:
+            class_name = data['class_name']
+            section = data['section']
+            teacher_info = TeacherUser.objects.filter(class_subject_section_details__0__class=class_name, class_subject_section_details__0__section=section,
+                                                      user__school_id=request.user.school_id).values('full_name')
+            class_teacher_info.append({
+                'class_name': class_name,
+                'section': section,
+                'teachers': [teacher['full_name'] for teacher in teacher_info]
+            })
+
+        class_student_count = []
+        for data in curriculum_data:
+            class_name = data['class_name']
+            section = data['section']
+            student_count = StudentUser.objects.filter(class_enrolled=class_name, section=section, user__school_id=request.user.school_id).count()
+            class_student_count.append({
+                'class_name': class_name,
+                'section': section,
+                'student_count': student_count
+            })
+        class_attendance_info = []
+        for data in curriculum_data:
+            class_name = data['class_name']
+            section = data['section']
+            total_present = StudentAttendence.objects.filter(student__class_enrolled=class_name, student__section=section,
+                                                             mark_attendence='P').count()
+            total_absent = StudentAttendence.objects.filter(student__class_enrolled=class_name, student__section=section,
+                                                            mark_attendence='A').count()
+            class_attendance_info.append({
+                'class_name': class_name,
+                'section': section,
+                'total_present': total_present,
+                'total_absent': total_absent
+            })
+
+        response_data = []
+        for curriculum_info, teacher_info, student_info, attendance_info in zip(curriculum_data, class_teacher_info,
+                                                               class_student_count, class_attendance_info):
+            response_data.append({
+                'class': curriculum_info['class_name'],
+                'section': curriculum_info['section'],
+                'class_teacher': teacher_info['teachers'],
+                'class_strength': student_info['student_count'],
+                'total_present': attendance_info['total_present'],
+                'total_absent': attendance_info['total_absent']
+            })
+
+        response = {
+            "status": status.HTTP_200_OK,
+            "message": CurriculumMessage.CURRICULUM_LIST_MESSAGE,
+            "data": response_data
+        }
+        return Response(response, status=status.HTTP_200_OK)
 
 
 class FetchAttendanceDetailView(APIView):
@@ -355,8 +395,8 @@ class FetchAttendanceListView(APIView):
             class_name = request.data.get('class_name')
             section = request.data.get('section')
             current_date = timezone.now().date()
-            students = StudentUser.objects.filter(class_enrolled=class_name, section=section)
-            attendance_data = StudentAttendence.objects.filter(date=current_date, student__in=students)
+            students = StudentUser.objects.filter(class_enrolled=class_name, section=section, user__school_id=request.user.school_id)
+            attendance_data = StudentAttendence.objects.filter(date=current_date, student__in=students, student__user__school_id=request.user.school_id)
 
             paginator = self.pagination_class()
             result_page = paginator.paginate_queryset(attendance_data, request)
@@ -408,8 +448,8 @@ class FetchAttendanceFilterListView(APIView):
         try:
             class_name = request.data.get('class_name')
             section = request.data.get('section')
-            students = StudentUser.objects.filter(class_enrolled=class_name, section=section)
-            attendance_data = StudentAttendence.objects.filter(student__in=students)
+            students = StudentUser.objects.filter(class_enrolled=class_name, section=section, user__school_id=request.user.school_id)
+            attendance_data = StudentAttendence.objects.filter(student__in=students, student__user__school_id=request.user.school_id)
 
             date = request.query_params.get('date', None)
             mark_attendence = request.query_params.get('mark_attendence', None)

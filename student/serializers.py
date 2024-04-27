@@ -167,27 +167,6 @@ class StudentListSerializer(serializers.ModelSerializer):
                 return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.image)}'
         return None
 
-class StudentAttendanceSerializer(serializers.ModelSerializer):
-    student = serializers.CharField(required=True)
-    date = serializers.DateField(required=True)
-    mark_attendence = serializers.ChoiceField(choices=ATTENDENCE_CHOICE, required=True)
-
-    class Meta:
-        model = StudentAttendence
-        fields = ['student', 'date', 'mark_attendence']
-
-
-    def create(self, validated_data):
-        student_id = validated_data.pop('student')
-        try:
-            student = StudentUser.objects.get(id=student_id)
-        except StudentUser.DoesNotExist:
-            raise serializers.ValidationError("Invalid student ID.")
-
-        # Use the retrieved student object to create the attendance record
-        student_attendance = StudentAttendence.objects.create(student=student, **validated_data)
-        return student_attendance
-
 
 class StudentAttendanceDetailSerializer(serializers.ModelSerializer):
 
