@@ -50,6 +50,9 @@ urlpatterns = [
 
     # Mobile App teacher curriculum list
     path('curriculum/list/', TeacherCurriculumListView.as_view(), name='teacher_curriculum_list'),
+    path('curriculum/section/list/', TeacherCurriculumClassListView.as_view(), name='teacher_section_list'),
+    path('curriculum/subject/list/', TeacherCurriculumSubjectListView.as_view(), name='teacher_subject_list'),
+
 
     # Mobile App teacher day & review
     path('teacher/day/review/', TeacherDayReviewView.as_view(), name='teacher_day_review'),
@@ -84,4 +87,5 @@ urlpatterns = [
     # Study material
     path('study/material/upload/', UploadStudyMaterialView.as_view(), name='upload_study_material'),
     path('study/material/list/', StudyMaterialListView.as_view(), name='study_material_list'),
+    path('study/material/detail/<int:pk>/', StudyMaterialDetailView.as_view(), name='study_material_detail'),
 ]

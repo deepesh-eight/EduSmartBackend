@@ -34,7 +34,7 @@ from teacher.serializers import TeacherDetailSerializer, TeacherProfileSerialize
     AnnouncementCreateSerializer, CreateTimeTableSerializer, AnnouncementListSerializer, TimeTableListSerializer, \
     TimeTableDetailSerializer, TimeTableUpdateSerializer, ExamReportCreateSerializer, ExamReportListSerializer, \
     ExamReportCardViewSerializer, ExamReportcardUpdateSerializer, ZoomLinkCreateSerializer, ZoomLinkListSerializer, \
-    StudyMaterialUploadSerializer, StudyMaterialListSerializer
+    StudyMaterialUploadSerializer, StudyMaterialListSerializer, StudyMaterialDetailSerializer
 from utils import create_response_data, create_response_list_data, get_staff_total_attendance, \
     get_staff_monthly_attendance, get_staff_total_absent, get_staff_monthly_absent
 
@@ -755,13 +755,13 @@ class TeacherCurriculumListView(APIView):
                 serializer = CurriculumTeacherListerializer(curriculum, many=True)
 
                 classes = list(set([item['class_name'] for item in serializer.data]))
-                sections = list(set([item['section'] for item in serializer.data]))
-                subject_names = list(set([subject['subject_name'] for item in serializer.data for subject in item['subject_name_code']]))
+                # sections = list(set([item['section'] for item in serializer.data]))
+                # subject_names = list(set([subject['subject_name'] for item in serializer.data for subject in item['subject_name_code']]))
 
                 response = {
                     'classes': classes,
-                    'sections': sections,
-                    'subjects': subject_names
+                    # 'sections': sections,
+                    # 'subjects': subject_names
                 }
                 response_data = create_response_data(
                     status=status.HTTP_200_OK,
@@ -784,6 +784,92 @@ class TeacherCurriculumListView(APIView):
             )
             return Response(response_data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+class TeacherCurriculumClassListView(APIView):
+    """
+    This class is created to fetch the list of sections in the provided class.
+    """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            user = request.user
+            if user.user_type == 'teacher':
+                class_name = request.data.get('class_name')
+                curriculum = Curriculum.objects.filter(school_id=request.user.school_id, class_name=class_name)
+                serializer = CurriculumTeacherListerializer(curriculum, many=True)
+
+                # classes = list(set([item['class_name'] for item in serializer.data]))
+                sections = list(set([item['section'] for item in serializer.data]))
+                # subject_names = list(set([subject['subject_name'] for item in serializer.data for subject in item['subject_name_code']]))
+                #
+                response = {
+                    'sections': sections,
+                }
+                response_data = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=CurriculumMessage.CURRICULUM_LIST_MESSAGE,
+                    data=response
+                )
+                return Response(response_data, status=status.HTTP_200_OK)
+            else:
+                response_data = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message="you are not an teacher user.",
+                    data={}
+                )
+                return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class TeacherCurriculumSubjectListView(APIView):
+    """
+    This class is created to fetch the list of subject in the provided setion.
+    """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            user = request.user
+            if user.user_type == 'teacher':
+                class_name = request.data.get('class_name')
+                section = request.data.get('section')
+                curriculum = Curriculum.objects.filter(school_id=request.user.school_id, class_name=class_name, section=section)
+                serializer = CurriculumTeacherListerializer(curriculum, many=True)
+
+                # classes = list(set([item['class_name'] for item in serializer.data]))
+                # sections = list(set([item['section'] for item in serializer.data]))
+                subject_names = list(set([subject['subject_name'] for item in serializer.data for subject in item['subject_name_code']]))
+                #
+                response = {
+                    'subject_name': subject_names,
+                }
+                response_data = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=CurriculumMessage.CURRICULUM_LIST_MESSAGE,
+                    data=response
+                )
+                return Response(response_data, status=status.HTTP_200_OK)
+            else:
+                response_data = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message="you are not an teacher user.",
+                    data={}
+                )
+                return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class TeacherDayReviewView(APIView):
     """
@@ -1621,10 +1707,47 @@ class StudyMaterialListView(APIView):
                             )
             return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
-            create_response_data(
+            response_data = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
                 message=e.args[0],
                 data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        except TokenError:
+            response = create_response_data(
+                status=status.HTTP_401_UNAUTHORIZED,
+                message=UserResponseMessage.TOKEN_HAS_EXPIRED,
+                data={}
+            )
+            return Response(response, status=status.HTTP_401_UNAUTHORIZED)
+
+
+class StudyMaterialDetailView(APIView):
+    """
+    This class is used to fetch detail of the study material.
+    """
+    def get(self, request, pk):
+        try:
+            data = StudentMaterial.objects.get(id=pk, school_id=request.user.school_id)
+            serializer = StudyMaterialDetailSerializer(data)
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=StudyMaterialMessage.STUDY_MATERIAL_FETCHED_SUCCESSFULLY,
+                data=serializer.data,
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except StudentMaterial.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=StudyMaterialMessage.STUDY_MATERIAL_Not_Exist,
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={},
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
         except TokenError:

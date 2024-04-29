@@ -868,12 +868,44 @@ class ZoomLinkListSerializer(serializers.ModelSerializer):
 
 
 class StudyMaterialUploadSerializer(serializers.ModelSerializer):
+    class_name = serializers.CharField(required=True)
+    subject = serializers.CharField(required=True)
+    curriculum = serializers.CharField(required=True)
+    upload_link = serializers.URLField(required=False)
+    title = serializers.CharField(required=True)
+    discription = serializers.CharField(required=False)
+    upload_content = serializers.FileField(required=False)
+
     class Meta:
         model = StudentMaterial
         fields = ['class_name', 'subject', 'curriculum', 'upload_link', 'title', 'discription', 'upload_content']
 
 
 class StudyMaterialListSerializer(serializers.ModelSerializer):
+    upload_content = serializers.SerializerMethodField()
     class Meta:
         model = StudentMaterial
         fields = ['id', 'class_name', 'subject', 'curriculum', 'upload_link', 'title', 'discription', 'upload_content']
+
+    def get_upload_content(self, obj):
+        if obj.upload_content:
+            if obj.upload_content.name.startswith(settings.base_url + settings.MEDIA_URL):
+                return str(obj.upload_content)
+            else:
+                return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.upload_content)}'
+        return None
+
+
+class StudyMaterialDetailSerializer(serializers.ModelSerializer):
+    upload_content = serializers.SerializerMethodField()
+    class Meta:
+        model = StudentMaterial
+        fields = ['id', 'class_name', 'subject', 'curriculum', 'upload_link', 'title', 'discription', 'upload_content']
+
+    def get_upload_content(self, obj):
+        if obj.upload_content:
+            if obj.upload_content.name.startswith(settings.base_url + settings.MEDIA_URL):
+                return str(obj.upload_content)
+            else:
+                return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.upload_content)}'
+        return None
