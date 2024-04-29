@@ -12,7 +12,7 @@ from authentication.models import TeacherUser, Certificate, TeachersSchedule, Te
 from constants import USER_TYPE_CHOICES, GENDER_CHOICES, RELIGION_CHOICES, BLOOD_GROUP_CHOICES, CLASS_CHOICES, \
     SUBJECT_CHOICES, ROLE_CHOICES, ATTENDENCE_CHOICE, EXAME_TYPE_CHOICE
 from curriculum.models import Curriculum
-from student.models import ExmaReportCard, ZoomLink
+from student.models import ExmaReportCard, ZoomLink, StudentMaterial
 from superadmin.models import Announcement
 
 
@@ -866,3 +866,14 @@ class ZoomLinkListSerializer(serializers.ModelSerializer):
     def get_end_time(self, obj):
         return obj.end_time.strftime("%I:%M %p")
 
+
+class StudyMaterialUploadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StudentMaterial
+        fields = ['class_name', 'subject', 'curriculum', 'upload_link', 'title', 'discription', 'upload_content']
+
+
+class StudyMaterialListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StudentMaterial
+        fields = ['id', 'class_name', 'subject', 'curriculum', 'upload_link', 'title', 'discription', 'upload_content']

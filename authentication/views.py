@@ -9,7 +9,7 @@ from rest_framework import status, permissions
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.exceptions import AuthenticationFailed
+from rest_framework_simplejwt.exceptions import AuthenticationFailed, TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from authentication.models import User, AddressDetails, ErrorLogging, Certificate, StaffUser, StaffAttendence, \
@@ -22,10 +22,10 @@ from authentication.serializers import UserSignupSerializer, UsersListSerializer
     StaffAttendanceDetailSerializer, StaffAttendanceListSerializer, LogoutSerializer
 from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage, ScheduleMessage, \
     CurriculumMessage, DayReviewMessage, NotificationMessage, AnnouncementMessage, TimeTableMessage, ReportCardMesssage, \
-    ZoomLinkMessage
+    ZoomLinkMessage, StudyMaterialMessage
 from curriculum.models import Curriculum
 from pagination import CustomPagination
-from student.models import ExmaReportCard, ZoomLink
+from student.models import ExmaReportCard, ZoomLink, StudentMaterial
 from student.serializers import StudentDetailSerializer, StudentUserProfileSerializer
 from superadmin.models import Announcement
 from teacher.serializers import TeacherDetailSerializer, TeacherProfileSerializer, TeacherUserProfileSerializer, \
@@ -33,7 +33,8 @@ from teacher.serializers import TeacherDetailSerializer, TeacherProfileSerialize
     TeacherUserAttendanceListSerializer, NotificationSerializer, NotificationListSerializer, \
     AnnouncementCreateSerializer, CreateTimeTableSerializer, AnnouncementListSerializer, TimeTableListSerializer, \
     TimeTableDetailSerializer, TimeTableUpdateSerializer, ExamReportCreateSerializer, ExamReportListSerializer, \
-    ExamReportCardViewSerializer, ExamReportcardUpdateSerializer, ZoomLinkCreateSerializer, ZoomLinkListSerializer
+    ExamReportCardViewSerializer, ExamReportcardUpdateSerializer, ZoomLinkCreateSerializer, ZoomLinkListSerializer, \
+    StudyMaterialUploadSerializer, StudyMaterialListSerializer
 from utils import create_response_data, create_response_list_data, get_staff_total_attendance, \
     get_staff_monthly_attendance, get_staff_total_absent, get_staff_monthly_absent
 
@@ -1565,3 +1566,71 @@ class ZoomLinkListView(APIView):
                 message=e.args[0],
                 data={}
             )
+
+
+class UploadStudyMaterialView(APIView):
+    """
+    This class is used to upload study material.
+    """
+    def post(self, request):
+        try:
+            serializer = StudyMaterialUploadSerializer(data=request.data)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save(school_id=request.user.school_id)
+                response_data = create_response_data(
+                        status=status.HTTP_201_CREATED,
+                        message=StudyMaterialMessage.STUDY_MATERIAL_UPLOADED_SUCCESSFULLY,
+                        data=serializer.data
+                        )
+                return Response(response_data, status=status.HTTP_201_CREATED)
+            else:
+                response_data = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=serializer.errors,
+                    data={}
+                )
+                return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        except TokenError:
+            response = create_response_data(
+                status=status.HTTP_401_UNAUTHORIZED,
+                message=UserResponseMessage.TOKEN_HAS_EXPIRED,
+                data={}
+            )
+            return Response(response, status=status.HTTP_401_UNAUTHORIZED)
+
+
+class StudyMaterialListView(APIView):
+    """
+    This class is used to fetch list of study material.
+    """
+    def get(self, request):
+        try:
+            data = StudentMaterial.objects.filter(school_id=request.user.school_id)
+            serializer = StudyMaterialListSerializer(data, many=True)
+            response_data = create_response_data(
+                            status=status.HTTP_200_OK,
+                            message=StudyMaterialMessage.STUDY_MATERIAL_FETCHED_SUCCESSFULLY,
+                            data=serializer.data
+                            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        except TokenError:
+            response = create_response_data(
+                status=status.HTTP_401_UNAUTHORIZED,
+                message=UserResponseMessage.TOKEN_HAS_EXPIRED,
+                data={}
+            )
+            return Response(response, status=status.HTTP_401_UNAUTHORIZED)

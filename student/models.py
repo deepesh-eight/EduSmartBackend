@@ -39,3 +39,19 @@ class ZoomLink(models.Model):
 
     def __str__(self):
         return f'{self.id}'
+
+
+class StudentMaterial(models.Model):
+    school_id = models.CharField(max_length=255, blank=True, null=True)
+    class_name = models.CharField(max_length=255)
+    subject = models.CharField(max_length=255)
+    curriculum = models.CharField(max_length=255)
+    upload_link = models.URLField(max_length=500)
+    title = models.CharField(max_length=255)
+    discription = models.TextField()
+    upload_content = models.FileField(upload_to='study_material/')
+    created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, blank=True, null=True)
+
+    def __str__(self):
+        return f'{self.id}'

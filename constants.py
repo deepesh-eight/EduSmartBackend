@@ -165,3 +165,8 @@ class ReportCardMesssage:
 class ZoomLinkMessage:
     ZOOM_LINK_UPLOADED_SUCCESSFULLY = "Zoom link uploaded successfully."
     ZOOM_LINK_FETCHED_SUCCESSFULLY = "Zoom link fetched successfully."
+
+
+class StudyMaterialMessage:
+    STUDY_MATERIAL_UPLOADED_SUCCESSFULLY = "Study materail uploaded successfully."
+    STUDY_MATERIAL_FETCHED_SUCCESSFULLY = "Study materail fetched successfully."
