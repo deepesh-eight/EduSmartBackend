@@ -348,7 +348,7 @@ class TeacherScheduleCreateView(APIView):
                 )
                 return Response(response, status=status.HTTP_400_BAD_REQUEST)
             schedule_data = TeachersSchedule.objects.create(
-                teacher=teacher, start_date=start_date, end_date=end_date, schedule_data=schedule_data)
+                teacher=teacher, start_date=start_date, end_date=end_date, schedule_data=schedule_data, school_id=request.user.school_id)
             response_data = create_response_data(
                     status=status.HTTP_201_CREATED,
                     message=ScheduleMessage.SCHEDULE_CREATED_SUCCESSFULLY,
@@ -379,7 +379,7 @@ class TeacherScheduleDetailView(APIView):
 
     def get(self, request, pk):
         try:
-            data = TeachersSchedule.objects.get(id=pk)
+            data = TeachersSchedule.objects.filter(id=pk, school_id=request.user.school_id)
             if data:
                 serializer = ScheduleDetailSerializer(data)
                 response_data = create_response_data(
@@ -412,7 +412,7 @@ class TeacherScheduleListView(APIView):
     pagination_class = CustomPagination
 
     def get(self, request):
-        queryset = TeachersSchedule.objects.all()
+        queryset = TeachersSchedule.objects.filter(school_id=request.user.school_id)
         if request.query_params:
             start_date = request.query_params.get('start_date', None)
             end_date = request.query_params.get('end_date', None)
@@ -462,7 +462,7 @@ class TeacherScheduleDeleteView(APIView):
 
     def delete(self, request, pk):
         try:
-            schedule_data = TeachersSchedule.objects.get(id=pk)
+            schedule_data = TeachersSchedule.objects.filter(id=pk, school_id=request.user.school_id)
 
             schedule_data.delete()
             response_data = create_response_data(
@@ -489,7 +489,7 @@ class TeacherScheduleUpdateView(APIView):
     def patch(self, request, pk):
         try:
             teacher_id = int(request.data.get('teacher'))
-            teacher = TeacherUser.objects.get(id=teacher_id, user__school_id=request.user.school_id)
+            teacher = TeacherUser.objects.filter(id=teacher_id, user__school_id=request.user.school_id)
             schedule_data_details = request.data.get('schedule_data')
             # schedule_data_str = json.loads(schedule_data_details)
             data = {
@@ -498,7 +498,7 @@ class TeacherScheduleUpdateView(APIView):
                 'teacher': teacher.id,
                 'schedule_data': schedule_data_details
             }
-            staff = TeachersSchedule.objects.get(id=pk)
+            staff = TeachersSchedule.objects.filter(id=pk, school_id=request.user.school_id)
             serializer = ScheduleUpdateSerializer(staff, data=data, partial=True)
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
