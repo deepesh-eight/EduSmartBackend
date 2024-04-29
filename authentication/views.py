@@ -795,7 +795,7 @@ class TeacherCurriculumClassListView(APIView):
         try:
             user = request.user
             if user.user_type == 'teacher':
-                class_name = request.data.get('class_name')
+                class_name = request.query_params.get('class_name')
                 curriculum = Curriculum.objects.filter(school_id=request.user.school_id, class_name=class_name)
                 serializer = CurriculumTeacherListerializer(curriculum, many=True)
 
@@ -838,8 +838,8 @@ class TeacherCurriculumSubjectListView(APIView):
         try:
             user = request.user
             if user.user_type == 'teacher':
-                class_name = request.data.get('class_name')
-                section = request.data.get('section')
+                class_name = request.query_params.get('class_name')
+                section = request.query_params.get('section')
                 curriculum = Curriculum.objects.filter(school_id=request.user.school_id, class_name=class_name, section=section)
                 serializer = CurriculumTeacherListerializer(curriculum, many=True)
 
