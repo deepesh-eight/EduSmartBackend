@@ -701,15 +701,15 @@ class TeacherUserScheduleView(APIView):
     """
     This class is created to fetch schedule of the teacher.
     """
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsTeacherUser, IsInSameSchool]
 
     def get(self, request):
         try:
             user = request.user
             if user.user_type == 'teacher':
                 today = datetime.date.today()
-                teacher = TeacherUser.objects.get(user=user.id)
-                data = TeachersSchedule.objects.filter(teacher=teacher.id, start_date__lte=today, end_date__gte=today)
+                teacher = TeacherUser.objects.get(user=user.id, user__school_id=request.user.school_id)
+                data = TeachersSchedule.objects.filter(teacher=teacher.id, school_id=request.user.school_id,start_date__lte=today, end_date__gte=today)
                 if data:
                     serializer = TeacherUserScheduleSerializer(data[0])
                     response_data = create_response_data(
@@ -745,7 +745,7 @@ class TeacherCurriculumListView(APIView):
     """
     This class is created to fetch the list of classes, sections, and subject.
     """
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsTeacherUser, IsInSameSchool]
 
     def get(self, request):
         try:
@@ -911,7 +911,7 @@ class TeacherDayReviewDetailView(APIView):
     """
     This colass is used to fetch detail of teacher day & review.
     """
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsTeacherUser, IsInSameSchool]
 
     def get(self, request, pk):
         try:
@@ -1658,6 +1658,8 @@ class UploadStudyMaterialView(APIView):
     """
     This class is used to upload study material.
     """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+
     def post(self, request):
         try:
             serializer = StudyMaterialUploadSerializer(data=request.data)
@@ -1696,6 +1698,8 @@ class StudyMaterialListView(APIView):
     """
     This class is used to fetch list of study material.
     """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+
     def get(self, request):
         try:
             data = StudentMaterial.objects.filter(school_id=request.user.school_id)
@@ -1726,6 +1730,8 @@ class StudyMaterialDetailView(APIView):
     """
     This class is used to fetch detail of the study material.
     """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+
     def get(self, request, pk):
         try:
             data = StudentMaterial.objects.get(id=pk, school_id=request.user.school_id)

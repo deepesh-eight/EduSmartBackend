@@ -84,7 +84,7 @@ urlpatterns = [
     path('create/zoomlink/', CreateZoomLinkView.as_view(), name='create_zoom_link'),
     path('zoomlink/list/', ZoomLinkListView.as_view(), name='zoom_link_list'),
 
-    # Study material
+    # Mobile Study material
     path('study/material/upload/', UploadStudyMaterialView.as_view(), name='upload_study_material'),
     path('study/material/list/', StudyMaterialListView.as_view(), name='study_material_list'),
     path('study/material/detail/<int:pk>/', StudyMaterialDetailView.as_view(), name='study_material_detail'),
