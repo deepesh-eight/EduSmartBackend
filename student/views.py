@@ -171,7 +171,7 @@ class StudentListView(APIView):
     pagination_class = CustomPagination
 
     def get(self, request):
-        queryset = StudentUser.objects.filter(user__is_active=True, user__school_id=request.user.school_id)
+        queryset = StudentUser.objects.filter(user__is_active=True, user__school_id=request.user.school_id).order_by("-id")
         if request.query_params:
             name = request.query_params.get('name', None)
             page = request.query_params.get('page_size', None)

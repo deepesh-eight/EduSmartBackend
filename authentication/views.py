@@ -352,7 +352,7 @@ class NonTeachingStaffListView(APIView):
     pagination_class = CustomPagination
 
     def get(self, request):
-        queryset = StaffUser.objects.filter(user__is_active=True, user__school_id=request.user.school_id)
+        queryset = StaffUser.objects.filter(user__is_active=True, user__school_id=request.user.school_id).order_by("-id")
         if request.query_params:
             name = request.query_params.get('first_name', None)
             page = request.query_params.get('page_size', None)
