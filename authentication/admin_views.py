@@ -10,7 +10,7 @@ from utils import create_response_data, create_response_list_data
 from django.db import IntegrityError
 from rest_framework import status, permissions, response
 from rest_framework.exceptions import ValidationError
-from authentication.models import User, AddressDetails
+from authentication.models import User, AddressDetails, StudentUser, TeacherUser, StaffUser
 from constants import UserLoginMessage, UserResponseMessage
 from rest_framework.response import Response
 
@@ -68,17 +68,35 @@ class AdminStaffLoginView(APIView):
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
 
-class StaffListView(APIView):
-    permission_classes = [IsSuperAdminUser]
+class UserListView(APIView):
+    """
+    This class is used to fetch all user's list.
+    """
+    permission_classes = [IsAdminUser]
 
     def get(self, request):
-        serializer = StaffProfileSerializer(User.objects.filter(is_staff=True, is_active=True, user_type="admin"), many=True)
-        response_data = create_response_data(
-            status=status.HTTP_200_OK,
-            message=UserResponseMessage.USER_LIST_MESSAGE,
-            data=serializer.data
-        )
-        return Response(response_data, status=status.HTTP_200_OK)
+        try:
+            student = StudentUser.objects.filter(user__is_active=True, user__school_id=request.user.school_id)
+            teacher = TeacherUser.objects.filter(user__is_active=True, user__school_id=request.user.school_id)
+            staff = StaffUser.objects.filter(user__is_active=True, user__school_id=request.user.school_id)
+            data = {
+                "student": len(student),
+                "teacher": len(teacher),
+                "staff": len(staff),
+            }
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=UserResponseMessage.USER_LIST_MESSAGE,
+                data=data
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
 
 class StaffProfileView(APIView):

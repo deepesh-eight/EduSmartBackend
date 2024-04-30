@@ -532,7 +532,7 @@ class TeacherScheduleUpdateView(APIView):
                 'teacher': teacher.id,
                 'schedule_data': schedule_data_details
             }
-            staff = TeachersSchedule.objects.filter(id=pk, school_id=request.user.school_id)
+            staff = TeachersSchedule.objects.get(id=pk, school_id=request.user.school_id)
             serializer = ScheduleUpdateSerializer(staff, data=data, partial=True)
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
