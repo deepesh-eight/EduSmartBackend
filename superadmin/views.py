@@ -7,7 +7,7 @@ from rest_framework.views import APIView
 
 from authentication.models import User
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsInSameSchool
-from constants import SchoolMessage, UserLoginMessage
+from constants import SchoolMessage, UserLoginMessage, UserResponseMessage
 from pagination import CustomPagination
 from superadmin.models import SchoolProfile
 from superadmin.serializers import SchoolCreateSerializer, SchoolProfileSerializer, SchoolProfileUpdateSerializer
@@ -68,21 +68,21 @@ class SchoolCreateView(APIView):
         except IntegrityError:
             response = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
-                message="Email already exist.",
+                message=UserResponseMessage.EMAIL_ALREADY_EXIST,
                 data={}
             )
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
-        except ValidationError as exp:
-            response = create_response_data(
+        except ValidationError:
+            response_data = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
-                message=exp.args[0],
+                message=serializer.errors,
                 data={}
             )
-            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             response = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
-                message=f"Missing key in request data: {e}",
+                message=e.args[0],
                 data={}
             )
             return Response(response, status=status.HTTP_400_BAD_REQUEST)

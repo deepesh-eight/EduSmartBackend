@@ -92,10 +92,29 @@ class TeacherUserCreateView(APIView):
             )
             return Response(response, status=status.HTTP_201_CREATED)
 
-        except KeyError as e:
-            return Response(f"Missing key in request data: {e}", status=status.HTTP_400_BAD_REQUEST)
+        except ValidationError:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=serializer.errors,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
         except IntegrityError as e:
-            return Response("User already exist", status=status.HTTP_400_BAD_REQUEST)
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=UserResponseMessage.EMAIL_ALREADY_EXIST,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
 
 class FetchTeacherDetailView(APIView):
@@ -282,46 +301,54 @@ class UserLoginView(APIView):
     This class is used to login user.
     """
     def post(self, request):
-        serializer = UserLoginSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        email = serializer.validated_data['email']
-        password = serializer.validated_data['password']
+        try:
+            serializer = UserLoginSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            email = serializer.validated_data['email']
+            password = serializer.validated_data['password']
 
-        try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
+            try:
+                user = User.objects.get(email=email)
+            except User.DoesNotExist:
+                response = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=UserLoginMessage.USER_DOES_NOT_EXISTS,
+                    data={}
+                )
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
+            if not user.check_password(password):
+                response = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=UserLoginMessage.INCORRECT_PASSWORD,
+                    data={}
+                )
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                refresh = RefreshToken.for_user(user)
+            except TokenError as e:
+                response = create_response_data(
+                    status=status.HTTP_401_UNAUTHORIZED,
+                    message= UserResponseMessage.TOKEN_HAS_EXPIRED,
+                    data={}
+                )
+                return Response(response, status=status.HTTP_401_UNAUTHORIZED)
+            response_data = create_response_data(
+                status=status.HTTP_201_CREATED,
+                message=UserLoginMessage.USER_LOGIN_SUCCESSFUL,
+                data={
+                    'refresh': str(refresh),
+                    'access': str(refresh.access_token),
+                    'user_type': user.user_type
+                }
+            )
+            return Response(response_data, status=status.HTTP_201_CREATED)
+        except ValidationError:
             response = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
-                message=UserLoginMessage.USER_DOES_NOT_EXISTS,
+                message=serializer.errors,
                 data={}
             )
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
-        if not user.check_password(password):
-            response = create_response_data(
-                status=status.HTTP_400_BAD_REQUEST,
-                message=UserLoginMessage.INCORRECT_PASSWORD,
-                data={}
-            )
-            return Response(response, status=status.HTTP_400_BAD_REQUEST)
-        try:
-            refresh = RefreshToken.for_user(user)
-        except TokenError as e:
-            response = create_response_data(
-                status=status.HTTP_401_UNAUTHORIZED,
-                message= UserResponseMessage.TOKEN_HAS_EXPIRED,
-                data={}
-            )
-            return Response(response, status=status.HTTP_401_UNAUTHORIZED)
-        response_data = create_response_data(
-            status=status.HTTP_201_CREATED,
-            message=UserLoginMessage.USER_LOGIN_SUCCESSFUL,
-            data={
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
-                'user_type': user.user_type
-            }
-        )
-        return Response(response_data, status=status.HTTP_201_CREATED)
 
 
 class TeacherScheduleCreateView(APIView):
