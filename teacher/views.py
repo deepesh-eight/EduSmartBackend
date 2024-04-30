@@ -379,7 +379,7 @@ class TeacherScheduleDetailView(APIView):
 
     def get(self, request, pk):
         try:
-            data = TeachersSchedule.objects.filter(id=pk, school_id=request.user.school_id)
+            data = TeachersSchedule.objects.get(id=pk, school_id=request.user.school_id)
             if data:
                 serializer = ScheduleDetailSerializer(data)
                 response_data = create_response_data(
@@ -402,6 +402,13 @@ class TeacherScheduleDetailView(APIView):
                 data={}
             )
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+        except TokenError:
+            response = create_response_data(
+                status=status.HTTP_401_UNAUTHORIZED,
+                message=UserResponseMessage.TOKEN_HAS_EXPIRED,
+                data={}
+            )
+            return Response(response, status=status.HTTP_401_UNAUTHORIZED)
 
 
 class TeacherScheduleListView(APIView):
@@ -462,7 +469,7 @@ class TeacherScheduleDeleteView(APIView):
 
     def delete(self, request, pk):
         try:
-            schedule_data = TeachersSchedule.objects.filter(id=pk, school_id=request.user.school_id)
+            schedule_data = TeachersSchedule.objects.get(id=pk, school_id=request.user.school_id)
 
             schedule_data.delete()
             response_data = create_response_data(
@@ -489,7 +496,7 @@ class TeacherScheduleUpdateView(APIView):
     def patch(self, request, pk):
         try:
             teacher_id = int(request.data.get('teacher'))
-            teacher = TeacherUser.objects.filter(id=teacher_id, user__school_id=request.user.school_id)
+            teacher = TeacherUser.objects.get(id=teacher_id, user__school_id=request.user.school_id)
             schedule_data_details = request.data.get('schedule_data')
             # schedule_data_str = json.loads(schedule_data_details)
             data = {
