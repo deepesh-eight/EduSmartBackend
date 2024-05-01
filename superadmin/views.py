@@ -13,7 +13,7 @@ from constants import SchoolMessage, UserLoginMessage, UserResponseMessage, Curr
 from pagination import CustomPagination
 from superadmin.models import SchoolProfile, CurricullumList
 from superadmin.serializers import SchoolCreateSerializer, SchoolProfileSerializer, SchoolProfileUpdateSerializer, \
-    CurriculumCreateSerializer, CurriculumListSerializer
+    CurriculumCreateSerializer, CurriculumListSerializer, CurriculumUpdateSerializer
 from utils import create_response_data
 
 
@@ -375,7 +375,7 @@ class CurriculumUpdateView(APIView):
     def patch(self, request, pk):
         try:
             data = CurricullumList.objects.get(id=pk)
-            serializer = CurriculumCreateSerializer(data, data=request.data, partial=True)
+            serializer = CurriculumUpdateSerializer(data, data=request.data, partial=True)
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
                 response_data = create_response_data(

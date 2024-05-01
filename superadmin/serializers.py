@@ -128,6 +128,32 @@ class CurriculumCreateSerializer(serializers.ModelSerializer):
         return data
 
 
+class CurriculumUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CurricullumList
+        fields = ['curriculum_name', 'class_name', 'class_subject', 'optional_subject']
+
+    def validate_class_subject(self, value):
+        updated_subjects = []
+        for subject in value:
+            # Convert the first character to uppercase
+            subject = subject.capitalize()
+            # Convert characters after space to uppercase
+            subject = ' '.join(word.capitalize() for word in subject.split(' '))
+            updated_subjects.append(subject)
+        return updated_subjects
+
+    def validate_optional_subject(self, value):
+        updated_subjects = []
+        for subject in value:
+            # Convert the first character to uppercase
+            subject = subject.capitalize()
+            # Convert characters after space to uppercase
+            subject = ' '.join(word.capitalize() for word in subject.split(' '))
+            updated_subjects.append(subject)
+        return updated_subjects
+
+
 class CurriculumListSerializer(serializers.ModelSerializer):
     class Meta:
         model = CurricullumList
