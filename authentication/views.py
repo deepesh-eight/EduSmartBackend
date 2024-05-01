@@ -11,18 +11,19 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import AuthenticationFailed, TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.utils.dateparse import parse_date
 
 from authentication.models import User, AddressDetails, ErrorLogging, Certificate, StaffUser, StaffAttendence, \
-    TeacherUser, StudentUser, TeachersSchedule, DayReview, TeacherAttendence, Notification, TimeTable
+    TeacherUser, StudentUser, TeachersSchedule, DayReview, TeacherAttendence, Notification, TimeTable, EventsCalender
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsManagementUser, IsPayRollManagementUser, \
     IsBoardingUser, IsInSameSchool, IsTeacherUser
 from authentication.serializers import UserSignupSerializer, UsersListSerializer, UpdateProfileSerializer, \
     UserLoginSerializer, NonTeachingStaffSerializers, NonTeachingStaffListSerializers, \
     NonTeachingStaffDetailSerializers, NonTeachingStaffProfileSerializers, StaffAttendanceSerializer, \
-    StaffAttendanceDetailSerializer, StaffAttendanceListSerializer, LogoutSerializer
+    StaffAttendanceDetailSerializer, StaffAttendanceListSerializer, LogoutSerializer, EventSerializer, EventsCalendarSerializer
 from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage, ScheduleMessage, \
     CurriculumMessage, DayReviewMessage, NotificationMessage, AnnouncementMessage, TimeTableMessage, ReportCardMesssage, \
-    ZoomLinkMessage, StudyMaterialMessage
+    ZoomLinkMessage, StudyMaterialMessage, EventsMessages
 from curriculum.models import Curriculum
 from pagination import CustomPagination
 from student.models import ExmaReportCard, ZoomLink, StudentMaterial
@@ -1763,3 +1764,65 @@ class StudyMaterialDetailView(APIView):
                 data={}
             )
             return Response(response, status=status.HTTP_401_UNAUTHORIZED)
+
+class EventCreateView(APIView):
+    permission_classes = [IsAdminUser]
+    def post(self, request):
+        serializer = EventSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=EventsMessages.EVENT_CREATED_SUCCESSFULLY,
+                data=serializer.data,
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=serializer.errors,
+                data={},
+            )
+        return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+    
+class GetAllEvents(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+        is_one_day_event = request.query_params.get('is_one_day_event')
+        is_event_calendar = request.query_params.get('is_event_calendar')
+
+        if not start_date or not end_date:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=EventsMessages.EVENT_PROVIDE_ALL_INFORMATION,
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+        start_date = parse_date(start_date)
+        end_date = parse_date(end_date)
+
+        if not start_date or not end_date:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=EventsMessages.PROVIDE_VALID_DATE,
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+        events = EventsCalender.objects.filter(start_date__gte=start_date, end_date__lte=end_date)
+
+        if is_one_day_event is not None:
+            events = events.filter(is_one_day_event=is_one_day_event.lower() == 'true')
+        if is_event_calendar is not None:
+            events = events.filter(is_event_calendar=is_event_calendar.lower() == 'true')
+
+        serializer = EventsCalendarSerializer(events, many=True)
+        response_data = create_response_data(
+            status=status.HTTP_200_OK,
+            message=EventsMessages.EVENTS_DATA_FETCHED_SUCCESSFULLY,
+            data=serializer.data,
+        )
+        return Response(response_data, status=status.HTTP_200_OK)

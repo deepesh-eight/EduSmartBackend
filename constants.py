@@ -171,3 +171,9 @@ class StudyMaterialMessage:
     STUDY_MATERIAL_UPLOADED_SUCCESSFULLY = "Study materail uploaded successfully."
     STUDY_MATERIAL_FETCHED_SUCCESSFULLY = "Study materail fetched successfully."
     STUDY_MATERIAL_Not_Exist = "Study materail does not exist."
+
+class EventsMessages:
+    EVENT_CREATED_SUCCESSFULLY = "Event Created Successfully."
+    EVENT_PROVIDE_ALL_INFORMATION = "Please provide all information"
+    PROVIDE_VALID_DATE = "Please Provide Valid Date"
+    EVENTS_DATA_FETCHED_SUCCESSFULLY = "Events Data Fetched Successfully."

@@ -88,4 +88,8 @@ urlpatterns = [
     path('study/material/upload/', UploadStudyMaterialView.as_view(), name='upload_study_material'),
     path('study/material/list/', StudyMaterialListView.as_view(), name='study_material_list'),
     path('study/material/detail/<int:pk>/', StudyMaterialDetailView.as_view(), name='study_material_detail'),
+
+    # Events
+    path('events/create', EventCreateView.as_view(), name='create_event'),
+    path('events/get-events', GetAllEvents.as_view(), name='get_events'),
 ]

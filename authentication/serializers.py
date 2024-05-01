@@ -5,7 +5,7 @@ from datetime import date
 from EduSmart import settings
 from constants import USER_TYPE_CHOICES, ROLE_CHOICES, ATTENDENCE_CHOICE
 from teacher.serializers import CertificateSerializer, ImageFieldStringAndFile
-from .models import User, AddressDetails, StaffUser, Certificate, StaffAttendence
+from .models import User, AddressDetails, StaffUser, Certificate, StaffAttendence, EventsCalender
 from django.core.exceptions import ValidationError as DjangoValidationError
 
 class UserSignupSerializer(serializers.Serializer):
@@ -331,3 +331,18 @@ class LogoutSerializer(serializers.Serializer):
             #     raise AuthenticationFailed(self.error_messages['bad_token'])
         except TokenError:
             raise AuthenticationFailed(self.error_messages['bad_token'])
+        
+class EventSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EventsCalender
+        fields = ['is_one_day_event', 'is_event_calendar', 'title', 'description', 'event_image', 'start_time', 'end_time', 'start_date', 'end_date']
+
+    def validate(self, data):
+        if data['end_date'] < data['start_date']:
+            raise serializers.ValidationError("End date must be after start date.")
+        return data
+
+class EventsCalendarSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EventsCalender
+        fields = '__all__'

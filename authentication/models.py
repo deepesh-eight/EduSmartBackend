@@ -254,17 +254,17 @@ class StaffAttendence(models.Model):
 
 
 class EventsCalender(models.Model):
-    day_event = models.CharField(max_length=200) # This will be choice field it can be one_day_event or multi_day_event.
-    event_date = models.DateField()
-    calendar = models.CharField(max_length=200) # This will be choice field it can be academic_calendar or events.
+    is_one_day_event = models.BooleanField(default=True)  # one-day event = True, multi-day event = False
+    is_event_calendar = models.BooleanField(default=True)  # event = True, academic calendar = False
     title = models.CharField(max_length=255)
     description = models.TextField()
     event_image = models.ImageField(upload_to='', blank=True)
     start_time = models.TimeField()
     end_time = models.TimeField()
+    start_date = models.DateField(null=True)
+    end_date = models.DateField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
 
 class DayReview(models.Model):
     school_id = models.CharField(max_length=255, null=True, blank=True)
