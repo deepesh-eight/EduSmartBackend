@@ -38,3 +38,12 @@ class Announcement(models.Model):
     date_time = models.DateTimeField(auto_now=True)
     announcement_title = models.CharField(max_length=255)
     description = models.TextField()
+
+
+class CurricullumList(models.Model):
+    curriculum_name = models.CharField(max_length=255)
+    class_name = models.CharField(max_length=255)
+    class_subject = models.JSONField()
+    optional_subject = models.JSONField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, blank=True, null=True)

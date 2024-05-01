@@ -320,10 +320,29 @@ class NonTeachingStaffCreateView(APIView):
             )
             return Response(response, status=status.HTTP_201_CREATED)
 
-        except KeyError as e:
-            return Response(f"Missing key in request data: {e}", status=status.HTTP_400_BAD_REQUEST)
+        except ValidationError:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=serializer.errors,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
         except IntegrityError as e:
-            return Response("User already exist", status=status.HTTP_400_BAD_REQUEST)
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=UserResponseMessage.EMAIL_ALREADY_EXIST,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
 
 class NonTeachingStaffListView(APIView):
@@ -334,7 +353,7 @@ class NonTeachingStaffListView(APIView):
     pagination_class = CustomPagination
 
     def get(self, request):
-        queryset = StaffUser.objects.filter(user__is_active=True, user__school_id=request.user.school_id)
+        queryset = StaffUser.objects.filter(user__is_active=True, user__school_id=request.user.school_id).order_by("-id")
         if request.query_params:
             name = request.query_params.get('first_name', None)
             page = request.query_params.get('page_size', None)
@@ -1024,20 +1043,28 @@ class NotificationCreateView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        serializer = NotificationSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            serializer.save()
-            response_data = create_response_data(
-                status=status.HTTP_201_CREATED,
-                message=NotificationMessage.NOTIFICATION_CREATED_SUCCESSFULLY,
-                data={},
-            )
-            return Response(response_data, status=status.HTTP_201_CREATED)
-        else:
+        try:
+            serializer = NotificationSerializer(data=request.data)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                response_data = create_response_data(
+                    status=status.HTTP_201_CREATED,
+                    message=NotificationMessage.NOTIFICATION_CREATED_SUCCESSFULLY,
+                    data={},
+                )
+                return Response(response_data, status=status.HTTP_201_CREATED)
+            else:
+                response_data = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=serializer.errors,
+                    data={},
+                )
+                return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
             response_data = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
-                message=serializer.errors,
-                data={},
+                message=e.args[0],
+                data={}
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
@@ -1086,20 +1113,27 @@ class AnnouncementCreateView(APIView):
     permission_classes = [IsSuperAdminUser]
 
     def post(self, request):
-
-        serializer = AnnouncementCreateSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            serializer.save()
-            response_data = create_response_data(
-                status=status.HTTP_201_CREATED,
-                message=AnnouncementMessage.ANNOUNCEMENT_CREATED_SUCCESSFULLE,
-                data={},
-            )
-            return Response(response_data, status=status.HTTP_201_CREATED)
-        else:
+        try:
+            serializer = AnnouncementCreateSerializer(data=request.data)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                response_data = create_response_data(
+                    status=status.HTTP_201_CREATED,
+                    message=AnnouncementMessage.ANNOUNCEMENT_CREATED_SUCCESSFULLE,
+                    data={},
+                )
+                return Response(response_data, status=status.HTTP_201_CREATED)
+            else:
+                response_data = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=serializer.errors,
+                    data={},
+                )
+                return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
             response_data = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
-                message=serializer.errors,
+                message=e.args[0],
                 data={},
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)

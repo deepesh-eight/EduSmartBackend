@@ -92,10 +92,29 @@ class TeacherUserCreateView(APIView):
             )
             return Response(response, status=status.HTTP_201_CREATED)
 
-        except KeyError as e:
-            return Response(f"Missing key in request data: {e}", status=status.HTTP_400_BAD_REQUEST)
+        except ValidationError:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=serializer.errors,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
         except IntegrityError as e:
-            return Response("User already exist", status=status.HTTP_400_BAD_REQUEST)
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=UserResponseMessage.EMAIL_ALREADY_EXIST,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
 
 class FetchTeacherDetailView(APIView):
@@ -139,7 +158,7 @@ class TeacherListView(APIView):
     pagination_class = CustomPagination
 
     def get(self, request):
-        queryset = TeacherUser.objects.filter(user__is_active=True, user__school_id=request.user.school_id)
+        queryset = TeacherUser.objects.filter(user__is_active=True, user__school_id=request.user.school_id).order_by("-id")
         if request.query_params:
             name = request.query_params.get('full_name', None)
             page = request.query_params.get('page_size', None)
@@ -282,46 +301,54 @@ class UserLoginView(APIView):
     This class is used to login user.
     """
     def post(self, request):
-        serializer = UserLoginSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        email = serializer.validated_data['email']
-        password = serializer.validated_data['password']
+        try:
+            serializer = UserLoginSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            email = serializer.validated_data['email']
+            password = serializer.validated_data['password']
 
-        try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
+            try:
+                user = User.objects.get(email=email)
+            except User.DoesNotExist:
+                response = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=UserLoginMessage.USER_DOES_NOT_EXISTS,
+                    data={}
+                )
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
+            if not user.check_password(password):
+                response = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=UserLoginMessage.INCORRECT_PASSWORD,
+                    data={}
+                )
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                refresh = RefreshToken.for_user(user)
+            except TokenError as e:
+                response = create_response_data(
+                    status=status.HTTP_401_UNAUTHORIZED,
+                    message= UserResponseMessage.TOKEN_HAS_EXPIRED,
+                    data={}
+                )
+                return Response(response, status=status.HTTP_401_UNAUTHORIZED)
+            response_data = create_response_data(
+                status=status.HTTP_201_CREATED,
+                message=UserLoginMessage.USER_LOGIN_SUCCESSFUL,
+                data={
+                    'refresh': str(refresh),
+                    'access': str(refresh.access_token),
+                    'user_type': user.user_type
+                }
+            )
+            return Response(response_data, status=status.HTTP_201_CREATED)
+        except ValidationError:
             response = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
-                message=UserLoginMessage.USER_DOES_NOT_EXISTS,
+                message=serializer.errors,
                 data={}
             )
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
-        if not user.check_password(password):
-            response = create_response_data(
-                status=status.HTTP_400_BAD_REQUEST,
-                message=UserLoginMessage.INCORRECT_PASSWORD,
-                data={}
-            )
-            return Response(response, status=status.HTTP_400_BAD_REQUEST)
-        try:
-            refresh = RefreshToken.for_user(user)
-        except TokenError as e:
-            response = create_response_data(
-                status=status.HTTP_401_UNAUTHORIZED,
-                message= UserResponseMessage.TOKEN_HAS_EXPIRED,
-                data={}
-            )
-            return Response(response, status=status.HTTP_401_UNAUTHORIZED)
-        response_data = create_response_data(
-            status=status.HTTP_201_CREATED,
-            message=UserLoginMessage.USER_LOGIN_SUCCESSFUL,
-            data={
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
-                'user_type': user.user_type
-            }
-        )
-        return Response(response_data, status=status.HTTP_201_CREATED)
 
 
 class TeacherScheduleCreateView(APIView):
@@ -379,7 +406,7 @@ class TeacherScheduleDetailView(APIView):
 
     def get(self, request, pk):
         try:
-            data = TeachersSchedule.objects.filter(id=pk, school_id=request.user.school_id)
+            data = TeachersSchedule.objects.get(id=pk, school_id=request.user.school_id)
             if data:
                 serializer = ScheduleDetailSerializer(data)
                 response_data = create_response_data(
@@ -402,6 +429,13 @@ class TeacherScheduleDetailView(APIView):
                 data={}
             )
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+        except TokenError:
+            response = create_response_data(
+                status=status.HTTP_401_UNAUTHORIZED,
+                message=UserResponseMessage.TOKEN_HAS_EXPIRED,
+                data={}
+            )
+            return Response(response, status=status.HTTP_401_UNAUTHORIZED)
 
 
 class TeacherScheduleListView(APIView):
@@ -462,7 +496,7 @@ class TeacherScheduleDeleteView(APIView):
 
     def delete(self, request, pk):
         try:
-            schedule_data = TeachersSchedule.objects.filter(id=pk, school_id=request.user.school_id)
+            schedule_data = TeachersSchedule.objects.get(id=pk, school_id=request.user.school_id)
 
             schedule_data.delete()
             response_data = create_response_data(
@@ -489,7 +523,7 @@ class TeacherScheduleUpdateView(APIView):
     def patch(self, request, pk):
         try:
             teacher_id = int(request.data.get('teacher'))
-            teacher = TeacherUser.objects.filter(id=teacher_id, user__school_id=request.user.school_id)
+            teacher = TeacherUser.objects.get(id=teacher_id, user__school_id=request.user.school_id)
             schedule_data_details = request.data.get('schedule_data')
             # schedule_data_str = json.loads(schedule_data_details)
             data = {
@@ -498,7 +532,7 @@ class TeacherScheduleUpdateView(APIView):
                 'teacher': teacher.id,
                 'schedule_data': schedule_data_details
             }
-            staff = TeachersSchedule.objects.filter(id=pk, school_id=request.user.school_id)
+            staff = TeachersSchedule.objects.get(id=pk, school_id=request.user.school_id)
             serializer = ScheduleUpdateSerializer(staff, data=data, partial=True)
             if serializer.is_valid(raise_exception=True):
                 serializer.save()

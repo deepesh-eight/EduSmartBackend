@@ -1,3 +1,5 @@
+import json
+
 from django.db import IntegrityError
 from django.shortcuts import render
 from rest_framework.exceptions import ValidationError
@@ -7,10 +9,11 @@ from rest_framework.views import APIView
 
 from authentication.models import User
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsInSameSchool
-from constants import SchoolMessage, UserLoginMessage
+from constants import SchoolMessage, UserLoginMessage, UserResponseMessage, CurriculumMessage
 from pagination import CustomPagination
-from superadmin.models import SchoolProfile
-from superadmin.serializers import SchoolCreateSerializer, SchoolProfileSerializer, SchoolProfileUpdateSerializer
+from superadmin.models import SchoolProfile, CurricullumList
+from superadmin.serializers import SchoolCreateSerializer, SchoolProfileSerializer, SchoolProfileUpdateSerializer, \
+    CurriculumCreateSerializer, CurriculumListSerializer
 from utils import create_response_data
 
 
@@ -68,21 +71,21 @@ class SchoolCreateView(APIView):
         except IntegrityError:
             response = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
-                message="Email already exist.",
+                message=UserResponseMessage.EMAIL_ALREADY_EXIST,
                 data={}
             )
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
-        except ValidationError as exp:
-            response = create_response_data(
+        except ValidationError:
+            response_data = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
-                message=exp.args[0],
+                message=serializer.errors,
                 data={}
             )
-            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             response = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
-                message=f"Missing key in request data: {e}",
+                message=e.args[0],
                 data={}
             )
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
@@ -132,7 +135,7 @@ class SchoolProfileUpdateView(APIView):
                 return Response(response_data, status=status.HTTP_200_OK)
             else:
                 response = create_response_data(
-                    status=status.HTTP_200_OK,
+                    status=status.HTTP_400_BAD_REQUEST,
                     message=serializer.errors,
                     data=serializer.errors
                 )
@@ -250,3 +253,189 @@ class SchoolAdminDeleteView(APIView):
                 data={}
             )
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+
+
+class CurriculumCreateView(APIView):
+    """
+    This class is used to create curriculum from the superadmin.
+    """
+    permission_classes = [IsSuperAdminUser]
+
+    def post(self, request):
+        try:
+            subject = request.data.get("class_subject")
+            optional_subject = request.data.get("class_subject")
+            subject_str = json.loads(subject)
+            optional_subject_str = json.loads(subject)
+            data = {
+                "curriculum_name": request.data.get("curriculum_name"),
+                "class_name": request.data.get("class_name"),
+                "class_subject": subject_str,
+                "optional_subject": optional_subject_str,
+            }
+            serializer = CurriculumCreateSerializer(data=data)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                response_data = create_response_data(
+                status=status.HTTP_201_CREATED,
+                message=CurriculumMessage.CURRICULUM_CREATED_SUCCESSFULLY,
+                data=serializer.data
+                )
+                return Response(response_data, status=status.HTTP_201_CREATED)
+            else:
+                response_data = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=serializer.errors,
+                    data={}
+                )
+                return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CurriculumListView(APIView):
+    """
+    This class is used to fetch the list of the curriculum.
+    """
+    permission_classes = [IsSuperAdminUser]
+    pagination_class = CustomPagination
+
+    def get(self, request):
+        try:
+            data = CurricullumList.objects.all().order_by('-id')
+            paginator = self.pagination_class()
+            paginated_queryset = paginator.paginate_queryset(data, request)
+            serializer = CurriculumListSerializer(paginated_queryset, many=True)
+            response_data = {
+                'status': status.HTTP_200_OK,
+                'count': len(serializer.data),
+                'message': CurriculumMessage.CURRICULUM_LIST_MESSAGE,
+                'data': serializer.data,
+                'pagination': {
+                    'page_size': paginator.page_size,
+                    'next': paginator.get_next_link(),
+                    'previous': paginator.get_previous_link(),
+                    'total_pages': paginator.page.paginator.num_pages,
+                    'current_page': paginator.page.number,
+                }
+            }
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CurriculumDetailView(APIView):
+    """
+    This class is used to fetch detail of curriculum which is added by superadmin
+    """
+    permission_classes = [IsSuperAdminUser]
+
+    def get(self, request, pk):
+        try:
+            data = CurricullumList.objects.get(id=pk)
+            serializer = CurriculumListSerializer(data)
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=CurriculumMessage.CURRICULUM_DETAIL_MESSAGE,
+                data=serializer.data
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except CurricullumList.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=CurriculumMessage.CURRICULUM_NOT_FOUND,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CurriculumUpdateView(APIView):
+    """
+    This class is used to fetch detail of curriculum which is added by superadmin
+    """
+    permission_classes = [IsSuperAdminUser]
+
+    def patch(self, request, pk):
+        try:
+            data = CurricullumList.objects.get(id=pk)
+            serializer = CurriculumCreateSerializer(data, data=request.data, partial=True)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                response_data = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=CurriculumMessage.CURRICULUM_UPDATED_MESSAGE,
+                    data=serializer.data
+                )
+                return Response(response_data, status=status.HTTP_200_OK)
+            else:
+                response_data = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=serializer.errors,
+                    data={}
+                )
+                return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        except CurricullumList.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=CurriculumMessage.CURRICULUM_NOT_FOUND,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CurriculumDeleteView(APIView):
+    """
+    This class is used to delete the curriculum by superadmin.
+    """
+    permission_classes = [IsSuperAdminUser]
+
+    def delete(self, request, pk):
+        try:
+            data = CurricullumList.objects.get(id=pk)
+            data.delete()
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=CurriculumMessage.CURRICULUM_DELETED_SUCCESSFULLY,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        except CurricullumList.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=CurriculumMessage.CURRICULUM_NOT_FOUND,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)

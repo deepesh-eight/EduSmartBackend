@@ -5,7 +5,7 @@ from EduSmart import settings
 from authentication.models import User
 from constants import USER_TYPE_CHOICES
 from student.serializers import ImageFieldStringAndFile
-from superadmin.models import SchoolProfile, SchoolProfilePassword
+from superadmin.models import SchoolProfile, SchoolProfilePassword, CurricullumList
 
 
 class SchoolCreateSerializer(serializers.Serializer):
@@ -90,3 +90,15 @@ class SchoolProfileUpdateSerializer(serializers.ModelSerializer):
         instance.save()
 
         return instance
+
+
+class CurriculumCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CurricullumList
+        fields = ['curriculum_name', 'class_name', 'class_subject', 'optional_subject']
+
+
+class CurriculumListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CurricullumList
+        fields = ['id', 'curriculum_name', 'class_name', 'class_subject']

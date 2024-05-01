@@ -10,7 +10,7 @@ from utils import create_response_data, create_response_list_data
 from django.db import IntegrityError
 from rest_framework import status, permissions, response
 from rest_framework.exceptions import ValidationError
-from authentication.models import User, AddressDetails
+from authentication.models import User, AddressDetails, StudentUser, TeacherUser, StaffUser
 from constants import UserLoginMessage, UserResponseMessage
 from rest_framework.response import Response
 
@@ -22,55 +22,81 @@ class AdminStaffLoginView(APIView):
     """
 
     def post(self, request):
-        serializer = UserLoginSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        email = serializer.validated_data['email']
-        password = serializer.validated_data['password']
-
         try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
-            resposne = create_response_data(
+            serializer = UserLoginSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            email = serializer.validated_data['email']
+            password = serializer.validated_data['password']
+
+            try:
+                user = User.objects.get(email=email)
+            except User.DoesNotExist:
+                resposne = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=UserLoginMessage.USER_DOES_NOT_EXISTS,
+                    data={}
+                )
+                return Response(resposne, status=status.HTTP_400_BAD_REQUEST)
+            if not user.check_password(password):
+                response = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=UserLoginMessage.INCORRECT_PASSWORD,
+                    data={}
+                )
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
+            refresh = RefreshToken.for_user(user)
+            response_data = create_response_data(
+                status=status.HTTP_201_CREATED,
+                message=UserLoginMessage.USER_LOGIN_SUCCESSFUL,
+                data={
+                    'refresh': str(refresh),
+                    'access': str(refresh.access_token),
+                    'user_id': user.id,
+                    'name': user.name,
+                    'email': user.email,
+                    'phone': str(user.phone),
+                    'user_type': user.user_type
+                }
+            )
+            return Response(response_data, status=status.HTTP_201_CREATED)
+        except ValidationError:
+            response_data = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
-                message=UserLoginMessage.USER_DOES_NOT_EXISTS,
+                message=serializer.errors,
                 data={}
             )
-            return Response(resposne, status=status.HTTP_400_BAD_REQUEST)
-        if not user.check_password(password):
-            response = create_response_data(
-                status=status.HTTP_400_BAD_REQUEST,
-                message=UserLoginMessage.INCORRECT_PASSWORD,
-                data={}
-            )
-            return Response(response, status=status.HTTP_400_BAD_REQUEST)
-        refresh = RefreshToken.for_user(user)
-        response_data = create_response_data(
-            status=status.HTTP_201_CREATED,
-            message=UserLoginMessage.USER_LOGIN_SUCCESSFUL,
-            data={
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
-                'user_id': user.id,
-                'name': user.name,
-                'email': user.email,
-                'phone': str(user.phone),
-                'user_type': user.user_type
-            }
-        )
-        return Response(response_data, status=status.HTTP_201_CREATED)
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
 
-class StaffListView(APIView):
-    permission_classes = [IsSuperAdminUser]
+class UserListView(APIView):
+    """
+    This class is used to fetch all user's list.
+    """
+    permission_classes = [IsAdminUser]
 
     def get(self, request):
-        serializer = StaffProfileSerializer(User.objects.filter(is_staff=True, is_active=True, user_type="admin"), many=True)
-        response_data = create_response_data(
-            status=status.HTTP_200_OK,
-            message=UserResponseMessage.USER_LIST_MESSAGE,
-            data=serializer.data
-        )
-        return Response(response_data, status=status.HTTP_200_OK)
+        try:
+            student = StudentUser.objects.filter(user__is_active=True, user__school_id=request.user.school_id)
+            teacher = TeacherUser.objects.filter(user__is_active=True, user__school_id=request.user.school_id)
+            staff = StaffUser.objects.filter(user__is_active=True, user__school_id=request.user.school_id)
+            data = {
+                "student": len(student),
+                "teacher": len(teacher),
+                "staff": len(staff),
+            }
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=UserResponseMessage.USER_LIST_MESSAGE,
+                data=data
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
 
 class StaffProfileView(APIView):

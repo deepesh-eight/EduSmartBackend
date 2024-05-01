@@ -64,6 +64,7 @@ class StudentUserCreateView(APIView):
             curriculum_data = serializer.validated_data['curriculum']
             enrollment_no = serializer.validated_data.get('enrollment_no', '')
             roll_no = serializer.validated_data.get('roll_no', '')
+            guardian_no = serializer.validated_data.get('guardian_no', '')
 
             try:
                 curriculum = Curriculum.objects.get(id=curriculum_data)
@@ -85,7 +86,8 @@ class StudentUserCreateView(APIView):
                     school_fee=school_fee, bus_fee=bus_fee, canteen_fee=canteen_fee, other_fee=other_fee,
                     total_fee=total_fee, blood_group=blood_group, class_enrolled=class_enrolled, father_phone_number=father_phone_number,
                     mother_occupation=mother_occupation, mother_phone_number=mother_phone_number, section=section, permanent_address=permanent_address,
-                    bus_number=bus_number, bus_route=bus_route, due_fee=due_fee, curriculum=curriculum, enrollment_no=enrollment_no, roll_no=roll_no
+                    bus_number=bus_number, bus_route=bus_route, due_fee=due_fee, curriculum=curriculum, enrollment_no=enrollment_no, roll_no=roll_no,
+                    guardian_no=guardian_no
                 )
             else:
                 raise ValidationError("Invalid user_type. Expected 'student'.")
@@ -103,10 +105,29 @@ class StudentUserCreateView(APIView):
             )
             return Response(response, status=status.HTTP_201_CREATED)
 
-        except KeyError as e:
-            return Response(f"Missing key in request data: {e}", status=status.HTTP_400_BAD_REQUEST)
+        except ValidationError:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=serializer.errors,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
         except IntegrityError as e:
-            return Response("User already exist", status=status.HTTP_400_BAD_REQUEST)
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=UserResponseMessage.EMAIL_ALREADY_EXIST,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
 
 class FetchStudentDetailView(APIView):
@@ -150,7 +171,7 @@ class StudentListView(APIView):
     pagination_class = CustomPagination
 
     def get(self, request):
-        queryset = StudentUser.objects.filter(user__is_active=True, user__school_id=request.user.school_id)
+        queryset = StudentUser.objects.filter(user__is_active=True, user__school_id=request.user.school_id).order_by("-id")
         if request.query_params:
             name = request.query_params.get('name', None)
             page = request.query_params.get('page_size', None)
@@ -402,8 +423,8 @@ class FetchAttendanceListView(APIView):
 
     def get(self, request):
         try:
-            class_name = request.data.get('class_name')
-            section = request.data.get('section')
+            class_name = request.query_params.get('class_name')
+            section = request.query_params.get('section')
             current_date = timezone.now().date()
             students = StudentUser.objects.filter(class_enrolled=class_name, section=section, user__school_id=request.user.school_id)
             attendance_data = StudentAttendence.objects.filter(date=current_date, student__in=students, student__user__school_id=request.user.school_id)

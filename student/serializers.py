@@ -43,6 +43,7 @@ class StudentUserSignupSerializer(serializers.Serializer):
     bus_route = serializers.IntegerField(required=False, default='')
     enrollment_no = serializers.CharField(default='')
     roll_no = serializers.CharField(default='')
+    guardian_no = serializers.CharField(default='')
 
 
 class StudentDetailSerializer(serializers.ModelSerializer):
