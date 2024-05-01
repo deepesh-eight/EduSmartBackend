@@ -255,6 +255,7 @@ class StaffAttendence(models.Model):
 
 
 class EventsCalender(models.Model):
+    school_id = models.CharField(max_length=255, null=True, blank=True)
     is_one_day_event = models.BooleanField(default=True)  # one-day event = True, multi-day event = False
     is_event_calendar = models.BooleanField(default=True)  # event = True, academic calendar = False
     title = models.CharField(max_length=255)

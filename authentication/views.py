@@ -1800,11 +1800,11 @@ class StudyMaterialDetailView(APIView):
             return Response(response, status=status.HTTP_401_UNAUTHORIZED)
 
 class EventCreateView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser, IsInSameSchool]
     def post(self, request):
         serializer = EventSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(school_id=request.user.school_id)
             response_data = create_response_data(
                 status=status.HTTP_200_OK,
                 message=EventsMessages.EVENT_CREATED_SUCCESSFULLY,
@@ -1846,7 +1846,7 @@ class GetAllEvents(APIView):
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
-        events = EventsCalender.objects.filter(start_date__gte=start_date, end_date__lte=end_date)
+        events = EventsCalender.objects.filter(start_date__gte=start_date, end_date__lte=end_date, school_id=request.user.school_id)
 
         if is_one_day_event is not None:
             events = events.filter(is_one_day_event=is_one_day_event.lower() == 'true')
