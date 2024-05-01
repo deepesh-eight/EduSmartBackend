@@ -97,6 +97,7 @@ class CurriculumMessage:
     CURRICULUM_DELETED_SUCCESSFULLY = "Curriculum deleted successfully."
     CURRICULUM_NOT_FOUND = "Curriculum not found."
     CURRICULUM_DETAIL_MESSAGE = "Curriculum detail fetch successfully."
+    CURRICULUM_UPDATED_MESSAGE = "Curriculum updated successfully."
 
 
 class ScheduleMessage:

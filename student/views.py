@@ -423,8 +423,8 @@ class FetchAttendanceListView(APIView):
 
     def get(self, request):
         try:
-            class_name = request.data.get('class_name')
-            section = request.data.get('section')
+            class_name = request.query_params.get('class_name')
+            section = request.query_params.get('section')
             current_date = timezone.now().date()
             students = StudentUser.objects.filter(class_enrolled=class_name, section=section, user__school_id=request.user.school_id)
             attendance_data = StudentAttendence.objects.filter(date=current_date, student__in=students, student__user__school_id=request.user.school_id)
