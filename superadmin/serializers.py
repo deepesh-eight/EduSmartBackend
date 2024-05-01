@@ -97,6 +97,36 @@ class CurriculumCreateSerializer(serializers.ModelSerializer):
         model = CurricullumList
         fields = ['curriculum_name', 'class_name', 'class_subject', 'optional_subject']
 
+    def validate_class_subject(self, value):
+        updated_subjects = []
+        for subject in value:
+            # Convert the first character to uppercase
+            subject = subject.capitalize()
+            # Convert characters after space to uppercase
+            subject = ' '.join(word.capitalize() for word in subject.split(' '))
+            updated_subjects.append(subject)
+        return updated_subjects
+
+    def validate_optional_subject(self, value):
+        updated_subjects = []
+        for subject in value:
+            # Convert the first character to uppercase
+            subject = subject.capitalize()
+            # Convert characters after space to uppercase
+            subject = ' '.join(word.capitalize() for word in subject.split(' '))
+            updated_subjects.append(subject)
+        return updated_subjects
+
+    def validate(self, data):
+        curriculum_name = data.get('curriculum_name')
+        class_name = data.get('class_name')
+
+        # Check if a curriculum with the provided name and class already exists
+        if CurricullumList.objects.filter(curriculum_name=curriculum_name, class_name=class_name).exists():
+            raise serializers.ValidationError(f"A curriculum with name {curriculum_name} and class {class_name} already exists.")
+
+        return data
+
 
 class CurriculumListSerializer(serializers.ModelSerializer):
     class Meta:

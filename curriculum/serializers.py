@@ -3,6 +3,7 @@ import json
 from rest_framework import serializers
 
 from curriculum.models import Curriculum, CurriculumPDF
+from superadmin.models import CurricullumList
 
 
 class CurriculumSerializer(serializers.ModelSerializer):
@@ -67,3 +68,21 @@ class CurriculumDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Curriculum
         fields = ['curriculum_name',]
+
+
+class SuperAdminCurriculumClassList(serializers.ModelSerializer):
+    class Meta:
+        model = CurricullumList
+        fields = ['class_name']
+
+
+class SuperAdminCurriculumSubjectList(serializers.ModelSerializer):
+    class Meta:
+        model = CurricullumList
+        fields = ['class_subject']
+
+
+class SuperAdminCurriculumOptionalSubjectList(serializers.ModelSerializer):
+    class Meta:
+        model = CurricullumList
+        fields = ['optional_subject']

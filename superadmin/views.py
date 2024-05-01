@@ -264,9 +264,9 @@ class CurriculumCreateView(APIView):
     def post(self, request):
         try:
             subject = request.data.get("class_subject")
-            optional_subject = request.data.get("class_subject")
+            optional_subject = request.data.get("optional_subject")
             subject_str = json.loads(subject)
-            optional_subject_str = json.loads(subject)
+            optional_subject_str = json.loads(optional_subject)
             data = {
                 "curriculum_name": request.data.get("curriculum_name"),
                 "class_name": request.data.get("class_name"),
@@ -289,7 +289,6 @@ class CurriculumCreateView(APIView):
                     data={}
                 )
                 return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
-
         except Exception as e:
             response_data = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
