@@ -180,3 +180,7 @@ class EventsMessages:
     EVENT_PROVIDE_ALL_INFORMATION = "Please provide all information"
     PROVIDE_VALID_DATE = "Please Provide Valid Date"
     EVENTS_DATA_FETCHED_SUCCESSFULLY = "Events Data Fetched Successfully."
+
+class BusMessages:
+    BUS_ROUTE_CREATED = "Route Created Successfully."
+    ROUTE_DATA_FETCHED = "Route Data Fetched Successfully."
