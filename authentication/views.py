@@ -1391,22 +1391,7 @@ class CreateExamReportView(APIView):
     def post(self, request):
         try:
             if request.user.user_type == 'teacher':
-                mark_grade = request.data.get('marks_grades')
-                marks_grades_str = json.loads(mark_grade)
-
-                data = {
-                    "class_name": request.data.get("class_name"),
-                    "class_section": request.data.get("class_section"),
-                    "student_name": request.data.get("student_name"),
-                    "roll_no": request.data.get("roll_no"),
-                    "exam_type": request.data.get("exam_type"),
-                    "exam_month": request.data.get("exam_month"),
-                    "overall_grades": request.data.get("overall_grades"),
-                    "total_marks": request.data.get("total_marks"),
-                    "marks_grades": marks_grades_str,
-                }
-
-                serializer = ExamReportCreateSerializer(data=data)
+                serializer = ExamReportCreateSerializer(data=request.data)
                 if serializer.is_valid(raise_exception=True):
                     serializer.save(school_id=request.user.school_id)
                     response_data = create_response_data(
@@ -1579,21 +1564,7 @@ class ExamReportCardUpdateView(APIView):
     def patch(self, request, pk):
         try:
             exam_report_card = ExmaReportCard.objects.get(id=pk, school_id=request.user.school_id)
-            mark_grade = request.data.get('marks_grades')
-            marks_grades_str = json.loads(mark_grade)
-
-            data = {
-                "class_name": request.data.get("class_name"),
-                "class_section": request.data.get("class_section"),
-                "student_name": request.data.get("student_name"),
-                "roll_no": request.data.get("roll_no"),
-                "exam_type": request.data.get("exam_type"),
-                "exam_month": request.data.get("exam_month"),
-                "overall_grades": request.data.get("overall_grades"),
-                "total_marks": request.data.get("total_marks"),
-                "marks_grades": marks_grades_str,
-            }
-            serializer = ExamReportcardUpdateSerializer(exam_report_card, data=data, partial=True)
+            serializer = ExamReportcardUpdateSerializer(exam_report_card, data=request.data, partial=True)
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
                 response = create_response_data(

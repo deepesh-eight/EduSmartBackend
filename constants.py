@@ -98,6 +98,8 @@ class CurriculumMessage:
     CURRICULUM_NOT_FOUND = "Curriculum not found."
     CURRICULUM_DETAIL_MESSAGE = "Curriculum detail fetch successfully."
     CURRICULUM_UPDATED_MESSAGE = "Curriculum updated successfully."
+    CLASSES_LIST_MESSAGE = "All classes fetch successfully."
+    SUBJECT_LIST_MESSAGE = "All subject fetch successfully."
 
 
 class ScheduleMessage:

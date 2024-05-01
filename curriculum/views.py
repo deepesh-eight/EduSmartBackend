@@ -7,8 +7,10 @@ from authentication.permissions import IsAdminUser, IsInSameSchool
 from constants import CurriculumMessage
 from curriculum.models import Curriculum, CurriculumPDF
 from curriculum.serializers import CurriculumSerializer, CurriculumDetailSerializer, CurriculumUploadSerializer, \
-    CurriculumListerializer
+    CurriculumListerializer, SuperAdminCurriculumClassList, SuperAdminCurriculumSubjectList, \
+    SuperAdminCurriculumOptionalSubjectList
 from pagination import CustomPagination
+from superadmin.models import CurricullumList
 from utils import create_response_data, create_response_list_data
 
 
@@ -178,3 +180,114 @@ class CurriculumFetchView(APIView):
                 data={}
             )
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+
+
+class CurriculumListView(APIView):
+    """
+    This class is used to fetch the list of the curriculum which is added by superadmin.
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            data = CurricullumList.objects.values_list('curriculum_name', flat=True).distinct()
+            curriculum = list(data)
+            curriculum_list = {
+                "curriculum_name": curriculum
+            }
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=CurriculumMessage.CURRICULUM_LIST_MESSAGE,
+                data=curriculum_list
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CurriculumClassListView(APIView):
+    """
+    This class is used to fetch the list of the classes which is added by superadmin.
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            curriculum = request.query_params.get("curriculum_name")
+            data = CurricullumList.objects.filter(curriculum_name=curriculum)
+            serializer = SuperAdminCurriculumClassList(data, many=True)
+            class_names = [item['class_name'] for item in serializer.data]
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=CurriculumMessage.CLASSES_LIST_MESSAGE,
+                data=class_names
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CurriculumsubjectListView(APIView):
+    """
+    This class is used to fetch the list of the subject which is added by superadmin according to curriculum.
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            curriculum = request.query_params.get("curriculum_name")
+            classes = request.query_params.get("class_name")
+            data = CurricullumList.objects.filter(curriculum_name=curriculum, class_name=classes)
+            serializer = SuperAdminCurriculumSubjectList(data, many=True)
+            subjects = [item['class_subject'] for item in serializer.data]
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=CurriculumMessage.SUBJECT_LIST_MESSAGE,
+                data=subjects[0]
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CurriculumOptionalsubjectListView(APIView):
+    """
+    This class is used to fetch the list of the optional subject which is added by superadmin according to curriculum.
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            curriculum = request.query_params.get("curriculum_name")
+            classes = request.query_params.get("class_name")
+            data = CurricullumList.objects.filter(curriculum_name=curriculum, class_name=classes)
+            serializer = SuperAdminCurriculumOptionalSubjectList(data, many=True)
+            optional_subj = [item['optional_subject'] for item in serializer.data]
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=CurriculumMessage.SUBJECT_LIST_MESSAGE,
+                data=optional_subj[0]
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
