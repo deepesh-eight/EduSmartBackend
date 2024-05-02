@@ -19,7 +19,7 @@ from pagination import CustomPagination
 from student.models import StudentAttendence
 from student.serializers import StudentUserSignupSerializer, StudentDetailSerializer, StudentListSerializer, \
     studentProfileSerializer, StudentAttendanceDetailSerializer, \
-    StudentAttendanceListSerializer, StudentListBySectionSerializer, StudentAttendanceCreateSerializer
+    StudentAttendanceListSerializer, StudentListBySectionSerializer, StudentAttendanceCreateSerializer, AdminClassListSerializer, AdminOptionalSubjectListSerializer
 from utils import create_response_data, create_response_list_data, get_student_total_attendance, \
     get_student_total_absent, get_student_attendence_percentage, generate_random_password
 
@@ -634,3 +634,86 @@ class StudentAttendanceCreateView(APIView):
             data={}
         )
         return Response(response, status=status.HTTP_200_OK)
+
+
+class AdminCurriculumList(APIView):
+    """
+    This class is used to fetch the list of the curriculum which is added by admin.
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            data = Curriculum.objects.filter(school_id=request.user.school_id).values_list('curriculum_name', flat=True).distinct()
+            curriculum = list(data)
+            curriculum_list = {
+                "curriculum_name": curriculum
+            }
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=CurriculumMessage.CURRICULUM_LIST_MESSAGE,
+                data=curriculum_list
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AdminClassesList(APIView):
+    """
+    This class is used to fetch the list of the classes which is added by admin.
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            curriculum = request.query_params.get("curriculum_name")
+            data = Curriculum.objects.filter(curriculum_name=curriculum, school_id=request.user.school_id)
+            serializer = AdminClassListSerializer(data, many=True)
+            class_names = [item['select_class'] for item in serializer.data]
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=CurriculumMessage.CLASSES_LIST_MESSAGE,
+                data=class_names
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AdminOptionalSubjectList(APIView):
+    """
+    This class is used to fetch the list of the optional subject which is added by admin according to curriculum.
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            curriculum = request.query_params.get("curriculum_name")
+            classes = request.query_params.get("class_name")
+            data = Curriculum.objects.filter(curriculum_name=curriculum, select_class=classes, school_id=request.user.school_id)
+            serializer = AdminOptionalSubjectListSerializer(data, many=True)
+            optional_subj = [item['optional_subject'] for item in serializer.data]
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=CurriculumMessage.SUBJECT_LIST_MESSAGE,
+                data=optional_subj[0]
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)

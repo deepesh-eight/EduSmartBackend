@@ -18,4 +18,9 @@ urlpatterns = [
         path('mobile/student/list/', FetchStudentList.as_view(), name='fetch_student_list'),
         path('mobile/attendance/create/', StudentAttendanceCreateView.as_view(), name='attendance_create'),
 
+        # Student curriculum API'S
+        path('curriculum/list/', AdminCurriculumList.as_view(), name='admin_curriculum_list'),
+        path('classes/list/', AdminClassesList.as_view(), name='admin_classes_list'),
+        path('optional/subject/list/', AdminOptionalSubjectList.as_view(), name='admin_optional_subject_list'),
+
 ]

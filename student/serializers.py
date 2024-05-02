@@ -281,3 +281,14 @@ class StudentUserProfileSerializer(serializers.ModelSerializer):
             student=obj.id, date__year=year, mark_attendence='P').count()
         return total_attendance
 
+
+class AdminClassListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Curriculum
+        fields = ['select_class']
+
+
+class AdminOptionalSubjectListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Curriculum
+        fields = ['optional_subject']
