@@ -65,12 +65,13 @@ class StudentUserCreateView(APIView):
             enrollment_no = serializer.validated_data.get('enrollment_no', '')
             roll_no = serializer.validated_data.get('roll_no', '')
             guardian_no = serializer.validated_data.get('guardian_no', '')
+            optional_subject = serializer.validated_data.get('optional_subject', '')
 
-            try:
-                curriculum = Curriculum.objects.get(id=curriculum_data)
-                serializer.validated_data['curriculum'] = curriculum
-            except Curriculum.DoesNotExist:
-                return Response({"message": "Curriculum not found"}, status=status.HTTP_404_NOT_FOUND)
+            # try:
+            #     curriculum = Curriculum.objects.get(id=curriculum_data)
+            #     serializer.validated_data['curriculum'] = curriculum
+            # except Curriculum.DoesNotExist:
+            #     return Response({"message": "Curriculum not found"}, status=status.HTTP_404_NOT_FOUND)
 
             if user_type == 'student' and serializer.is_valid() == True:
                 user = User.objects.create_user(
@@ -86,8 +87,8 @@ class StudentUserCreateView(APIView):
                     school_fee=school_fee, bus_fee=bus_fee, canteen_fee=canteen_fee, other_fee=other_fee,
                     total_fee=total_fee, blood_group=blood_group, class_enrolled=class_enrolled, father_phone_number=father_phone_number,
                     mother_occupation=mother_occupation, mother_phone_number=mother_phone_number, section=section, permanent_address=permanent_address,
-                    bus_number=bus_number, bus_route=bus_route, due_fee=due_fee, curriculum=curriculum, enrollment_no=enrollment_no, roll_no=roll_no,
-                    guardian_no=guardian_no
+                    bus_number=bus_number, bus_route=bus_route, due_fee=due_fee, curriculum=curriculum_data, enrollment_no=enrollment_no, roll_no=roll_no,
+                    guardian_no=guardian_no, optional_subject=optional_subject
                 )
             else:
                 raise ValidationError("Invalid user_type. Expected 'student'.")

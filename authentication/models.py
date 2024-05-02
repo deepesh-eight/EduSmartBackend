@@ -191,13 +191,14 @@ class StudentUser(models.Model):
     blood_group = models.CharField(max_length=50, blank=True, null=True)
     class_enrolled = models.CharField(max_length=255)
     section = models.CharField(max_length=50)
-    curriculum = models.ForeignKey('curriculum.Curriculum', on_delete=models.CASCADE, null=True, blank=True)
+    curriculum = models.CharField(max_length=255, null=True, blank=True)
     permanent_address = models.TextField(blank=True, null=True)
     bus_number = models.CharField(max_length=255)
     bus_route = models.IntegerField()
     enrollment_no = models.CharField(max_length=255, null=True, blank=True)
     roll_no = models.CharField(max_length=255, null=True, blank=True)
     guardian_no = models.CharField(max_length=255, null=True, blank=True)
+    optional_subject = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self) -> str:
         return f'{self.id}'
