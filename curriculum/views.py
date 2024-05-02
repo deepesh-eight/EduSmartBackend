@@ -1,3 +1,5 @@
+import json
+
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -8,7 +10,7 @@ from constants import CurriculumMessage
 from curriculum.models import Curriculum, CurriculumPDF
 from curriculum.serializers import CurriculumSerializer, CurriculumDetailSerializer, CurriculumUploadSerializer, \
     CurriculumListerializer, SuperAdminCurriculumClassList, SuperAdminCurriculumSubjectList, \
-    SuperAdminCurriculumOptionalSubjectList
+    SuperAdminCurriculumOptionalSubjectList, CurriculumDetailUpdateSerializer
 from pagination import CustomPagination
 from superadmin.models import CurricullumList
 from utils import create_response_data, create_response_list_data
@@ -22,27 +24,44 @@ class CurriculumCreateView(APIView):
     """
     This class is used to create curriculum.
     """
-    def post(self,request):
-        mutable_data = request.data.copy()
-
-        # Add school_id to the mutable copy
-        mutable_data['school_id'] = request.user.school_id
-        serializer = CurriculumSerializer(data=mutable_data)
-        if serializer.is_valid(raise_exception=True):
-            serializer.save(school_id=request.user.school_id)
-            response = create_response_data(
-                status=status.HTTP_201_CREATED,
-                message=CurriculumMessage.CURRICULUM_CREATED_SUCCESSFULLY,
-                data=serializer.data
-            )
-            return Response(response, status=status.HTTP_200_OK)
-        else:
+    def post(self, request):
+        try:
+            primary_subject = request.data.get("primary_subject")
+            optional_subject = request.data.get("optional_subject")
+            primary_subject_str = json.loads(primary_subject)
+            optional_subject_str = json.loads(optional_subject)
+            data = {
+                "academic_session": request.data.get("academic_session"),
+                "curriculum_name": request.data.get("curriculum_name"),
+                "select_class": request.data.get("select_class"),
+                "primary_subject": primary_subject_str,
+                "optional_subject": optional_subject_str,
+                "syllabus": request.data.get("syllabus"),
+                "discription": request.data.get("discription")
+            }
+            serializer = CurriculumSerializer(data=data)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save(school_id=request.user.school_id)
+                response = create_response_data(
+                    status=status.HTTP_201_CREATED,
+                    message=CurriculumMessage.CURRICULUM_CREATED_SUCCESSFULLY,
+                    data=serializer.data
+                )
+                return Response(response, status=status.HTTP_201_CREATED)
+            else:
+                response = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=serializer.errors,
+                    data=serializer.errors
+                )
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
             response = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
-                message=serializer.errors,
-                data=serializer.errors
+                message=e.args[0],
+                data={}
             )
-            return Response(response, status=status.HTTP_200_OK)
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
 
 class CurriculumUploadView(APIView):
@@ -90,19 +109,19 @@ class CurriculumlistView(APIView):
     """
     def get(self,request):
         queryset = Curriculum.objects.filter(school_id=request.user.school_id)
-        for curriculum in queryset:
-            if not curriculum.curriculum_name:
-                querset1 = CurriculumPDF.objects.all()
-                for pdf_data in querset1:
-                    curriculum.curriculum_name = f"{settings.base_url}{settings.MEDIA_URL}{pdf_data.curriculum_pdf_file}"
-                    curriculum.save()
+        # for curriculum in queryset:
+        #     if not curriculum.curriculum_name:
+        #         querset1 = CurriculumPDF.objects.all()
+        #         for pdf_data in querset1:
+        #             curriculum.curriculum_name = f"{settings.base_url}{settings.MEDIA_URL}{pdf_data.curriculum_pdf_file}"
+        #             curriculum.save()
         if request.query_params:
             academic_session = request.query_params.get('academic_session', None)
             class_name = request.query_params.get('class_name', None)
             if academic_session:
                 queryset = queryset.filter(academic_session__icontains=academic_session)
             if class_name:
-                queryset = queryset.filter(class_name__icontains=class_name)
+                queryset = queryset.filter(select_class__icontains=class_name)
             paginator = self.pagination_class()
             paginated_queryset = paginator.paginate_queryset(queryset, request)
             serializer = CurriculumListerializer(paginated_queryset, many=True)
@@ -162,10 +181,10 @@ class CurriculumFetchView(APIView):
     def get(self, request, pk):
         try:
             data = Curriculum.objects.get(id=pk, school_id=request.user.school_id)
-            if not data.curriculum_name:
-                querset1 = CurriculumPDF.objects.get(curriculum=data.id)
-                data.curriculum_name = f"{settings.base_url}{settings.MEDIA_URL}{querset1.curriculum_pdf_file}"
-                data.save()
+            # if not data.curriculum_name:
+            #     querset1 = CurriculumPDF.objects.get(curriculum=data.id)
+            #     data.curriculum_name = f"{settings.base_url}{settings.MEDIA_URL}{querset1.curriculum_pdf_file}"
+            #     data.save()
             serializer = CurriculumDetailSerializer(data)
             response_data = create_response_data(
                 status=status.HTTP_200_OK,
@@ -173,6 +192,13 @@ class CurriculumFetchView(APIView):
                 data=serializer.data
             )
             return Response(response_data, status=status.HTTP_200_OK)
+        except Curriculum.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=CurriculumMessage.CURRICULUM_NOT_FOUND,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             response_data = create_response_data(
                 status=status.HTTP_404_NOT_FOUND,
@@ -180,6 +206,47 @@ class CurriculumFetchView(APIView):
                 data={}
             )
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+
+
+class CurriculumUpdateView(APIView):
+    permission_classes = [IsAdminUser, IsInSameSchool]
+    """
+    This class is created to update the detail of the curruiculum.
+    """
+
+    def patch(self, request, pk):
+        try:
+            data = Curriculum.objects.get(id=pk)
+            serializer = CurriculumDetailUpdateSerializer(data, data=request.data, partial=True)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                response_data = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=CurriculumMessage.CURRICULUM_UPDATED_MESSAGE,
+                    data=serializer.data
+                )
+                return Response(response_data, status=status.HTTP_200_OK)
+            else:
+                response_data = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=serializer.errors,
+                    data={}
+                )
+                return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        except Curriculum.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=CurriculumMessage.CURRICULUM_NOT_FOUND,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
 
 class CurriculumListView(APIView):

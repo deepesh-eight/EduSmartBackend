@@ -7,7 +7,7 @@ from curriculum.models import Curriculum, CurriculumPDF
 
 @admin.register(Curriculum)
 class Curriculum(admin.ModelAdmin):
-    list_display = ('academic_session', 'exam_board', 'subject_name_code', 'class_name', 'section', 'curriculum_name')
+    list_display = ('academic_session', 'curriculum_name', 'select_class', 'primary_subject', 'optional_subject', 'syllabus', 'discription')
 
 @admin.register(CurriculumPDF)
 class CurriculumPDF(admin.ModelAdmin):
