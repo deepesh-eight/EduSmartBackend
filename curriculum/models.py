@@ -5,7 +5,6 @@ from django.db import models
 
 class Curriculum(models.Model):
     school_id = models.CharField(max_length=255, null=True, blank=True)
-    academic_session = models.CharField(max_length=255)
     curriculum_name = models.CharField(max_length=255)
     select_class = models.CharField(max_length=255)
     primary_subject = models.JSONField(default=list)

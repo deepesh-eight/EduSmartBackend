@@ -31,7 +31,6 @@ class CurriculumCreateView(APIView):
             primary_subject_str = json.loads(primary_subject)
             optional_subject_str = json.loads(optional_subject)
             data = {
-                "academic_session": request.data.get("academic_session"),
                 "curriculum_name": request.data.get("curriculum_name"),
                 "select_class": request.data.get("select_class"),
                 "primary_subject": primary_subject_str,

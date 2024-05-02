@@ -25,7 +25,7 @@ class CurriculumSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Curriculum
-        fields = ['id', 'academic_session', 'curriculum_name', 'select_class', 'primary_subject', 'optional_subject', 'syllabus', 'discription']
+        fields = ['id', 'curriculum_name', 'select_class', 'primary_subject', 'optional_subject', 'syllabus', 'discription']
 
     def validate_primary_subject(self, value):
         updated_subjects = []
@@ -62,7 +62,7 @@ class CurriculumSerializer(serializers.ModelSerializer):
 class CurriculumListerializer(serializers.ModelSerializer):
     class Meta:
         model = Curriculum
-        fields = ['id', 'academic_session', 'curriculum_name', 'select_class', 'discription']
+        fields = ['id', 'curriculum_name', 'select_class', 'discription']
 
 
 class CurriculumUploadSerializer(serializers.Serializer):
@@ -89,7 +89,7 @@ class CurriculumDetailSerializer(serializers.ModelSerializer):
     syllabus = serializers.SerializerMethodField()
     class Meta:
         model = Curriculum
-        fields = ['id', 'curriculum_name', 'select_class', 'academic_session', 'primary_subject', 'optional_subject', 'syllabus', 'discription']
+        fields = ['id', 'curriculum_name', 'select_class', 'primary_subject', 'optional_subject', 'syllabus', 'discription']
 
     def get_syllabus(self, obj):
         if obj.syllabus:
@@ -104,7 +104,7 @@ class CurriculumDetailUpdateSerializer(serializers.ModelSerializer):
     syllabus = ImageFieldStringAndFile(required=False)
     class Meta:
         model = Curriculum
-        fields = ['id', 'curriculum_name', 'select_class', 'academic_session', 'primary_subject', 'optional_subject', 'syllabus', 'discription']
+        fields = ['id', 'curriculum_name', 'select_class', 'primary_subject', 'optional_subject', 'syllabus', 'discription']
 
 
     def validate_primary_subject(self, value):
