@@ -30,14 +30,20 @@ class Bus(models.Model):
         return str(self.operator_phone_no.as_national.lstrip('0').strip().replace(' ', ''))
 
 
-class BusRoute(models.Model):
-    bus = models.ForeignKey(Bus,on_delete=models.CASCADE)
-    route_name = models.CharField(max_length=100)
-    primary_start_time = models.TimeField()
-    primary_start_stop = models.CharField(max_length=100)
-    primary_next_stop = models.JSONField(null=True)
-    alternate_start_time = models.TimeField(null=True, blank=True)
-    alternate_next_stop = models.JSONField(null=True, blank=True)
+class Route(models.Model):
+    school_id = models.CharField(max_length=255, null=True, blank=True)
+    name = models.CharField(max_length=100, unique=True)
 
     def __str__(self):
-        return self.route_name
+        return self.name
+
+class Stop(models.Model):
+    route = models.ForeignKey(Route, related_name='stops', on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    time = models.TimeField()
+
+    class Meta:
+        unique_together = ('route', 'name', 'time')
+
+    def __str__(self):
+        return f"{self.name} at {self.time.strftime('%H:%M')}"
