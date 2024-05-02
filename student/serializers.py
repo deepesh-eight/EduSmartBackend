@@ -246,21 +246,19 @@ class StudentUserProfileSerializer(serializers.ModelSerializer):
     email = serializers.SerializerMethodField()
     curriculum = serializers.SerializerMethodField()
     subjects = serializers.SerializerMethodField()
-    exam_board = serializers.SerializerMethodField()
     age = serializers.SerializerMethodField()
-    roll_number = serializers.SerializerMethodField()
     total_attendance = serializers.SerializerMethodField()
 
     class Meta:
         model = StudentUser
-        fields = ['id', 'roll_number', 'name', 'image', 'class_enrolled', 'section', 'admission_date', 'dob', 'age', 'gender', 'religion', 'blood_group',
+        fields = ['id', 'roll_no', 'name', 'image', 'class_enrolled', 'section', 'admission_date', 'dob', 'age', 'gender', 'religion', 'blood_group',
                   'school_fee','bus_fee', 'canteen_fee', 'other_fee', 'due_fee', 'total_fee', 'father_name', 'father_phone_number',
                   'father_occupation', 'mother_name', 'mother_phone_number', 'mother_occupation', 'email', 'permanent_address', 'curriculum',
-                   'subjects', 'bus_number', 'bus_route', 'exam_board', 'total_attendance']
+                   'subjects', 'bus_number', 'bus_route', 'total_attendance']
 
 
     def get_curriculum(self,obj):
-        return obj.curriculum.id if hasattr(obj, 'curriculum') else None
+        return obj.curriculum if hasattr(obj, 'curriculum') else None
 
     def get_image(self, obj):
         if obj.image:
@@ -274,12 +272,12 @@ class StudentUserProfileSerializer(serializers.ModelSerializer):
         return obj.user.email if hasattr(obj, 'user') else None
 
     def get_subjects(self, obj):
-        subjects_list = obj.curriculum.subject_name_code if hasattr(obj, 'curriculum') else []
-        subject_names = ", ".join(subject['subject_name'] for subject in subjects_list)
-        return subject_names
+        subject = Curriculum.objects.get(curriculum_name=obj.curriculum, select_class=obj.class_enrolled)
+        if subject:
+            return subject.primary_subject
+        else:
+            None
 
-    def get_exam_board(self, obj):
-        return obj.curriculum.exam_board if hasattr(obj, 'curriculum') else None
 
     def get_age(self, obj):
         if obj.dob:
@@ -288,8 +286,6 @@ class StudentUserProfileSerializer(serializers.ModelSerializer):
             return age
         return None
 
-    def get_roll_number(self, obj):
-        return "001"
 
     def get_total_attendance(self, obj):
         year = datetime.date.today().year
