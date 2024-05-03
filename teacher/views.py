@@ -16,12 +16,13 @@ from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsTeacherU
 from authentication.serializers import UserLoginSerializer
 from authentication.views import NonTeachingStaffDetailView
 from constants import UserLoginMessage, UserResponseMessage, ScheduleMessage, AttendenceMarkedMessage, CurriculumMessage
+from curriculum.models import Curriculum
 from pagination import CustomPagination
 from student.views import FetchStudentDetailView
 from teacher.serializers import TeacherUserSignupSerializer, TeacherDetailSerializer, TeacherListSerializer, \
     TeacherProfileSerializer, ScheduleCreateSerializer, ScheduleDetailSerializer, ScheduleListSerializer, \
     ScheduleUpdateSerializer, TeacherAttendanceSerializer, TeacherAttendanceDetailSerializer, \
-    TeacherAttendanceListSerializer, SectionListSerializer
+    TeacherAttendanceListSerializer, SectionListSerializer, SubjectListSerializer
 from utils import create_response_data, create_response_list_data, generate_random_password,get_teacher_total_attendance, \
     get_teacher_monthly_attendance, get_teacher_total_absent, get_teacher_monthly_absent
 
@@ -57,7 +58,6 @@ class TeacherUserCreateView(APIView):
             class_subject_section_details = serializer.validated_data['class_subject_section_details']
             highest_qualification = serializer.validated_data['highest_qualification']
             certificates = serializer.validated_data.get('certificate_files', [])
-
 
             if user_type == 'teacher' and serializer.is_valid() == True:
                 user = User.objects.create_user(
@@ -730,6 +730,39 @@ class SectionListView(APIView):
                 status=status.HTTP_200_OK,
                 message=CurriculumMessage.SECTION_LIST_MESSAGE,
                 data=class_names
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SubjectListView(APIView):
+    """
+    This class is used to fetch list of the subjects(primary & optional).
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            curriculum = request.query_params.get("curriculum")
+            classes = request.query_params.get("class_name")
+            subjects = Curriculum.objects.filter(school_id=request.user.school_id, curriculum_name=curriculum, select_class=classes)
+            serializer = SubjectListSerializer(subjects, many=True)
+            primary_subject = [item['primary_subject'] for item in serializer.data]
+            optional_subject = [item['optional_subject'] for item in serializer.data]
+            data = {
+                "primary_subject": primary_subject[0],
+                "optional_subject": optional_subject[0]
+            }
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=CurriculumMessage.SECTION_LIST_MESSAGE,
+                data=data
             )
             return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:

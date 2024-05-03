@@ -483,7 +483,7 @@ class TeacherUserProfileSerializer(serializers.ModelSerializer):
     certificates = serializers.SerializerMethodField()
     class_teacher = serializers.SerializerMethodField()
     age = serializers.SerializerMethodField()
-    class_subject_section_details = serializers.SerializerMethodField()
+    # class_subject_section_details = serializers.SerializerMethodField()
 
     class Meta:
         model = TeacherUser
@@ -529,21 +529,21 @@ class TeacherUserProfileSerializer(serializers.ModelSerializer):
             return age
         return None
 
-    def get_class_subject_section_details(self, obj):
-        data = []
-        for detail in obj.class_subject_section_details:
-            # Find the matching curriculum based on class and section
-            matching_curriculum = Curriculum.objects.filter(class_name=detail.get('class'),
-                                                            section=detail.get('section')).first()
-            if matching_curriculum:
-                curriculum_data = {
-                    "class": detail.get('class'),
-                    "section": detail.get('section'),
-                    "subject": detail.get('subject'),
-                    "curriculum": matching_curriculum.exam_board
-                }
-                data.append(curriculum_data)
-        return data
+    # def get_class_subject_section_details(self, obj):
+    #     data = []
+    #     for detail in obj.class_subject_section_details:
+    #         # Find the matching curriculum based on class and section
+    #         matching_curriculum = Curriculum.objects.filter(class_name=detail.get('class'),
+    #                                                         section=detail.get('section')).first()
+    #         if matching_curriculum:
+    #             curriculum_data = {
+    #                 "class": detail.get('class'),
+    #                 "section": detail.get('section'),
+    #                 "subject": detail.get('subject'),
+    #                 "curriculum": matching_curriculum.exam_board
+    #             }
+    #             data.append(curriculum_data)
+    #     return data
 
 
 class TeacherUserScheduleSerializer(serializers.ModelSerializer):
@@ -915,3 +915,9 @@ class SectionListSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentUser
         fields = ['section']
+
+
+class SubjectListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Curriculum
+        fields = ['primary_subject', 'optional_subject']
