@@ -19,5 +19,8 @@ urlpatterns = [
         path('user/login/', UserLoginView.as_view(), name='user_login'),
         path('attendance/create/', TeacherAttendanceCreateView.as_view(), name='attendance_create'),
         path('attendance/detail/<int:pk>/', FetchAttendanceDetailView.as_view(), name='fetch_attendance_detail'),
-        path('attendance/list/',  FetchAttendanceListView.as_view(), name='fetch_attendance_list')
+        path('attendance/list/',  FetchAttendanceListView.as_view(), name='fetch_attendance_list'),
+
+        # Curriculum API'S
+        path('section/list/', SectionListView.as_view(), name='class_list')
 ]

@@ -909,3 +909,9 @@ class StudyMaterialDetailSerializer(serializers.ModelSerializer):
             else:
                 return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.upload_content)}'
         return None
+
+
+class SectionListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StudentUser
+        fields = ['section']

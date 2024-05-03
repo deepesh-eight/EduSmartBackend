@@ -15,13 +15,13 @@ from authentication.models import User, Class, TeacherUser, StudentUser, Certifi
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsTeacherUser, IsInSameSchool
 from authentication.serializers import UserLoginSerializer
 from authentication.views import NonTeachingStaffDetailView
-from constants import UserLoginMessage, UserResponseMessage, ScheduleMessage, AttendenceMarkedMessage
+from constants import UserLoginMessage, UserResponseMessage, ScheduleMessage, AttendenceMarkedMessage, CurriculumMessage
 from pagination import CustomPagination
 from student.views import FetchStudentDetailView
 from teacher.serializers import TeacherUserSignupSerializer, TeacherDetailSerializer, TeacherListSerializer, \
     TeacherProfileSerializer, ScheduleCreateSerializer, ScheduleDetailSerializer, ScheduleListSerializer, \
     ScheduleUpdateSerializer, TeacherAttendanceSerializer, TeacherAttendanceDetailSerializer, \
-    TeacherAttendanceListSerializer
+    TeacherAttendanceListSerializer, SectionListSerializer
 from utils import create_response_data, create_response_list_data, generate_random_password,get_teacher_total_attendance, \
     get_teacher_monthly_attendance, get_teacher_total_absent, get_teacher_monthly_absent
 
@@ -711,3 +711,32 @@ class FetchAttendanceListView(APIView):
             data=serializer.data,
         )
         return Response(response, status=status.HTTP_200_OK)
+
+
+class SectionListView(APIView):
+    """
+    This class is used to fetch list of the section.
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            curriculum = request.query_params.get("curriculum")
+            classes = request.query_params.get("class_name")
+            section_list = StudentUser.objects.filter(user__school_id=request.user.school_id, curriculum=curriculum, class_enrolled=classes)
+            serializer = SectionListSerializer(section_list, many=True)
+            class_names = [item['section'] for item in serializer.data]
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=CurriculumMessage.SECTION_LIST_MESSAGE,
+                data=class_names
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
