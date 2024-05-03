@@ -773,3 +773,134 @@ class SubjectListView(APIView):
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
+
+class TeachersListView(APIView):
+    """
+    This class is used to fetch list of all the teachers for creating their schedule.
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            teacher_list = TeacherUser.objects.filter(user__is_active=True, user__school_id=request.user.school_id).values('full_name')
+            data = {
+                "teacher_name": [teacher['full_name'] for teacher in teacher_list]
+            }
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=CurriculumMessage.TEACHER_LIST_MESSAGE,
+                data=data
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TeachersCurriculumListView(APIView):
+    """
+    This class is used to fetch list of curriculum for creating the teacher schedule.
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            teacher_name = request.query_params.get('teacher_name')
+            teacher_list = TeacherUser.objects.get(user__is_active=True, user__school_id=request.user.school_id, full_name=teacher_name)
+            # data = {
+            #     "curriculum": [teacher['curriculum'] for teacher in teacher_list.class_subject_section_details]
+            # }
+            curriculum_set = set()
+            for teacher in teacher_list.class_subject_section_details:
+                curriculum_set.add(teacher['curriculum'])
+
+            distinct_curriculums = list(curriculum_set)
+
+            data = {
+                "curriculum": distinct_curriculums
+            }
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=CurriculumMessage.CURRICULUM_LIST_MESSAGE,
+                data=data
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TeachersClassListView(APIView):
+    """
+    This class is used to fetch list of class for creating the teacher schedule.
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            teacher_name = request.query_params.get('teacher_name')
+            teacher_list = TeacherUser.objects.get(user__is_active=True, user__school_id=request.user.school_id, full_name=teacher_name)
+            class_set = set()
+            for teacher in teacher_list.class_subject_section_details:
+                class_set.add(teacher['class'])
+
+            distinct_class = list(class_set)
+
+            data = {
+                "class": distinct_class
+            }
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=CurriculumMessage.CLASSES_LIST_MESSAGE,
+                data=data
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TeachersSectionListView(APIView):
+    """
+    This class is used to fetch list of section's for creating the teacher schedule.
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            teacher_name = request.query_params.get('teacher_name')
+            teacher_list = TeacherUser.objects.get(user__is_active=True, user__school_id=request.user.school_id, full_name=teacher_name)
+            section_set = set()
+            for teacher in teacher_list.class_subject_section_details:
+                section_set.add(teacher['section'])
+
+            distinct_sections = list(section_set)
+
+            data = {
+                "section": distinct_sections
+            }
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=CurriculumMessage.SECTION_LIST_MESSAGE,
+                data=data
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)

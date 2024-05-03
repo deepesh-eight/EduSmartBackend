@@ -101,6 +101,7 @@ class CurriculumMessage:
     CLASSES_LIST_MESSAGE = "All classes fetch successfully."
     SUBJECT_LIST_MESSAGE = "All subject fetch successfully."
     SECTION_LIST_MESSAGE = "Section list fetch successfully."
+    TEACHER_LIST_MESSAGE = "Teacher list fetch successfully."
 
 
 class ScheduleMessage:
