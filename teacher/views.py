@@ -361,12 +361,12 @@ class TeacherScheduleCreateView(APIView):
             serializer = ScheduleCreateSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             start_date = serializer.validated_data['start_date']
-            end_date = serializer.validated_data['end_date']
+            end_date = serializer.validated_data.get('end_date', '')
             schedule_data = serializer.validated_data['schedule_data']
             teacher = serializer.validated_data['teacher']
 
             try:
-                teacher = TeacherUser.objects.get(id=teacher, user__school_id=request.user.school_id)
+                teacher = TeacherUser.objects.get(full_name=teacher, user__school_id=request.user.school_id)
             except TeacherUser.DoesNotExist:
                 response = create_response_data(
                     status=status.HTTP_400_BAD_REQUEST,
