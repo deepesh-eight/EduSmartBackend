@@ -446,7 +446,7 @@ class TeacherScheduleListView(APIView):
     pagination_class = CustomPagination
 
     def get(self, request):
-        queryset = TeachersSchedule.objects.filter(school_id=request.user.school_id)
+        queryset = TeachersSchedule.objects.filter(school_id=request.user.school_id).order_by('-id')
         if request.query_params:
             start_date = request.query_params.get('start_date', None)
             end_date = request.query_params.get('end_date', None)
