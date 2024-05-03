@@ -1,6 +1,7 @@
 import json
 
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -54,6 +55,13 @@ class CurriculumCreateView(APIView):
                     data=serializer.errors
                 )
                 return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        except ValidationError as er:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=str(er.detail.get('non_field_errors')[0]),
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             response = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
