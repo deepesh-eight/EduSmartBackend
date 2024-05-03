@@ -904,3 +904,37 @@ class TeachersSectionListView(APIView):
                 data={}
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TeachersSubjectListView(APIView):
+    """
+    This class is used to fetch list of subject's for creating the teacher schedule.
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            teacher_name = request.query_params.get('teacher_name')
+            teacher_list = TeacherUser.objects.get(user__is_active=True, user__school_id=request.user.school_id, full_name=teacher_name)
+            subject_set = set()
+            for teacher in teacher_list.class_subject_section_details:
+                subject_set.add(teacher['subject'])
+
+            distinct_subject = list(subject_set)
+
+            data = {
+                "subject": distinct_subject
+            }
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=CurriculumMessage.SUBJECT_LIST_MESSAGE,
+                data=data
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
