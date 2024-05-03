@@ -51,7 +51,8 @@ urlpatterns = [
 
     # Mobile App teacher curriculum list
     path('curriculum/list/', TeacherCurriculumListView.as_view(), name='teacher_curriculum_list'),
-    path('curriculum/section/list/', TeacherCurriculumClassListView.as_view(), name='teacher_section_list'),
+    path('curriculum/class/list/', TeacherCurriculumCListView.as_view(), name='teacher_class_list'),
+    path('curriculum/section/list/', TeacherCurriculumSectionListView.as_view(), name='teacher_section_list'),
     path('curriculum/subject/list/', TeacherCurriculumSubjectListView.as_view(), name='teacher_subject_list'),
 
 

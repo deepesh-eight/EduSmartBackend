@@ -613,10 +613,22 @@ class TeacherUserScheduleSerializer(serializers.ModelSerializer):
         return representation
 
 
-class CurriculumTeacherListerializer(serializers.ModelSerializer):
+class CurriculumSubjectsListerializer(serializers.ModelSerializer):
     class Meta:
         model = Curriculum
-        fields = ['id', 'subject_name_code', 'class_name', 'section']
+        fields = ['primary_subject', 'optional_subject']
+
+
+class CurriculumSectionListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StudentUser
+        fields = ['section']
+
+
+class CurriculumClassListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Curriculum
+        fields = ['select_class']
 
 
 class DayReviewSerializer(serializers.ModelSerializer):
