@@ -20,7 +20,8 @@ from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsManageme
 from authentication.serializers import UserSignupSerializer, UsersListSerializer, UpdateProfileSerializer, \
     UserLoginSerializer, NonTeachingStaffSerializers, NonTeachingStaffListSerializers, \
     NonTeachingStaffDetailSerializers, NonTeachingStaffProfileSerializers, StaffAttendanceSerializer, \
-    StaffAttendanceDetailSerializer, StaffAttendanceListSerializer, LogoutSerializer, EventSerializer, EventsCalendarSerializer
+    StaffAttendanceDetailSerializer, StaffAttendanceListSerializer, LogoutSerializer, EventSerializer, \
+    EventsCalendarSerializer, StaffAttendanceFilterListSerializer
 from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage, ScheduleMessage, \
     CurriculumMessage, DayReviewMessage, NotificationMessage, AnnouncementMessage, TimeTableMessage, ReportCardMesssage, \
     ZoomLinkMessage, StudyMaterialMessage, EventsMessages
@@ -1856,3 +1857,53 @@ class GetAllEvents(APIView):
             data=serializer.data,
         )
         return Response(response_data, status=status.HTTP_200_OK)
+
+
+class StaffAttedanceFilterListView(APIView):
+    """
+    This class is used to add filter in the list of non teaching staff attendance.
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+    pagination_class = CustomPagination
+
+    def get(self, request):
+        try:
+            staff = StaffUser.objects.filter(user__school_id=request.user.school_id)
+            attendance_data = StaffAttendence.objects.filter(staff__in=staff, staff__user__school_id=request.user.school_id)
+
+            date = request.query_params.get('date', None)
+            mark_attendence = request.query_params.get('mark_attendence', None)
+            if date:
+                date = datetime.datetime.strptime(date, '%Y-%m-%d').date()
+                attendance_data = attendance_data.filter(date=date)
+            if mark_attendence == 'A':
+                attendance_data = attendance_data.filter(mark_attendence='A')
+            if mark_attendence == 'P':
+                attendance_data = attendance_data.filter(mark_attendence='P')
+            if mark_attendence == 'L':
+                attendance_data = attendance_data.filter(mark_attendence='L')
+
+            paginator = self.pagination_class()
+            result_page = paginator.paginate_queryset(attendance_data, request)
+
+            serializers = StaffAttendanceFilterListSerializer(result_page, many=True)
+            response = {
+                'status': status.HTTP_200_OK,
+                'message': UserResponseMessage.USER_LIST_MESSAGE,
+                'data': serializers.data,
+                'pagination': {
+                    'page_size': paginator.page_size,
+                    'next': paginator.get_next_link(),
+                    'previous': paginator.get_previous_link(),
+                    'total_pages': paginator.page.paginator.num_pages,
+                    'current_page': paginator.page.number,
+                }
+            }
+            return Response(response, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)

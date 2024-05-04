@@ -22,7 +22,7 @@ from student.views import FetchStudentDetailView
 from teacher.serializers import TeacherUserSignupSerializer, TeacherDetailSerializer, TeacherListSerializer, \
     TeacherProfileSerializer, ScheduleCreateSerializer, ScheduleDetailSerializer, ScheduleListSerializer, \
     ScheduleUpdateSerializer, TeacherAttendanceSerializer, TeacherAttendanceDetailSerializer, \
-    TeacherAttendanceListSerializer, SectionListSerializer, SubjectListSerializer
+    TeacherAttendanceListSerializer, SectionListSerializer, SubjectListSerializer, TeacherAttendanceFilterListSerializer
 from utils import create_response_data, create_response_list_data, generate_random_password,get_teacher_total_attendance, \
     get_teacher_monthly_attendance, get_teacher_total_absent, get_teacher_monthly_absent
 
@@ -931,6 +931,56 @@ class TeachersSubjectListView(APIView):
                 data=data
             )
             return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AttedanceFilterListView(APIView):
+    """
+    This class is used to add filter in the list of teacher attendance.
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+    pagination_class = CustomPagination
+
+    def get(self, request):
+        try:
+            teacher = TeacherUser.objects.filter(user__school_id=request.user.school_id)
+            attendance_data = TeacherAttendence.objects.filter(teacher__in=teacher, teacher__user__school_id=request.user.school_id)
+
+            date = request.query_params.get('date', None)
+            mark_attendence = request.query_params.get('mark_attendence', None)
+            if date:
+                date = datetime.datetime.strptime(date, '%Y-%m-%d').date()
+                attendance_data = attendance_data.filter(date=date)
+            if mark_attendence == 'A':
+                attendance_data = attendance_data.filter(mark_attendence='A')
+            if mark_attendence == 'P':
+                attendance_data = attendance_data.filter(mark_attendence='P')
+            if mark_attendence == 'L':
+                attendance_data = attendance_data.filter(mark_attendence='L')
+
+            paginator = self.pagination_class()
+            result_page = paginator.paginate_queryset(attendance_data, request)
+
+            serializers = TeacherAttendanceFilterListSerializer(result_page, many=True)
+            response = {
+                'status': status.HTTP_200_OK,
+                'message': UserResponseMessage.USER_LIST_MESSAGE,
+                'data': serializers.data,
+                'pagination': {
+                    'page_size': paginator.page_size,
+                    'next': paginator.get_next_link(),
+                    'previous': paginator.get_previous_link(),
+                    'total_pages': paginator.page.paginator.num_pages,
+                    'current_page': paginator.page.number,
+                }
+            }
+            return Response(response, status=status.HTTP_200_OK)
         except Exception as e:
             response_data = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,

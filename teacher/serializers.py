@@ -450,6 +450,33 @@ class TeacherAttendanceListSerializer(serializers.ModelSerializer):
         return obj.class_subject_section_details[0].get("section") if obj.role == 'class_teacher' else None
 
 
+class TeacherAttendanceFilterListSerializer(serializers.ModelSerializer):
+    full_name = serializers.SerializerMethodField()
+    id = serializers.SerializerMethodField()
+    class_teacher = serializers.SerializerMethodField()
+    section = serializers.SerializerMethodField()
+    subject = serializers.SerializerMethodField()
+
+    class Meta:
+        model = TeacherAttendence
+        fields = ['full_name', 'id', 'class_teacher', 'section', 'subject', 'mark_attendence']
+
+    def get_class_teacher(self, obj):
+        return f"{obj.teacher.class_subject_section_details[0].get('class')} class" if obj.teacher.role == 'class_teacher' else None
+
+    def get_subject(self, obj):
+        return obj.teacher.class_subject_section_details[0].get("subject") if obj.teacher.role == 'class_teacher' else None
+
+    def get_section(self, obj):
+        return obj.teacher.class_subject_section_details[0].get("section") if obj.teacher.role == 'class_teacher' else None
+
+    def get_full_name(self, obj):
+        return obj.teacher.full_name if obj.teacher.role == 'class_teacher' else None
+
+    def get_id(self, obj):
+        return obj.teacher.id if obj.teacher.role == 'class_teacher' else None
+
+
 class CertificateUserProfileSerializer(serializers.ModelSerializer):
     certificate_file = serializers.SerializerMethodField()
     certificate_name = serializers.SerializerMethodField()
