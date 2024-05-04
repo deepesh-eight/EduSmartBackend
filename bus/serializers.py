@@ -5,14 +5,14 @@ from .models import Route, Stop
 class StopSerializer(serializers.ModelSerializer):
     class Meta:
         model = Stop
-        fields = ['name', 'time']
+        fields = ['id','name', 'time']
 
 class RouteSerializer(serializers.ModelSerializer):
     stops = StopSerializer(many=True)
 
     class Meta:
         model = Route
-        fields = ['name', 'stops']
+        fields = ['id','name', 'stops']
 
     def create(self, validated_data):
         stops_data = validated_data.pop('stops')
