@@ -50,7 +50,8 @@ INSTALLED_APPS = [
     'curriculum',
     'e_book',
     'superadmin',
-    'bus'
+    'bus',
+    'content'
 
 ]
 

@@ -72,6 +72,12 @@ EXAME_TYPE_CHOICE = [
     ('Quarterly Exams', 'Quarterly Exams'),
     ('Pre-Board Exams', 'Pre-Board Exams'),
 ]
+
+CONTENT_TYPES = [
+    ('e_book', 'E-Book'),
+    ('e_video', 'E-Video'),
+]
+
 class UserLoginMessage:
     USER_DOES_NOT_EXISTS = "User does not exists."
     INCORRECT_PASSWORD = "Incorrect password, please try again."
