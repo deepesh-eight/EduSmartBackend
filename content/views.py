@@ -48,3 +48,28 @@ class ContentListView(generics.ListAPIView):
             data=serializer.data,
         )
         return Response(response_data, status=status.HTTP_200_OK)
+    
+class ContentDeleteView(generics.DestroyAPIView):
+    serializer_class = ContentSerializer
+    permission_classes = [IsAdminUser, IsInSameSchool]
+
+    def get_queryset(self):
+        return Content.objects.filter(school_id=self.request.user.school_id)
+
+    def delete(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+            self.perform_destroy(instance)
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message="Content successfully deleted.",
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=str(e),
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
