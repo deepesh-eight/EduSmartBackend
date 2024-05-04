@@ -20,7 +20,8 @@ from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsManageme
 from authentication.serializers import UserSignupSerializer, UsersListSerializer, UpdateProfileSerializer, \
     UserLoginSerializer, NonTeachingStaffSerializers, NonTeachingStaffListSerializers, \
     NonTeachingStaffDetailSerializers, NonTeachingStaffProfileSerializers, StaffAttendanceSerializer, \
-    StaffAttendanceDetailSerializer, StaffAttendanceListSerializer, LogoutSerializer, EventSerializer, EventsCalendarSerializer
+    StaffAttendanceDetailSerializer, StaffAttendanceListSerializer, LogoutSerializer, EventSerializer, \
+    EventsCalendarSerializer, StaffAttendanceFilterListSerializer
 from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage, ScheduleMessage, \
     CurriculumMessage, DayReviewMessage, NotificationMessage, AnnouncementMessage, TimeTableMessage, ReportCardMesssage, \
     ZoomLinkMessage, StudyMaterialMessage, EventsMessages
@@ -30,12 +31,13 @@ from student.models import ExmaReportCard, ZoomLink, StudentMaterial
 from student.serializers import StudentDetailSerializer, StudentUserProfileSerializer
 from superadmin.models import Announcement
 from teacher.serializers import TeacherDetailSerializer, TeacherProfileSerializer, TeacherUserProfileSerializer, \
-    TeacherUserScheduleSerializer, CurriculumTeacherListerializer, DayReviewSerializer, DayReviewDetailSerializer, \
+    TeacherUserScheduleSerializer, DayReviewSerializer, DayReviewDetailSerializer, \
     TeacherUserAttendanceListSerializer, NotificationSerializer, NotificationListSerializer, \
     AnnouncementCreateSerializer, CreateTimeTableSerializer, AnnouncementListSerializer, TimeTableListSerializer, \
     TimeTableDetailSerializer, TimeTableUpdateSerializer, ExamReportCreateSerializer, ExamReportListSerializer, \
     ExamReportCardViewSerializer, ExamReportcardUpdateSerializer, ZoomLinkCreateSerializer, ZoomLinkListSerializer, \
-    StudyMaterialUploadSerializer, StudyMaterialListSerializer, StudyMaterialDetailSerializer
+    StudyMaterialUploadSerializer, StudyMaterialListSerializer, StudyMaterialDetailSerializer, \
+    CurriculumSectionListSerializer, CurriculumClassListSerializer, CurriculumSubjectsListerializer
 from utils import create_response_data, create_response_list_data, get_staff_total_attendance, \
     get_staff_monthly_attendance, get_staff_total_absent, get_staff_monthly_absent
 
@@ -771,22 +773,15 @@ class TeacherCurriculumListView(APIView):
         try:
             user = request.user
             if user.user_type == 'teacher':
-                curriculum = Curriculum.objects.filter()
-                serializer = CurriculumTeacherListerializer(curriculum, many=True)
-
-                classes = list(set([item['class_name'] for item in serializer.data]))
-                # sections = list(set([item['section'] for item in serializer.data]))
-                # subject_names = list(set([subject['subject_name'] for item in serializer.data for subject in item['subject_name_code']]))
-
-                response = {
-                    'classes': classes,
-                    # 'sections': sections,
-                    # 'subjects': subject_names
+                data = Curriculum.objects.filter(school_id=request.user.school_id).values_list('curriculum_name',flat=True).distinct()
+                curriculum = list(data)
+                curriculum_list = {
+                    "curriculum_name": curriculum
                 }
                 response_data = create_response_data(
                     status=status.HTTP_200_OK,
-                    message=CurriculumMessage.CURRICULUM_LIST_MESSAGE,
-                    data=response
+                    message=CurriculumMessage.CLASSES_LIST_MESSAGE,
+                    data=curriculum_list
                 )
                 return Response(response_data, status=status.HTTP_200_OK)
             else:
@@ -805,7 +800,7 @@ class TeacherCurriculumListView(APIView):
             return Response(response_data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class TeacherCurriculumClassListView(APIView):
+class TeacherCurriculumSectionListView(APIView):
     """
     This class is created to fetch the list of sections in the provided class.
     """
@@ -815,21 +810,52 @@ class TeacherCurriculumClassListView(APIView):
         try:
             user = request.user
             if user.user_type == 'teacher':
-                class_name = request.query_params.get('class_name')
-                curriculum = Curriculum.objects.filter(school_id=request.user.school_id, class_name=class_name)
-                serializer = CurriculumTeacherListerializer(curriculum, many=True)
-
-                # classes = list(set([item['class_name'] for item in serializer.data]))
-                sections = list(set([item['section'] for item in serializer.data]))
-                # subject_names = list(set([subject['subject_name'] for item in serializer.data for subject in item['subject_name_code']]))
-                #
-                response = {
-                    'sections': sections,
-                }
+                curriculum = request.query_params.get("curriculum")
+                classes = request.query_params.get("class_name")
+                section_list = StudentUser.objects.filter(user__school_id=request.user.school_id, curriculum=curriculum,
+                                                          class_enrolled=classes)
+                serializer = CurriculumSectionListSerializer(section_list, many=True)
+                class_names = [item['section'] for item in serializer.data]
                 response_data = create_response_data(
                     status=status.HTTP_200_OK,
-                    message=CurriculumMessage.CURRICULUM_LIST_MESSAGE,
-                    data=response
+                    message=CurriculumMessage.SECTION_LIST_MESSAGE,
+                    data=class_names
+                )
+                return Response(response_data, status=status.HTTP_200_OK)
+            else:
+                response_data = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message="you are not an teacher user.",
+                    data={}
+                )
+                return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class TeacherCurriculumCListView(APIView):
+    """
+    This class is created to fetch the list of classes in the provided curriculum.
+    """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            user = request.user
+            if user.user_type == 'teacher':
+                curriculum = request.query_params.get("curriculum")
+                data = Curriculum.objects.filter(curriculum_name=curriculum, school_id=request.user.school_id)
+                serializer = CurriculumClassListSerializer(data, many=True)
+                class_names = [item['select_class'] for item in serializer.data]
+                response_data = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=CurriculumMessage.CLASSES_LIST_MESSAGE,
+                    data=class_names
                 )
                 return Response(response_data, status=status.HTTP_200_OK)
             else:
@@ -850,7 +876,7 @@ class TeacherCurriculumClassListView(APIView):
 
 class TeacherCurriculumSubjectListView(APIView):
     """
-    This class is created to fetch the list of subject in the provided setion.
+    This class is created to fetch the list of subject in the provided curriculum and class.
     """
     permission_classes = [IsTeacherUser, IsInSameSchool]
 
@@ -858,22 +884,22 @@ class TeacherCurriculumSubjectListView(APIView):
         try:
             user = request.user
             if user.user_type == 'teacher':
-                class_name = request.query_params.get('class_name')
-                section = request.query_params.get('section')
-                curriculum = Curriculum.objects.filter(school_id=request.user.school_id, class_name=class_name, section=section)
-                serializer = CurriculumTeacherListerializer(curriculum, many=True)
-
-                # classes = list(set([item['class_name'] for item in serializer.data]))
-                # sections = list(set([item['section'] for item in serializer.data]))
-                subject_names = list(set([subject['subject_name'] for item in serializer.data for subject in item['subject_name_code']]))
-                #
-                response = {
-                    'subject_name': subject_names,
+                curriculum = request.query_params.get("curriculum")
+                classes = request.query_params.get("class_name")
+                subjects = Curriculum.objects.filter(school_id=request.user.school_id, curriculum_name=curriculum,
+                                                     select_class=classes)
+                serializer = CurriculumSubjectsListerializer(subjects, many=True)
+                primary_subject = [item['primary_subject'] for item in serializer.data]
+                optional_subject = [item['optional_subject'] for item in serializer.data]
+                subject_list = primary_subject+optional_subject
+                flat_subjects = [subject for sublist in subject_list for subject in sublist]
+                data = {
+                    "subject": flat_subjects,
                 }
                 response_data = create_response_data(
                     status=status.HTTP_200_OK,
-                    message=CurriculumMessage.CURRICULUM_LIST_MESSAGE,
-                    data=response
+                    message=CurriculumMessage.SECTION_LIST_MESSAGE,
+                    data=data
                 )
                 return Response(response_data, status=status.HTTP_200_OK)
             else:
@@ -1831,3 +1857,53 @@ class GetAllEvents(APIView):
             data=serializer.data,
         )
         return Response(response_data, status=status.HTTP_200_OK)
+
+
+class StaffAttedanceFilterListView(APIView):
+    """
+    This class is used to add filter in the list of non teaching staff attendance.
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+    pagination_class = CustomPagination
+
+    def get(self, request):
+        try:
+            staff = StaffUser.objects.filter(user__school_id=request.user.school_id)
+            attendance_data = StaffAttendence.objects.filter(staff__in=staff, staff__user__school_id=request.user.school_id)
+
+            date = request.query_params.get('date', None)
+            mark_attendence = request.query_params.get('mark_attendence', None)
+            if date:
+                date = datetime.datetime.strptime(date, '%Y-%m-%d').date()
+                attendance_data = attendance_data.filter(date=date)
+            if mark_attendence == 'A':
+                attendance_data = attendance_data.filter(mark_attendence='A')
+            if mark_attendence == 'P':
+                attendance_data = attendance_data.filter(mark_attendence='P')
+            if mark_attendence == 'L':
+                attendance_data = attendance_data.filter(mark_attendence='L')
+
+            paginator = self.pagination_class()
+            result_page = paginator.paginate_queryset(attendance_data, request)
+
+            serializers = StaffAttendanceFilterListSerializer(result_page, many=True)
+            response = {
+                'status': status.HTTP_200_OK,
+                'message': UserResponseMessage.USER_LIST_MESSAGE,
+                'data': serializers.data,
+                'pagination': {
+                    'page_size': paginator.page_size,
+                    'next': paginator.get_next_link(),
+                    'previous': paginator.get_previous_link(),
+                    'total_pages': paginator.page.paginator.num_pages,
+                    'current_page': paginator.page.number,
+                }
+            }
+            return Response(response, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)

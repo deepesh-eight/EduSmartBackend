@@ -14,10 +14,20 @@ urlpatterns = [
         path('schedule/list/', TeacherScheduleListView.as_view(), name='schedule_list'),
         path('schedule/delete/<int:pk>/', TeacherScheduleDeleteView.as_view(), name='schedule_delete'),
         path('schedule/update/<int:pk>/', TeacherScheduleUpdateView.as_view(), name='schedule_update'),
+        path('schedule/teacher/list/', TeachersListView.as_view(), name='teachers_list'),
+        path('schedule/curriculum/list/', TeachersCurriculumListView.as_view(), name='schedule_curriculum_list'),
+        path('schedule/class/list/', TeachersClassListView.as_view(), name='schedule_class_list'),
+        path('schedule/section/list/', TeachersSectionListView.as_view(), name='schedule_section_list'),
+        path('schedule/subject/list/', TeachersSubjectListView.as_view(), name='schedule_subject_list'),
 
         #Teacher attendence API's
         path('user/login/', UserLoginView.as_view(), name='user_login'),
         path('attendance/create/', TeacherAttendanceCreateView.as_view(), name='attendance_create'),
         path('attendance/detail/<int:pk>/', FetchAttendanceDetailView.as_view(), name='fetch_attendance_detail'),
-        path('attendance/list/',  FetchAttendanceListView.as_view(), name='fetch_attendance_list')
+        path('attendance/list/',  FetchAttendanceListView.as_view(), name='fetch_attendance_list'),
+        path('attendance/filter/list/', AttedanceFilterListView.as_view(), name='attendance_filter_list'),
+
+        # Curriculum API'S
+        path('section/list/', SectionListView.as_view(), name='class_list'),
+        path('subjects/list/', SubjectListView.as_view(), name='subject_list')
 ]

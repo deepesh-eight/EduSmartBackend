@@ -32,6 +32,7 @@ urlpatterns = [
     path('attendance/create/', AttendanceCreateView.as_view(), name='attendance_create'),
     path('attendance/detail/<int:pk>/', FetchAttendanceDetailView.as_view(), name='fetch_attendance_detail'),
     path('attendance/list/',  FetchAttendanceListView.as_view(), name='fetch_attendance_list'),
+    path('attendance/filter/list/', StaffAttedanceFilterListView.as_view(), name='staff_attendance_filter_list'),
 
     # Notification
     path('notification/create/', NotificationCreateView.as_view(), name='notification_create'),
@@ -51,7 +52,8 @@ urlpatterns = [
 
     # Mobile App teacher curriculum list
     path('curriculum/list/', TeacherCurriculumListView.as_view(), name='teacher_curriculum_list'),
-    path('curriculum/section/list/', TeacherCurriculumClassListView.as_view(), name='teacher_section_list'),
+    path('curriculum/class/list/', TeacherCurriculumCListView.as_view(), name='teacher_class_list'),
+    path('curriculum/section/list/', TeacherCurriculumSectionListView.as_view(), name='teacher_section_list'),
     path('curriculum/subject/list/', TeacherCurriculumSubjectListView.as_view(), name='teacher_subject_list'),
 
 

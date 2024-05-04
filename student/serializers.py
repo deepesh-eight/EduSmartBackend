@@ -44,6 +44,7 @@ class StudentUserSignupSerializer(serializers.Serializer):
     enrollment_no = serializers.CharField(default='')
     roll_no = serializers.CharField(default='')
     guardian_no = serializers.CharField(default='')
+    optional_subject = serializers.CharField(default='')
 
 
 class StudentDetailSerializer(serializers.ModelSerializer):
@@ -51,18 +52,18 @@ class StudentDetailSerializer(serializers.ModelSerializer):
     email = serializers.SerializerMethodField()
     curriculum = serializers.SerializerMethodField()
     subjects = serializers.SerializerMethodField()
-    exam_board = serializers.SerializerMethodField()
+    optional_subjects = serializers.SerializerMethodField()
 
     class Meta:
         model = StudentUser
         fields = ['id', 'name', 'image', 'class_enrolled', 'section', 'admission_date', 'dob', 'gender', 'religion', 'blood_group',
                   'school_fee','bus_fee', 'canteen_fee', 'other_fee', 'due_fee', 'total_fee', 'father_name', 'father_phone_number',
                   'father_occupation', 'mother_name', 'mother_phone_number', 'mother_occupation', 'email', 'permanent_address', 'curriculum',
-                   'subjects', 'bus_number', 'bus_route', 'exam_board', 'enrollment_no', 'roll_no']
+                   'subjects', 'bus_number', 'bus_route', 'enrollment_no', 'roll_no', 'optional_subjects', 'guardian_no']
 
 
     def get_curriculum(self,obj):
-        return obj.curriculum.id if hasattr(obj, 'curriculum') else None
+        return obj.curriculum if hasattr(obj, 'curriculum') else None
 
     def get_image(self, obj):
         if obj.image:
@@ -76,10 +77,19 @@ class StudentDetailSerializer(serializers.ModelSerializer):
         return obj.user.email if hasattr(obj, 'user') else None
 
     def get_subjects(self, obj):
-        return obj.curriculum.subject_name_code if hasattr(obj, 'curriculum') else None
+        subject = Curriculum.objects.get(curriculum_name=obj.curriculum, select_class=obj.class_enrolled)
+        if subject:
+            return subject.primary_subject
+        else:
+            None
 
-    def get_exam_board(self, obj):
-        return obj.curriculum.exam_board if hasattr(obj, 'curriculum') else None
+    def get_optional_subjects(self, obj):
+        subject = Curriculum.objects.get(curriculum_name=obj.curriculum, select_class=obj.class_enrolled)
+        if subject:
+            return subject.optional_subject
+        else:
+            None
+
 
 class ImageFieldStringAndFile(serializers.Field):
     def to_representation(self, value):
@@ -128,6 +138,8 @@ class studentProfileSerializer(serializers.ModelSerializer):
     permanent_address = serializers.CharField(max_length=255, required=False)
     bus_number = serializers.CharField(required=False)
     bus_route = serializers.IntegerField(required=False)
+    guardian_no = serializers.CharField(default='')
+    optional_subject = serializers.CharField(default='')
 
 
     class Meta:
@@ -135,7 +147,7 @@ class studentProfileSerializer(serializers.ModelSerializer):
         fields = ['name', 'email', 'user_type', 'dob', 'image', 'father_name', 'father_phone_number', 'father_occupation', 'mother_name',
                   'mother_occupation', 'mother_phone_number', 'gender', 'admission_date', 'school_fee', 'bus_fee', 'canteen_fee', 'other_fee',
                   'due_fee', 'total_fee', 'religion', 'blood_group', 'class_enrolled', 'section', 'curriculum', 'permanent_address', 'bus_number',
-                  'bus_route']
+                  'bus_route', 'guardian_no', 'optional_subject']
 
     def update(self, instance, validated_data):
         user_data = validated_data.pop('user', {})
@@ -145,20 +157,21 @@ class studentProfileSerializer(serializers.ModelSerializer):
             setattr(user, attr, value)
         user.save()
 
-        curriculum_data = validated_data.pop('curriculum', None)
-        if curriculum_data is not None:
-            curriculum = Curriculum.objects.get(id=curriculum_data)
-            instance.curriculum = curriculum
-            instance.save()
+        # curriculum_data = validated_data.pop('curriculum', None)
+        # if curriculum_data is not None:
+        #     curriculum = Curriculum.objects.get(id=curriculum_data)
+        #     instance.curriculum = curriculum
+        #     instance.save()
 
         return super().update(instance, validated_data)
 
 class StudentListSerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField()
+    email = serializers.SerializerMethodField()
 
     class Meta:
         model = StudentUser
-        fields = ['id', 'name', 'class_enrolled', 'section', 'father_phone_number', 'permanent_address', 'image']
+        fields = ['id', 'name', 'class_enrolled', 'section', 'father_phone_number', 'image', 'email']
 
     def get_image(self, obj):
         if obj.image:
@@ -167,6 +180,9 @@ class StudentListSerializer(serializers.ModelSerializer):
             else:
                 return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.image)}'
         return None
+
+    def get_email(self, obj):
+        return obj.user.email
 
 
 class StudentAttendanceDetailSerializer(serializers.ModelSerializer):
@@ -230,21 +246,19 @@ class StudentUserProfileSerializer(serializers.ModelSerializer):
     email = serializers.SerializerMethodField()
     curriculum = serializers.SerializerMethodField()
     subjects = serializers.SerializerMethodField()
-    exam_board = serializers.SerializerMethodField()
     age = serializers.SerializerMethodField()
-    roll_number = serializers.SerializerMethodField()
     total_attendance = serializers.SerializerMethodField()
 
     class Meta:
         model = StudentUser
-        fields = ['id', 'roll_number', 'name', 'image', 'class_enrolled', 'section', 'admission_date', 'dob', 'age', 'gender', 'religion', 'blood_group',
+        fields = ['id', 'roll_no', 'name', 'image', 'class_enrolled', 'section', 'admission_date', 'dob', 'age', 'gender', 'religion', 'blood_group',
                   'school_fee','bus_fee', 'canteen_fee', 'other_fee', 'due_fee', 'total_fee', 'father_name', 'father_phone_number',
                   'father_occupation', 'mother_name', 'mother_phone_number', 'mother_occupation', 'email', 'permanent_address', 'curriculum',
-                   'subjects', 'bus_number', 'bus_route', 'exam_board', 'total_attendance']
+                   'subjects', 'bus_number', 'bus_route', 'total_attendance']
 
 
     def get_curriculum(self,obj):
-        return obj.curriculum.id if hasattr(obj, 'curriculum') else None
+        return obj.curriculum if hasattr(obj, 'curriculum') else None
 
     def get_image(self, obj):
         if obj.image:
@@ -258,12 +272,12 @@ class StudentUserProfileSerializer(serializers.ModelSerializer):
         return obj.user.email if hasattr(obj, 'user') else None
 
     def get_subjects(self, obj):
-        subjects_list = obj.curriculum.subject_name_code if hasattr(obj, 'curriculum') else []
-        subject_names = ", ".join(subject['subject_name'] for subject in subjects_list)
-        return subject_names
+        subject = Curriculum.objects.get(curriculum_name=obj.curriculum, select_class=obj.class_enrolled)
+        if subject:
+            return subject.primary_subject
+        else:
+            None
 
-    def get_exam_board(self, obj):
-        return obj.curriculum.exam_board if hasattr(obj, 'curriculum') else None
 
     def get_age(self, obj):
         if obj.dob:
@@ -272,8 +286,6 @@ class StudentUserProfileSerializer(serializers.ModelSerializer):
             return age
         return None
 
-    def get_roll_number(self, obj):
-        return "001"
 
     def get_total_attendance(self, obj):
         year = datetime.date.today().year
@@ -281,3 +293,14 @@ class StudentUserProfileSerializer(serializers.ModelSerializer):
             student=obj.id, date__year=year, mark_attendence='P').count()
         return total_attendance
 
+
+class AdminClassListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Curriculum
+        fields = ['select_class']
+
+
+class AdminOptionalSubjectListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Curriculum
+        fields = ['optional_subject']

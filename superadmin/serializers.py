@@ -98,24 +98,36 @@ class CurriculumCreateSerializer(serializers.ModelSerializer):
         fields = ['curriculum_name', 'class_name', 'class_subject', 'optional_subject']
 
     def validate_class_subject(self, value):
-        updated_subjects = []
-        for subject in value:
-            # Convert the first character to uppercase
-            subject = subject.capitalize()
-            # Convert characters after space to uppercase
-            subject = ' '.join(word.capitalize() for word in subject.split(' '))
-            updated_subjects.append(subject)
+        updated_subjects = self.process_subjects(value)
         return updated_subjects
 
     def validate_optional_subject(self, value):
-        updated_subjects = []
-        for subject in value:
-            # Convert the first character to uppercase
-            subject = subject.capitalize()
-            # Convert characters after space to uppercase
-            subject = ' '.join(word.capitalize() for word in subject.split(' '))
-            updated_subjects.append(subject)
+        updated_subjects = self.process_subjects(value)
         return updated_subjects
+
+    def process_subjects(self, subjects):
+        updated_subjects = []
+        for subject in subjects:
+            # Format subject code
+            subject_code = self.generate_subject_code(subject)
+            # Format subject name
+            formatted_subject = self.format_subject_name(subject)
+            updated_subjects.append(subject_code)
+        return updated_subjects
+
+    def generate_subject_code(self, subject_code):
+        parts = subject_code.split('-')
+        if len(parts) == 2:
+            code = parts[0]
+            subject_name = parts[1]
+            if code.isdigit() and len(code) < 3:
+                code = code.zfill(3)  # Pad with leading zeros if necessary
+                return f"{code}-{self.format_subject_name(subject_name)}"
+        return subject_code
+
+    def format_subject_name(self, subject_name):
+        # Capitalize first letter of each word in subject name
+        return ' '.join(word.capitalize() for word in subject_name.split())
 
     def validate(self, data):
         curriculum_name = data.get('curriculum_name')
@@ -134,27 +146,39 @@ class CurriculumUpdateSerializer(serializers.ModelSerializer):
         fields = ['curriculum_name', 'class_name', 'class_subject', 'optional_subject']
 
     def validate_class_subject(self, value):
-        updated_subjects = []
-        for subject in value:
-            # Convert the first character to uppercase
-            subject = subject.capitalize()
-            # Convert characters after space to uppercase
-            subject = ' '.join(word.capitalize() for word in subject.split(' '))
-            updated_subjects.append(subject)
+        updated_subjects = self.process_subjects(value)
         return updated_subjects
 
     def validate_optional_subject(self, value):
-        updated_subjects = []
-        for subject in value:
-            # Convert the first character to uppercase
-            subject = subject.capitalize()
-            # Convert characters after space to uppercase
-            subject = ' '.join(word.capitalize() for word in subject.split(' '))
-            updated_subjects.append(subject)
+        updated_subjects = self.process_subjects(value)
         return updated_subjects
+
+    def process_subjects(self, subjects):
+        updated_subjects = []
+        for subject in subjects:
+            # Format subject code
+            subject_code = self.generate_subject_code(subject)
+            # Format subject name
+            formatted_subject = self.format_subject_name(subject)
+            updated_subjects.append(subject_code)
+        return updated_subjects
+
+    def generate_subject_code(self, subject_code):
+        parts = subject_code.split('-')
+        if len(parts) == 2:
+            code = parts[0]
+            subject_name = parts[1]
+            if code.isdigit() and len(code) < 3:
+                code = code.zfill(3)  # Pad with leading zeros if necessary
+                return f"{code}-{self.format_subject_name(subject_name)}"
+        return subject_code
+
+    def format_subject_name(self, subject_name):
+        # Capitalize first letter of each word in subject name
+        return ' '.join(word.capitalize() for word in subject_name.split())
 
 
 class CurriculumListSerializer(serializers.ModelSerializer):
     class Meta:
         model = CurricullumList
-        fields = ['id', 'curriculum_name', 'class_name', 'class_subject']
+        fields = ['id', 'curriculum_name', 'class_name', 'class_subject', 'optional_subject']

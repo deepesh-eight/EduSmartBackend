@@ -233,7 +233,7 @@ class TeacherProfileSerializer(serializers.ModelSerializer):
 
 class ScheduleCreateSerializer(serializers.Serializer):
     start_date = serializers.DateField(required=True)
-    end_date = serializers.DateField(required=True)
+    end_date = serializers.DateField(required=False)
     teacher = serializers.CharField(required=True)
     schedule_data = serializers.ListField(
         child=serializers.CharField(),
@@ -261,21 +261,16 @@ class ScheduleCreateSerializer(serializers.Serializer):
 
 class ScheduleDetailSerializer(serializers.ModelSerializer):
     teacher = serializers.SerializerMethodField()
-    teacher_id = serializers.SerializerMethodField()
+    # teacher_id = serializers.SerializerMethodField()
     schedule_data = serializers.ListField(child=serializers.DictField(), required=False)
 
     class Meta:
         model = TeachersSchedule
-        fields = ['start_date', 'end_date', 'teacher', 'teacher_id', 'schedule_data']
+        fields = ['start_date', 'end_date', 'teacher', 'schedule_data']
 
     def get_teacher(self, obj):
         teacher_data = TeacherUser.objects.get(id=obj.teacher_id)
         return teacher_data.full_name
-
-    def get_teacher_id(self, obj):
-        teacher_data = TeacherUser.objects.get(id=obj.teacher_id)
-        return teacher_data.id
-
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
@@ -455,6 +450,33 @@ class TeacherAttendanceListSerializer(serializers.ModelSerializer):
         return obj.class_subject_section_details[0].get("section") if obj.role == 'class_teacher' else None
 
 
+class TeacherAttendanceFilterListSerializer(serializers.ModelSerializer):
+    full_name = serializers.SerializerMethodField()
+    id = serializers.SerializerMethodField()
+    class_teacher = serializers.SerializerMethodField()
+    section = serializers.SerializerMethodField()
+    subject = serializers.SerializerMethodField()
+
+    class Meta:
+        model = TeacherAttendence
+        fields = ['full_name', 'id', 'class_teacher', 'section', 'subject', 'mark_attendence']
+
+    def get_class_teacher(self, obj):
+        return f"{obj.teacher.class_subject_section_details[0].get('class')} class" if obj.teacher.role == 'class_teacher' else None
+
+    def get_subject(self, obj):
+        return obj.teacher.class_subject_section_details[0].get("subject") if obj.teacher.role == 'class_teacher' else None
+
+    def get_section(self, obj):
+        return obj.teacher.class_subject_section_details[0].get("section") if obj.teacher.role == 'class_teacher' else None
+
+    def get_full_name(self, obj):
+        return obj.teacher.full_name if obj.teacher.role == 'class_teacher' else None
+
+    def get_id(self, obj):
+        return obj.teacher.id if obj.teacher.role == 'class_teacher' else None
+
+
 class CertificateUserProfileSerializer(serializers.ModelSerializer):
     certificate_file = serializers.SerializerMethodField()
     certificate_name = serializers.SerializerMethodField()
@@ -483,7 +505,7 @@ class TeacherUserProfileSerializer(serializers.ModelSerializer):
     certificates = serializers.SerializerMethodField()
     class_teacher = serializers.SerializerMethodField()
     age = serializers.SerializerMethodField()
-    class_subject_section_details = serializers.SerializerMethodField()
+    # class_subject_section_details = serializers.SerializerMethodField()
 
     class Meta:
         model = TeacherUser
@@ -529,21 +551,21 @@ class TeacherUserProfileSerializer(serializers.ModelSerializer):
             return age
         return None
 
-    def get_class_subject_section_details(self, obj):
-        data = []
-        for detail in obj.class_subject_section_details:
-            # Find the matching curriculum based on class and section
-            matching_curriculum = Curriculum.objects.filter(class_name=detail.get('class'),
-                                                            section=detail.get('section')).first()
-            if matching_curriculum:
-                curriculum_data = {
-                    "class": detail.get('class'),
-                    "section": detail.get('section'),
-                    "subject": detail.get('subject'),
-                    "curriculum": matching_curriculum.exam_board
-                }
-                data.append(curriculum_data)
-        return data
+    # def get_class_subject_section_details(self, obj):
+    #     data = []
+    #     for detail in obj.class_subject_section_details:
+    #         # Find the matching curriculum based on class and section
+    #         matching_curriculum = Curriculum.objects.filter(class_name=detail.get('class'),
+    #                                                         section=detail.get('section')).first()
+    #         if matching_curriculum:
+    #             curriculum_data = {
+    #                 "class": detail.get('class'),
+    #                 "section": detail.get('section'),
+    #                 "subject": detail.get('subject'),
+    #                 "curriculum": matching_curriculum.exam_board
+    #             }
+    #             data.append(curriculum_data)
+    #     return data
 
 
 class TeacherUserScheduleSerializer(serializers.ModelSerializer):
@@ -618,10 +640,22 @@ class TeacherUserScheduleSerializer(serializers.ModelSerializer):
         return representation
 
 
-class CurriculumTeacherListerializer(serializers.ModelSerializer):
+class CurriculumSubjectsListerializer(serializers.ModelSerializer):
     class Meta:
         model = Curriculum
-        fields = ['id', 'subject_name_code', 'class_name', 'section']
+        fields = ['primary_subject', 'optional_subject']
+
+
+class CurriculumSectionListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StudentUser
+        fields = ['section']
+
+
+class CurriculumClassListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Curriculum
+        fields = ['select_class']
 
 
 class DayReviewSerializer(serializers.ModelSerializer):
@@ -909,3 +943,15 @@ class StudyMaterialDetailSerializer(serializers.ModelSerializer):
             else:
                 return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.upload_content)}'
         return None
+
+
+class SectionListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StudentUser
+        fields = ['section']
+
+
+class SubjectListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Curriculum
+        fields = ['primary_subject', 'optional_subject']

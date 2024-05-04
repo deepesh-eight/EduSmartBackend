@@ -15,13 +15,14 @@ from authentication.models import User, Class, TeacherUser, StudentUser, Certifi
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsTeacherUser, IsInSameSchool
 from authentication.serializers import UserLoginSerializer
 from authentication.views import NonTeachingStaffDetailView
-from constants import UserLoginMessage, UserResponseMessage, ScheduleMessage, AttendenceMarkedMessage
+from constants import UserLoginMessage, UserResponseMessage, ScheduleMessage, AttendenceMarkedMessage, CurriculumMessage
+from curriculum.models import Curriculum
 from pagination import CustomPagination
 from student.views import FetchStudentDetailView
 from teacher.serializers import TeacherUserSignupSerializer, TeacherDetailSerializer, TeacherListSerializer, \
     TeacherProfileSerializer, ScheduleCreateSerializer, ScheduleDetailSerializer, ScheduleListSerializer, \
     ScheduleUpdateSerializer, TeacherAttendanceSerializer, TeacherAttendanceDetailSerializer, \
-    TeacherAttendanceListSerializer
+    TeacherAttendanceListSerializer, SectionListSerializer, SubjectListSerializer, TeacherAttendanceFilterListSerializer
 from utils import create_response_data, create_response_list_data, generate_random_password,get_teacher_total_attendance, \
     get_teacher_monthly_attendance, get_teacher_total_absent, get_teacher_monthly_absent
 
@@ -57,7 +58,6 @@ class TeacherUserCreateView(APIView):
             class_subject_section_details = serializer.validated_data['class_subject_section_details']
             highest_qualification = serializer.validated_data['highest_qualification']
             certificates = serializer.validated_data.get('certificate_files', [])
-
 
             if user_type == 'teacher' and serializer.is_valid() == True:
                 user = User.objects.create_user(
@@ -361,12 +361,12 @@ class TeacherScheduleCreateView(APIView):
             serializer = ScheduleCreateSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             start_date = serializer.validated_data['start_date']
-            end_date = serializer.validated_data['end_date']
+            end_date = serializer.validated_data.get('end_date', '')
             schedule_data = serializer.validated_data['schedule_data']
             teacher = serializer.validated_data['teacher']
 
             try:
-                teacher = TeacherUser.objects.get(id=teacher, user__school_id=request.user.school_id)
+                teacher = TeacherUser.objects.get(full_name=teacher, user__school_id=request.user.school_id)
             except TeacherUser.DoesNotExist:
                 response = create_response_data(
                     status=status.HTTP_400_BAD_REQUEST,
@@ -446,7 +446,7 @@ class TeacherScheduleListView(APIView):
     pagination_class = CustomPagination
 
     def get(self, request):
-        queryset = TeachersSchedule.objects.filter(school_id=request.user.school_id)
+        queryset = TeachersSchedule.objects.filter(school_id=request.user.school_id).order_by('-id')
         if request.query_params:
             start_date = request.query_params.get('start_date', None)
             end_date = request.query_params.get('end_date', None)
@@ -711,3 +711,280 @@ class FetchAttendanceListView(APIView):
             data=serializer.data,
         )
         return Response(response, status=status.HTTP_200_OK)
+
+
+class SectionListView(APIView):
+    """
+    This class is used to fetch list of the section.
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            curriculum = request.query_params.get("curriculum")
+            classes = request.query_params.get("class_name")
+            section_list = StudentUser.objects.filter(user__school_id=request.user.school_id, curriculum=curriculum, class_enrolled=classes)
+            serializer = SectionListSerializer(section_list, many=True)
+            class_names = [item['section'] for item in serializer.data]
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=CurriculumMessage.SECTION_LIST_MESSAGE,
+                data=class_names
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SubjectListView(APIView):
+    """
+    This class is used to fetch list of the subjects(primary & optional).
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            curriculum = request.query_params.get("curriculum")
+            classes = request.query_params.get("class_name")
+            subjects = Curriculum.objects.filter(school_id=request.user.school_id, curriculum_name=curriculum, select_class=classes)
+            serializer = SubjectListSerializer(subjects, many=True)
+            primary_subject = [item['primary_subject'] for item in serializer.data]
+            optional_subject = [item['optional_subject'] for item in serializer.data]
+            data = {
+                "primary_subject": primary_subject[0],
+                "optional_subject": optional_subject[0]
+            }
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=CurriculumMessage.SECTION_LIST_MESSAGE,
+                data=data
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TeachersListView(APIView):
+    """
+    This class is used to fetch list of all the teachers for creating their schedule.
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            teacher_list = TeacherUser.objects.filter(user__is_active=True, user__school_id=request.user.school_id).values('full_name')
+            data = {
+                "teacher_name": [teacher['full_name'] for teacher in teacher_list]
+            }
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=CurriculumMessage.TEACHER_LIST_MESSAGE,
+                data=data
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TeachersCurriculumListView(APIView):
+    """
+    This class is used to fetch list of curriculum for creating the teacher schedule.
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            teacher_name = request.query_params.get('teacher_name')
+            teacher_list = TeacherUser.objects.get(user__is_active=True, user__school_id=request.user.school_id, full_name=teacher_name)
+            # data = {
+            #     "curriculum": [teacher['curriculum'] for teacher in teacher_list.class_subject_section_details]
+            # }
+            curriculum_set = set()
+            for teacher in teacher_list.class_subject_section_details:
+                curriculum_set.add(teacher['curriculum'])
+
+            distinct_curriculums = list(curriculum_set)
+
+            data = {
+                "curriculum": distinct_curriculums
+            }
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=CurriculumMessage.CURRICULUM_LIST_MESSAGE,
+                data=data
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TeachersClassListView(APIView):
+    """
+    This class is used to fetch list of class for creating the teacher schedule.
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            teacher_name = request.query_params.get('teacher_name')
+            teacher_list = TeacherUser.objects.get(user__is_active=True, user__school_id=request.user.school_id, full_name=teacher_name)
+            class_set = set()
+            for teacher in teacher_list.class_subject_section_details:
+                class_set.add(teacher['class'])
+
+            distinct_class = list(class_set)
+
+            data = {
+                "class": distinct_class
+            }
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=CurriculumMessage.CLASSES_LIST_MESSAGE,
+                data=data
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TeachersSectionListView(APIView):
+    """
+    This class is used to fetch list of section's for creating the teacher schedule.
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            teacher_name = request.query_params.get('teacher_name')
+            teacher_list = TeacherUser.objects.get(user__is_active=True, user__school_id=request.user.school_id, full_name=teacher_name)
+            section_set = set()
+            for teacher in teacher_list.class_subject_section_details:
+                section_set.add(teacher['section'])
+
+            distinct_sections = list(section_set)
+
+            data = {
+                "section": distinct_sections
+            }
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=CurriculumMessage.SECTION_LIST_MESSAGE,
+                data=data
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TeachersSubjectListView(APIView):
+    """
+    This class is used to fetch list of subject's for creating the teacher schedule.
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            teacher_name = request.query_params.get('teacher_name')
+            teacher_list = TeacherUser.objects.get(user__is_active=True, user__school_id=request.user.school_id, full_name=teacher_name)
+            subject_set = set()
+            for teacher in teacher_list.class_subject_section_details:
+                subject_set.add(teacher['subject'])
+
+            distinct_subject = list(subject_set)
+
+            data = {
+                "subject": distinct_subject
+            }
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=CurriculumMessage.SUBJECT_LIST_MESSAGE,
+                data=data
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AttedanceFilterListView(APIView):
+    """
+    This class is used to add filter in the list of teacher attendance.
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+    pagination_class = CustomPagination
+
+    def get(self, request):
+        try:
+            teacher = TeacherUser.objects.filter(user__school_id=request.user.school_id)
+            attendance_data = TeacherAttendence.objects.filter(teacher__in=teacher, teacher__user__school_id=request.user.school_id)
+
+            date = request.query_params.get('date', None)
+            mark_attendence = request.query_params.get('mark_attendence', None)
+            if date:
+                date = datetime.datetime.strptime(date, '%Y-%m-%d').date()
+                attendance_data = attendance_data.filter(date=date)
+            if mark_attendence == 'A':
+                attendance_data = attendance_data.filter(mark_attendence='A')
+            if mark_attendence == 'P':
+                attendance_data = attendance_data.filter(mark_attendence='P')
+            if mark_attendence == 'L':
+                attendance_data = attendance_data.filter(mark_attendence='L')
+
+            paginator = self.pagination_class()
+            result_page = paginator.paginate_queryset(attendance_data, request)
+
+            serializers = TeacherAttendanceFilterListSerializer(result_page, many=True)
+            response = {
+                'status': status.HTTP_200_OK,
+                'message': UserResponseMessage.USER_LIST_MESSAGE,
+                'data': serializers.data,
+                'pagination': {
+                    'page_size': paginator.page_size,
+                    'next': paginator.get_next_link(),
+                    'previous': paginator.get_previous_link(),
+                    'total_pages': paginator.page.paginator.num_pages,
+                    'current_page': paginator.page.number,
+                }
+            }
+            return Response(response, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)

@@ -346,3 +346,27 @@ class EventsCalendarSerializer(serializers.ModelSerializer):
     class Meta:
         model = EventsCalender
         fields = '__all__'
+
+
+class StaffAttendanceFilterListSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+    id = serializers.SerializerMethodField()
+    role = serializers.SerializerMethodField()
+    class Meta:
+        model = StaffAttendence
+        fields = ['name', 'id', 'role', 'mark_attendence']
+
+    def get_id(self, obj):
+        return obj.staff.id
+
+    def get_role(self, obj):
+        return obj.staff.role
+
+    def get_name(self, obj):
+        first_name = obj.staff.first_name
+        last_name = obj.staff.last_name
+        name = f"{first_name} {last_name}"
+        if name:
+            return name
+        else:
+            None

@@ -19,7 +19,7 @@ from pagination import CustomPagination
 from student.models import StudentAttendence
 from student.serializers import StudentUserSignupSerializer, StudentDetailSerializer, StudentListSerializer, \
     studentProfileSerializer, StudentAttendanceDetailSerializer, \
-    StudentAttendanceListSerializer, StudentListBySectionSerializer, StudentAttendanceCreateSerializer
+    StudentAttendanceListSerializer, StudentListBySectionSerializer, StudentAttendanceCreateSerializer, AdminClassListSerializer, AdminOptionalSubjectListSerializer
 from utils import create_response_data, create_response_list_data, get_student_total_attendance, \
     get_student_total_absent, get_student_attendence_percentage, generate_random_password
 
@@ -65,12 +65,13 @@ class StudentUserCreateView(APIView):
             enrollment_no = serializer.validated_data.get('enrollment_no', '')
             roll_no = serializer.validated_data.get('roll_no', '')
             guardian_no = serializer.validated_data.get('guardian_no', '')
+            optional_subject = serializer.validated_data.get('optional_subject', '')
 
-            try:
-                curriculum = Curriculum.objects.get(id=curriculum_data)
-                serializer.validated_data['curriculum'] = curriculum
-            except Curriculum.DoesNotExist:
-                return Response({"message": "Curriculum not found"}, status=status.HTTP_404_NOT_FOUND)
+            # try:
+            #     curriculum = Curriculum.objects.get(id=curriculum_data)
+            #     serializer.validated_data['curriculum'] = curriculum
+            # except Curriculum.DoesNotExist:
+            #     return Response({"message": "Curriculum not found"}, status=status.HTTP_404_NOT_FOUND)
 
             if user_type == 'student' and serializer.is_valid() == True:
                 user = User.objects.create_user(
@@ -86,8 +87,8 @@ class StudentUserCreateView(APIView):
                     school_fee=school_fee, bus_fee=bus_fee, canteen_fee=canteen_fee, other_fee=other_fee,
                     total_fee=total_fee, blood_group=blood_group, class_enrolled=class_enrolled, father_phone_number=father_phone_number,
                     mother_occupation=mother_occupation, mother_phone_number=mother_phone_number, section=section, permanent_address=permanent_address,
-                    bus_number=bus_number, bus_route=bus_route, due_fee=due_fee, curriculum=curriculum, enrollment_no=enrollment_no, roll_no=roll_no,
-                    guardian_no=guardian_no
+                    bus_number=bus_number, bus_route=bus_route, due_fee=due_fee, curriculum=curriculum_data, enrollment_no=enrollment_no, roll_no=roll_no,
+                    guardian_no=guardian_no, optional_subject=optional_subject
                 )
             else:
                 raise ValidationError("Invalid user_type. Expected 'student'.")
@@ -634,3 +635,86 @@ class StudentAttendanceCreateView(APIView):
             data={}
         )
         return Response(response, status=status.HTTP_200_OK)
+
+
+class AdminCurriculumList(APIView):
+    """
+    This class is used to fetch the list of the curriculum which is added by admin.
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            data = Curriculum.objects.filter(school_id=request.user.school_id).values_list('curriculum_name', flat=True).distinct()
+            curriculum = list(data)
+            curriculum_list = {
+                "curriculum_name": curriculum
+            }
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=CurriculumMessage.CURRICULUM_LIST_MESSAGE,
+                data=curriculum_list
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AdminClassesList(APIView):
+    """
+    This class is used to fetch the list of the classes which is added by admin.
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            curriculum = request.query_params.get("curriculum_name")
+            data = Curriculum.objects.filter(curriculum_name=curriculum, school_id=request.user.school_id)
+            serializer = AdminClassListSerializer(data, many=True)
+            class_names = [item['select_class'] for item in serializer.data]
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=CurriculumMessage.CLASSES_LIST_MESSAGE,
+                data=class_names
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AdminOptionalSubjectList(APIView):
+    """
+    This class is used to fetch the list of the optional subject which is added by admin according to curriculum.
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            curriculum = request.query_params.get("curriculum_name")
+            classes = request.query_params.get("class_name")
+            data = Curriculum.objects.filter(curriculum_name=curriculum, select_class=classes, school_id=request.user.school_id)
+            serializer = AdminOptionalSubjectListSerializer(data, many=True)
+            optional_subj = [item['optional_subject'] for item in serializer.data]
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=CurriculumMessage.SUBJECT_LIST_MESSAGE,
+                data=optional_subj[0]
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)

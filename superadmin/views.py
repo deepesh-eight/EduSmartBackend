@@ -289,6 +289,13 @@ class CurriculumCreateView(APIView):
                     data={}
                 )
                 return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        except ValidationError as er:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=str(er.detail.get('non_field_errors')[0]),
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             response_data = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
