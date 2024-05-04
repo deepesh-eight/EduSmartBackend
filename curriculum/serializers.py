@@ -5,7 +5,7 @@ from rest_framework import serializers
 from EduSmart import settings
 from curriculum.models import Curriculum, CurriculumPDF
 from student.serializers import ImageFieldStringAndFile
-from superadmin.models import CurricullumList
+from superadmin.models import CurricullumList, Subjects
 
 
 class CurriculumSerializer(serializers.ModelSerializer):
@@ -135,11 +135,11 @@ class SuperAdminCurriculumClassList(serializers.ModelSerializer):
 
 class SuperAdminCurriculumSubjectList(serializers.ModelSerializer):
     class Meta:
-        model = CurricullumList
-        fields = ['class_subject']
+        model = Subjects
+        fields = ['primary_subject']
 
 
 class SuperAdminCurriculumOptionalSubjectList(serializers.ModelSerializer):
     class Meta:
-        model = CurricullumList
+        model = Subjects
         fields = ['optional_subject']
