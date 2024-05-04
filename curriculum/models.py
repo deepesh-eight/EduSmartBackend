@@ -11,6 +11,7 @@ class Classes(models.Model):
 class Subjects(models.Model):
     school_id = models.CharField(max_length=255)
     subject_name = models.CharField(max_length=255)
+    class_name = models.ForeignKey(Classes, on_delete=models.CASCADE, blank=True, null=True)
 
 
 class Curriculum(models.Model):
