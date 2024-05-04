@@ -40,10 +40,20 @@ class Announcement(models.Model):
     description = models.TextField()
 
 
+class Classes(models.Model):
+    school_id = models.CharField(max_length=255)
+    class_name = models.CharField(max_length=255)
+
+
+class Subjects(models.Model):
+    school_id = models.CharField(max_length=255)
+    subject_name = models.CharField(max_length=255)
+
+
 class CurricullumList(models.Model):
     curriculum_name = models.CharField(max_length=255)
-    class_name = models.CharField(max_length=255)
-    class_subject = models.JSONField()
-    optional_subject = models.JSONField(blank=True, null=True)
+    class_name = models.ForeignKey(Classes, on_delete=models.CASCADE)
+    class_subject = models.ForeignKey(Subjects, on_delete=models.CASCADE, related_name="admin_curriculum_primary_subject")
+    optional_subject = models.ForeignKey(Subjects, on_delete=models.CASCADE, related_name="admin_curriculum_optional_subject", blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, blank=True, null=True)
