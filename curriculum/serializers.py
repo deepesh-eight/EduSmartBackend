@@ -84,6 +84,9 @@ class CurriculumUploadSerializer(serializers.Serializer):
 
 class CurriculumDetailSerializer(serializers.ModelSerializer):
     syllabus = serializers.SerializerMethodField()
+    primary_subject = serializers.SerializerMethodField()
+    optional_subject = serializers.SerializerMethodField()
+
     class Meta:
         model = Curriculum
         fields = ['id', 'curriculum_name', 'select_class', 'primary_subject', 'optional_subject', 'syllabus', 'discription']
@@ -95,6 +98,29 @@ class CurriculumDetailSerializer(serializers.ModelSerializer):
             else:
                 return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.syllabus)}'
         return None
+
+    def get_primary_subject(self, obj):
+        primary_subject = Subjects.objects.filter(curriculum_id=obj.id)
+        subjcet_list = []
+        if primary_subject:
+            for subject_list in primary_subject:
+                subject = subject_list.primary_subject
+                subjcet_list.append(subject)
+            return subjcet_list
+        else:
+            None
+
+    def get_optional_subject(self, obj):
+        optional_subject = Subjects.objects.filter(curriculum_id=obj.id)
+        subjcet_list = []
+        if optional_subject:
+            for subject_list in optional_subject:
+                subject = subject_list.optional_subject
+                subjcet_list.append(subject)
+            return subjcet_list
+        else:
+            None
+
 
 
 class CurriculumDetailUpdateSerializer(serializers.ModelSerializer):
