@@ -162,6 +162,13 @@ class FetchStudentDetailView(APIView):
                 data={}
             )
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+        except ValidationError as e:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=str(e.args[0]),
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
 
 
 class StudentListView(APIView):
