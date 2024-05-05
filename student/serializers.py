@@ -52,14 +52,14 @@ class StudentDetailSerializer(serializers.ModelSerializer):
     email = serializers.SerializerMethodField()
     curriculum = serializers.SerializerMethodField()
     subjects = serializers.SerializerMethodField()
-    optional_subjects = serializers.SerializerMethodField()
+    # optional_subjects = serializers.SerializerMethodField()
 
     class Meta:
         model = StudentUser
         fields = ['id', 'name', 'image', 'class_enrolled', 'section', 'admission_date', 'dob', 'gender', 'religion', 'blood_group',
                   'school_fee','bus_fee', 'canteen_fee', 'other_fee', 'due_fee', 'total_fee', 'father_name', 'father_phone_number',
                   'father_occupation', 'mother_name', 'mother_phone_number', 'mother_occupation', 'email', 'permanent_address', 'curriculum',
-                   'subjects', 'bus_number', 'bus_route', 'enrollment_no', 'roll_no', 'optional_subjects', 'guardian_no']
+                   'subjects', 'bus_number', 'bus_route', 'enrollment_no', 'roll_no', 'optional_subject', 'guardian_no']
 
 
     def get_curriculum(self,obj):
@@ -87,17 +87,17 @@ class StudentDetailSerializer(serializers.ModelSerializer):
         except Curriculum.DoesNotExist as e:
             raise serializers.ValidationError(f"Error retrieving subjects: {str(e)}")
 
-    def get_optional_subjects(self, obj):
-        try:
-            curriculum = Curriculum.objects.get(curriculum_name=obj.curriculum, select_class=obj.class_enrolled)
-            subject_data = Subjects.objects.filter(curriculum_id=curriculum.id)
-            subject = []
-            for subject_list in subject_data:
-                subject.append(subject_list.optional_subject)
-            return subject or None
-
-        except Curriculum.DoesNotExist as e:
-            raise serializers.ValidationError(f"Error retrieving subjects: {str(e)}")
+    # def get_optional_subjects(self, obj):
+    #     try:
+    #         curriculum = Curriculum.objects.get(curriculum_name=obj.curriculum, select_class=obj.class_enrolled)
+    #         subject_data = Subjects.objects.filter(curriculum_id=curriculum.id)
+    #         subject = []
+    #         for subject_list in subject_data:
+    #             subject.append(subject_list.optional_subject)
+    #         return subject or None
+    #
+    #     except Curriculum.DoesNotExist as e:
+    #         raise serializers.ValidationError(f"Error retrieving subjects: {str(e)}")
 
 
 class ImageFieldStringAndFile(serializers.Field):
