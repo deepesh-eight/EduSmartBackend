@@ -316,3 +316,8 @@ class AdminOptionalSubjectListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subjects
         fields = ['optional_subject']
+
+class StudentAttendanceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StudentAttendence
+        fields = ['date','mark_attendence']

@@ -13,6 +13,7 @@ urlpatterns = [
         path('attendance/detail/<int:pk>/', FetchAttendanceDetailView.as_view(), name='fetch_attendance_detail'),
         path('attendance/list/',  FetchAttendanceListView.as_view(), name='fetch_attendance_list'),
         path('attendance/filter/list/',  FetchAttendanceFilterListView.as_view(), name='fetch_attendance_filter_list'),
+        path('get_student_attendance/', StudentAttendanceView.as_view(), name='get_specific_student_attandance'),
 
         #Student API's for Mobile
         path('mobile/student/list/', FetchStudentList.as_view(), name='fetch_student_list'),
