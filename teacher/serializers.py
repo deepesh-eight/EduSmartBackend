@@ -909,17 +909,18 @@ class StudyMaterialUploadSerializer(serializers.ModelSerializer):
     discription = serializers.CharField(required=False)
     upload_content = serializers.FileField(required=False)
     content_type = serializers.CharField(required=True)
+    subject = serializers.CharField(required=True)
 
     class Meta:
         model = StudentMaterial
-        fields = ['class_name', 'section', 'curriculum', 'upload_link', 'title', 'discription', 'upload_content', 'content_type']
+        fields = ['class_name', 'section', 'subject', 'curriculum', 'upload_link', 'title', 'discription', 'upload_content', 'content_type']
 
 
 class StudyMaterialListSerializer(serializers.ModelSerializer):
     upload_content = serializers.SerializerMethodField()
     class Meta:
         model = StudentMaterial
-        fields = ['id', 'class_name', 'section', 'curriculum', 'upload_link', 'title', 'discription', 'upload_content', 'content_type']
+        fields = ['id', 'class_name', 'section', 'subject', 'curriculum', 'upload_link', 'title', 'discription', 'upload_content', 'content_type']
 
     def get_upload_content(self, obj):
         if obj.upload_content:
@@ -934,7 +935,7 @@ class StudyMaterialDetailSerializer(serializers.ModelSerializer):
     upload_content = serializers.SerializerMethodField()
     class Meta:
         model = StudentMaterial
-        fields = ['id', 'class_name', 'section', 'curriculum', 'upload_link', 'title', 'discription', 'upload_content', 'content_type']
+        fields = ['id', 'class_name', 'section', 'subject', 'curriculum', 'upload_link', 'title', 'discription', 'upload_content', 'content_type']
 
     def get_upload_content(self, obj):
         if obj.upload_content:
