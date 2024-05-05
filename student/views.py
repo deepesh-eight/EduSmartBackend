@@ -14,7 +14,7 @@ from rest_framework.views import APIView
 from authentication.models import User, Class, AddressDetails, StudentUser, TeacherUser
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsStudentUser, IsTeacherUser, IsInSameSchool
 from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage, CurriculumMessage
-from curriculum.models import Curriculum
+from curriculum.models import Curriculum, Subjects
 from pagination import CustomPagination
 from student.models import StudentAttendence
 from student.serializers import StudentUserSignupSerializer, StudentDetailSerializer, StudentListSerializer, \
@@ -702,13 +702,14 @@ class AdminOptionalSubjectList(APIView):
         try:
             curriculum = request.query_params.get("curriculum_name")
             classes = request.query_params.get("class_name")
-            data = Curriculum.objects.filter(curriculum_name=curriculum, select_class=classes, school_id=request.user.school_id)
-            serializer = AdminOptionalSubjectListSerializer(data, many=True)
+            data = Curriculum.objects.get(curriculum_name=curriculum, select_class=classes, school_id=request.user.school_id)
+            subject = Subjects.objects.filter(curriculum_id=data.id)
+            serializer = AdminOptionalSubjectListSerializer(subject, many=True)
             optional_subj = [item['optional_subject'] for item in serializer.data]
             response_data = create_response_data(
                 status=status.HTTP_200_OK,
                 message=CurriculumMessage.SUBJECT_LIST_MESSAGE,
-                data=optional_subj[0]
+                data=optional_subj
             )
             return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:

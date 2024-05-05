@@ -16,7 +16,7 @@ from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsTeacherU
 from authentication.serializers import UserLoginSerializer
 from authentication.views import NonTeachingStaffDetailView
 from constants import UserLoginMessage, UserResponseMessage, ScheduleMessage, AttendenceMarkedMessage, CurriculumMessage
-from curriculum.models import Curriculum
+from curriculum.models import Curriculum, Subjects
 from pagination import CustomPagination
 from student.views import FetchStudentDetailView
 from teacher.serializers import TeacherUserSignupSerializer, TeacherDetailSerializer, TeacherListSerializer, \
@@ -751,13 +751,14 @@ class SubjectListView(APIView):
         try:
             curriculum = request.query_params.get("curriculum")
             classes = request.query_params.get("class_name")
-            subjects = Curriculum.objects.filter(school_id=request.user.school_id, curriculum_name=curriculum, select_class=classes)
-            serializer = SubjectListSerializer(subjects, many=True)
+            subjects = Curriculum.objects.get(school_id=request.user.school_id, curriculum_name=curriculum, select_class=classes)
+            subject = Subjects.objects.filter(curriculum_id=subjects.id)
+            serializer = SubjectListSerializer(subject, many=True)
             primary_subject = [item['primary_subject'] for item in serializer.data]
             optional_subject = [item['optional_subject'] for item in serializer.data]
             data = {
-                "primary_subject": primary_subject[0],
-                "optional_subject": optional_subject[0]
+                "primary_subject": primary_subject,
+                "optional_subject": optional_subject
             }
             response_data = create_response_data(
                 status=status.HTTP_200_OK,
