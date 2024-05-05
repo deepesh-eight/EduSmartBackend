@@ -296,6 +296,7 @@ class Notification(models.Model):
 
 class TimeTable(models.Model):
     school_id = models.CharField(max_length=255, null=True, blank=True)
+    curriculum = models.CharField(max_length=255, blank=True, null=True)
     class_name = models.CharField(max_length=255)
     class_section = models.CharField(max_length=150)
     exam_type = models.CharField(max_length=255)
