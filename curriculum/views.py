@@ -10,10 +10,10 @@ from authentication.permissions import IsAdminUser, IsInSameSchool
 from constants import CurriculumMessage
 from curriculum.models import Curriculum, CurriculumPDF
 from curriculum.serializers import CurriculumSerializer, CurriculumDetailSerializer, CurriculumUploadSerializer, \
-    CurriculumListerializer, SuperAdminCurriculumClassList, SuperAdminCurriculumSubjectList, \
-    SuperAdminCurriculumOptionalSubjectList, CurriculumDetailUpdateSerializer
+    CurriculumListerializer, SuperAdminCurriculumClassList, CurriculumDetailUpdateSerializer
 from pagination import CustomPagination
 from superadmin.models import CurricullumList, Subjects
+from superadmin.serializers import SuperAdminCurriculumSubjectList, SuperAdminCurriculumOptionalSubjectList
 from utils import create_response_data, create_response_list_data
 
 
@@ -27,19 +27,19 @@ class CurriculumCreateView(APIView):
     """
     def post(self, request):
         try:
-            primary_subject = request.data.get("primary_subject")
-            optional_subject = request.data.get("optional_subject")
-            primary_subject_str = json.loads(primary_subject)
-            optional_subject_str = json.loads(optional_subject)
-            data = {
-                "curriculum_name": request.data.get("curriculum_name"),
-                "select_class": request.data.get("select_class"),
-                "primary_subject": primary_subject_str,
-                "optional_subject": optional_subject_str,
-                "syllabus": request.data.get("syllabus"),
-                "discription": request.data.get("discription")
-            }
-            serializer = CurriculumSerializer(data=data)
+            # primary_subject = request.data.get("primary_subject")
+            # optional_subject = request.data.get("optional_subject")
+            # primary_subject_str = json.loads(primary_subject)
+            # optional_subject_str = json.loads(optional_subject)
+            # data = {
+            #     "curriculum_name": request.data.get("curriculum_name"),
+            #     "select_class": request.data.get("select_class"),
+            #     "primary_subject": primary_subject_str,
+            #     "optional_subject": optional_subject_str,
+            #     "syllabus": request.data.get("syllabus"),
+            #     "discription": request.data.get("discription")
+            # }
+            serializer = CurriculumSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
                 serializer.save(school_id=request.user.school_id)
                 response = create_response_data(

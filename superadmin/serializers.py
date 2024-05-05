@@ -211,3 +211,15 @@ class CurriculumListSerializer(serializers.ModelSerializer):
             return subjcet_list
         else:
             None
+
+
+class SuperAdminCurriculumSubjectList(serializers.ModelSerializer):
+    class Meta:
+        model = Subjects
+        fields = ['primary_subject']
+
+
+class SuperAdminCurriculumOptionalSubjectList(serializers.ModelSerializer):
+    class Meta:
+        model = Subjects
+        fields = ['optional_subject']
