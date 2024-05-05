@@ -192,6 +192,9 @@ class EventsMessages:
 class BusMessages:
     BUS_ROUTE_CREATED = "Route Created Successfully."
     ROUTE_DATA_FETCHED = "Route Data Fetched Successfully."
+    BUS_ADDED = "Bus Added Successfully."
+    BUS_DATA_FETCHED = "Bus Data Fetched Successfully."
+    BUS_DELETED = "Bus Deleted Successfully."
 
 class ContentMessages:
     CONTENT_CREATED = "Content Created Successfully."
