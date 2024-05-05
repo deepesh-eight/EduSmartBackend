@@ -9,6 +9,25 @@ from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsManageme
 from utils import create_response_data, create_response_list_data
 from constants import ContentMessages
 
+class SuperAdminContentCreateView(APIView):
+    permission_classes = [IsSuperAdminUser]
+    def post(self, request, format=None):
+        serializer = ContentSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=ContentMessages.CONTENT_CREATED,
+                data=serializer.data,
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        response_data = create_response_data(
+            status=status.HTTP_400_BAD_REQUEST,
+            message=serializer.errors,
+            data={},
+        )
+        return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
 class ContentCreateView(APIView):
     permission_classes = [IsAdminUser, IsInSameSchool]
     def post(self, request, format=None):

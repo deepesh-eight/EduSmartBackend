@@ -6,7 +6,7 @@ from django.db import IntegrityError
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from rest_framework import status
+from rest_framework import status, generics
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -19,7 +19,7 @@ from pagination import CustomPagination
 from student.models import StudentAttendence
 from student.serializers import StudentUserSignupSerializer, StudentDetailSerializer, StudentListSerializer, \
     studentProfileSerializer, StudentAttendanceDetailSerializer, \
-    StudentAttendanceListSerializer, StudentListBySectionSerializer, StudentAttendanceCreateSerializer, AdminClassListSerializer, AdminOptionalSubjectListSerializer
+    StudentAttendanceListSerializer, StudentListBySectionSerializer, StudentAttendanceCreateSerializer, AdminClassListSerializer, AdminOptionalSubjectListSerializer, StudentAttendanceSerializer
 from utils import create_response_data, create_response_list_data, get_student_total_attendance, \
     get_student_total_absent, get_student_attendence_percentage, generate_random_password
 
@@ -726,3 +726,29 @@ class AdminOptionalSubjectList(APIView):
                 data={}
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        
+class StudentAttendanceView(generics.ListAPIView):
+    serializer_class = StudentAttendanceSerializer
+    permission_classes = [IsStudentUser]
+
+    def get_queryset(self):
+        student_user = self.request.user.studentuser
+        year = self.request.query_params.get('year')
+        month = self.request.query_params.get('month')
+
+        queryset = StudentAttendence.objects.filter(student=student_user)
+        if year and month:
+            queryset = queryset.filter(date__year=year, date__month=month)
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(queryset, many=True)
+        
+        response_data = {
+            "status": status.HTTP_200_OK,
+            "message": AttendenceMarkedMessage.STUDENT_ATTENDANCE_FETCHED_SUCCESSFULLY,
+            "data": serializer.data
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)
