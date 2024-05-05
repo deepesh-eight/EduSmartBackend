@@ -1,11 +1,12 @@
 from django.shortcuts import render
+from django.db.models import Q
 from .models import Content
 from .serializers import ContentSerializer
 from rest_framework import status, permissions, generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsManagementUser, IsPayRollManagementUser, \
-    IsBoardingUser, IsInSameSchool, IsTeacherUser
+    IsBoardingUser, IsInSameSchool, IsTeacherUser, IsStudentUser
 from utils import create_response_data, create_response_list_data
 from constants import ContentMessages
 
@@ -51,7 +52,7 @@ class ContentListView(generics.ListAPIView):
     permission_classes = [IsAdminUser, IsInSameSchool]
 
     def get_queryset(self):
-        queryset = Content.objects.filter(school_id=self.request.user.school_id)
+        queryset = Content.objects.filter(Q(school_id=self.request.user.school_id) | Q(school_id__isnull=True))
         content_type = self.request.query_params.get('content_type', None)
         is_recommended = self.request.query_params.get('is_recommended', None)
         if content_type is not None:
@@ -94,3 +95,26 @@ class ContentDeleteView(generics.DestroyAPIView):
                 data={}
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        
+class StudentContentListView(generics.ListAPIView):
+    permission_classes = [IsStudentUser, IsInSameSchool]
+
+    def get_queryset(self):
+        queryset = Content.objects.filter(Q(school_id=self.request.user.school_id) | Q(school_id__isnull=True))
+        content_type = self.request.query_params.get('content_type', None)
+        is_recommended = self.request.query_params.get('is_recommended', None)
+        if content_type is not None:
+            queryset = queryset.filter(content_type=content_type)
+        if is_recommended is not None:
+            queryset = queryset.filter(is_recommended=is_recommended)
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = ContentSerializer(queryset, many=True)
+        response_data = create_response_data(
+            status=status.HTTP_200_OK,
+            message=ContentMessages.CONTENT_FETCHED,
+            data=serializer.data,
+        )
+        return Response(response_data, status=status.HTTP_200_OK)
