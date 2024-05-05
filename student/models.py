@@ -15,6 +15,7 @@ class StudentAttendence(models.Model):
 
 class ExmaReportCard(models.Model):
     school_id = models.CharField(max_length=255)
+    curriculum = models.CharField(max_length=255, blank=True, null=True)
     class_name = models.CharField(max_length=200)
     class_section = models.CharField(max_length=200)
     student_name = models.CharField(max_length=200)

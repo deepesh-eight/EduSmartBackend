@@ -821,10 +821,11 @@ class ExamReportCreateSerializer(serializers.ModelSerializer):
         ),
         allow_empty=False
     )
+    curriculum = serializers.CharField(required=True)
 
     class Meta:
         model = ExmaReportCard
-        fields = ['class_name', 'class_section', 'student_name', 'roll_no', 'exam_type', 'exam_month', 'marks_grades', 'total_marks', 'overall_grades']
+        fields = ['class_name', 'curriculum', 'class_section', 'student_name', 'roll_no', 'exam_type', 'exam_month', 'marks_grades', 'total_marks', 'overall_grades']
 
 
 class ExamReportListSerializer(serializers.ModelSerializer):
@@ -840,7 +841,7 @@ class ExamReportCardViewSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ExmaReportCard
-        fields = ['id', 'class_name', 'class_section', 'student_name', 'roll_no', 'exam_type', 'exam_month', 'marks_grades', 'total_marks', 'overall_grades', 'father_name', 'mother_name', 'teacher_name']
+        fields = ['id', 'class_name', 'curriculum', 'class_section', 'student_name', 'roll_no', 'exam_type', 'exam_month', 'marks_grades', 'total_marks', 'overall_grades', 'father_name', 'mother_name', 'teacher_name']
 
     def get_father_name(self, obj):
         father_name = StudentUser.objects.get(roll_no=obj.roll_no)
