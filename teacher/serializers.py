@@ -642,7 +642,7 @@ class TeacherUserScheduleSerializer(serializers.ModelSerializer):
 
 class CurriculumSubjectsListerializer(serializers.ModelSerializer):
     class Meta:
-        model = Curriculum
+        model = Subjects
         fields = ['primary_subject', 'optional_subject']
 
 
