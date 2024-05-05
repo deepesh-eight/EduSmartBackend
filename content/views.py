@@ -34,9 +34,11 @@ class ContentListView(generics.ListAPIView):
     def get_queryset(self):
         queryset = Content.objects.filter(school_id=self.request.user.school_id)
         content_type = self.request.query_params.get('content_type', None)
+        is_recommended = self.request.query_params.get('is_recommended', None)
         if content_type is not None:
             queryset = queryset.filter(content_type=content_type)
-        
+        if is_recommended is not None:
+            queryset = queryset.filter(is_recommended=is_recommended)
         return queryset
 
     def list(self, request, *args, **kwargs):

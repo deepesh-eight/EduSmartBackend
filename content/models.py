@@ -14,6 +14,7 @@ class Content(models.Model):
     subject = models.ForeignKey(Subjects, on_delete=models.SET_NULL, null=True, blank=True)
     supporting_detail = models.TextField(blank=True, null=True)
     description = models.TextField()
+    is_recommended = models.BooleanField(default=False)
     def __str__(self):
         return self.name
 
