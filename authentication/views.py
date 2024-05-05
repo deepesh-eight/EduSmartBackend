@@ -25,7 +25,7 @@ from authentication.serializers import UserSignupSerializer, UsersListSerializer
 from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage, ScheduleMessage, \
     CurriculumMessage, DayReviewMessage, NotificationMessage, AnnouncementMessage, TimeTableMessage, ReportCardMesssage, \
     ZoomLinkMessage, StudyMaterialMessage, EventsMessages
-from curriculum.models import Curriculum
+from curriculum.models import Curriculum, Subjects
 from pagination import CustomPagination
 from student.models import ExmaReportCard, ZoomLink, StudentMaterial
 from student.serializers import StudentDetailSerializer, StudentUserProfileSerializer
@@ -780,7 +780,7 @@ class TeacherCurriculumListView(APIView):
                 }
                 response_data = create_response_data(
                     status=status.HTTP_200_OK,
-                    message=CurriculumMessage.CLASSES_LIST_MESSAGE,
+                    message=CurriculumMessage.CURRICULUM_LIST_MESSAGE,
                     data=curriculum_list
                 )
                 return Response(response_data, status=status.HTTP_200_OK)
@@ -886,19 +886,20 @@ class TeacherCurriculumSubjectListView(APIView):
             if user.user_type == 'teacher':
                 curriculum = request.query_params.get("curriculum")
                 classes = request.query_params.get("class_name")
-                subjects = Curriculum.objects.filter(school_id=request.user.school_id, curriculum_name=curriculum,
+                subjects = Curriculum.objects.get(school_id=request.user.school_id, curriculum_name=curriculum,
                                                      select_class=classes)
-                serializer = CurriculumSubjectsListerializer(subjects, many=True)
+                subject = Subjects.objects.filter(curriculum_id=subjects)
+                serializer = CurriculumSubjectsListerializer(subject, many=True)
                 primary_subject = [item['primary_subject'] for item in serializer.data]
                 optional_subject = [item['optional_subject'] for item in serializer.data]
                 subject_list = primary_subject+optional_subject
-                flat_subjects = [subject for sublist in subject_list for subject in sublist]
+                # flat_subjects = [subject for sublist in subject_list for subject in sublist]
                 data = {
-                    "subject": flat_subjects,
+                    "subject": subject_list,
                 }
                 response_data = create_response_data(
                     status=status.HTTP_200_OK,
-                    message=CurriculumMessage.SECTION_LIST_MESSAGE,
+                    message=CurriculumMessage.SUBJECT_LIST_MESSAGE,
                     data=data
                 )
                 return Response(response_data, status=status.HTTP_200_OK)
@@ -911,7 +912,7 @@ class TeacherCurriculumSubjectListView(APIView):
                 return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             response_data = create_response_data(
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                status=status.HTTP_400_BAD_REQUEST,
                 message=e.args[0],
                 data={}
             )

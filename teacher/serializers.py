@@ -11,7 +11,7 @@ from authentication.models import TeacherUser, Certificate, TeachersSchedule, Te
     Notification, TimeTable, StudentUser
 from constants import USER_TYPE_CHOICES, GENDER_CHOICES, RELIGION_CHOICES, BLOOD_GROUP_CHOICES, CLASS_CHOICES, \
     SUBJECT_CHOICES, ROLE_CHOICES, ATTENDENCE_CHOICE, EXAME_TYPE_CHOICE
-from curriculum.models import Curriculum
+from curriculum.models import Curriculum, Subjects
 from student.models import ExmaReportCard, ZoomLink, StudentMaterial
 from superadmin.models import Announcement
 
@@ -642,7 +642,7 @@ class TeacherUserScheduleSerializer(serializers.ModelSerializer):
 
 class CurriculumSubjectsListerializer(serializers.ModelSerializer):
     class Meta:
-        model = Curriculum
+        model = Subjects
         fields = ['primary_subject', 'optional_subject']
 
 
@@ -953,5 +953,5 @@ class SectionListSerializer(serializers.ModelSerializer):
 
 class SubjectListSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Curriculum
+        model = Subjects
         fields = ['primary_subject', 'optional_subject']

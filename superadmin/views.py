@@ -263,17 +263,7 @@ class CurriculumCreateView(APIView):
 
     def post(self, request):
         try:
-            subject = request.data.get("class_subject")
-            optional_subject = request.data.get("optional_subject")
-            subject_str = json.loads(subject)
-            optional_subject_str = json.loads(optional_subject)
-            data = {
-                "curriculum_name": request.data.get("curriculum_name"),
-                "class_name": request.data.get("class_name"),
-                "class_subject": subject_str,
-                "optional_subject": optional_subject_str,
-            }
-            serializer = CurriculumCreateSerializer(data=data)
+            serializer = CurriculumCreateSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
                 response_data = create_response_data(

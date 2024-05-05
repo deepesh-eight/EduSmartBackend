@@ -7,7 +7,7 @@ from authentication.models import StudentUser, User
 from authentication.serializers import AddressDetailsSerializer
 from constants import USER_TYPE_CHOICES, GENDER_CHOICES, RELIGION_CHOICES, CLASS_CHOICES, BLOOD_GROUP_CHOICES, \
     ATTENDENCE_CHOICE
-from curriculum.models import Curriculum
+from curriculum.models import Curriculum, Subjects
 from student.models import StudentAttendence
 
 
@@ -302,5 +302,5 @@ class AdminClassListSerializer(serializers.ModelSerializer):
 
 class AdminOptionalSubjectListSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Curriculum
+        model = Subjects
         fields = ['optional_subject']

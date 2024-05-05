@@ -2,10 +2,11 @@ import json
 
 from rest_framework import serializers
 
-from EduSmart import settings
-from curriculum.models import Curriculum, CurriculumPDF
-from student.serializers import ImageFieldStringAndFile
 from superadmin.models import CurricullumList
+from EduSmart import settings
+from curriculum.models import Curriculum, Subjects
+from student.serializers import ImageFieldStringAndFile
+
 
 
 class CurriculumSerializer(serializers.ModelSerializer):
@@ -21,31 +22,27 @@ class CurriculumSerializer(serializers.ModelSerializer):
         fields = ['academic_session', 'exam_board', 'subject_name_code', 'class_name', 'section', 'curriculum_name']
 
 
+class CurriculumSubjectsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subjects
+        fields = ['primary_subject', 'optional_subject']
+
+
 class CurriculumSerializer(serializers.ModelSerializer):
+    subjects = CurriculumSubjectsSerializer(many=True, required=False)
 
     class Meta:
         model = Curriculum
-        fields = ['id', 'curriculum_name', 'select_class', 'primary_subject', 'optional_subject', 'syllabus', 'discription']
+        fields = ['id', 'curriculum_name', 'select_class', 'subjects', 'syllabus', 'discription']
 
-    def validate_primary_subject(self, value):
-        updated_subjects = []
-        for subject in value:
-            # Convert the first character to uppercase
-            subject = subject.capitalize()
-            # Convert characters after space to uppercase
-            subject = ' '.join(word.capitalize() for word in subject.split(' '))
-            updated_subjects.append(subject)
-        return updated_subjects
+    def create(self, validated_data):
+        subjects_data = validated_data.pop('subjects')
+        curriculum = Curriculum.objects.create(**validated_data)
 
-    def validate_optional_subject(self, value):
-        updated_subjects = []
-        for subject in value:
-            # Convert the first character to uppercase
-            subject = subject.capitalize()
-            # Convert characters after space to uppercase
-            subject = ' '.join(word.capitalize() for word in subject.split(' '))
-            updated_subjects.append(subject)
-        return updated_subjects
+        for subject_data in subjects_data:
+            Subjects.objects.create(curriculum_id=curriculum, **subject_data)
+
+        return curriculum
 
     def validate(self, data):
         curriculum_name = data.get('curriculum_name')
@@ -87,6 +84,9 @@ class CurriculumUploadSerializer(serializers.Serializer):
 
 class CurriculumDetailSerializer(serializers.ModelSerializer):
     syllabus = serializers.SerializerMethodField()
+    primary_subject = serializers.SerializerMethodField()
+    optional_subject = serializers.SerializerMethodField()
+
     class Meta:
         model = Curriculum
         fields = ['id', 'curriculum_name', 'select_class', 'primary_subject', 'optional_subject', 'syllabus', 'discription']
@@ -99,33 +99,72 @@ class CurriculumDetailSerializer(serializers.ModelSerializer):
                 return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.syllabus)}'
         return None
 
+    def get_primary_subject(self, obj):
+        primary_subject = Subjects.objects.filter(curriculum_id=obj.id)
+        subjcet_list = []
+        if primary_subject:
+            for subject_list in primary_subject:
+                subject = subject_list.primary_subject
+                subjcet_list.append(subject)
+            return subjcet_list
+        else:
+            None
+
+    def get_optional_subject(self, obj):
+        optional_subject = Subjects.objects.filter(curriculum_id=obj.id)
+        subjcet_list = []
+        if optional_subject:
+            for subject_list in optional_subject:
+                subject = subject_list.optional_subject
+                subjcet_list.append(subject)
+            return subjcet_list
+        else:
+            None
+
+
 
 class CurriculumDetailUpdateSerializer(serializers.ModelSerializer):
     syllabus = ImageFieldStringAndFile(required=False)
+    subjects = CurriculumSubjectsSerializer(many=True, required=False)
     class Meta:
         model = Curriculum
-        fields = ['id', 'curriculum_name', 'select_class', 'primary_subject', 'optional_subject', 'syllabus', 'discription']
+        fields = ['id', 'curriculum_name', 'select_class', 'subjects', 'syllabus', 'discription']
 
+    def update(self, instance, validated_data):
+        instance.curriculum_name = validated_data.get('curriculum_name', instance.curriculum_name)
+        instance.class_name = validated_data.get('select_class', instance.select_class)
+        instance.save()
 
-    def validate_primary_subject(self, value):
-        updated_subjects = []
-        for subject in value:
-            # Convert the first character to uppercase
-            subject = subject.capitalize()
-            # Convert characters after space to uppercase
-            subject = ' '.join(word.capitalize() for word in subject.split(' '))
-            updated_subjects.append(subject)
-        return updated_subjects
+        # Handle update logic for associated subjects
+        subjects_data = validated_data.pop('subjects', [])
+        existing_subjects = Subjects.objects.filter(curriculum_id=instance.id)
 
-    def validate_optional_subject(self, value):
-        updated_subjects = []
-        for subject in value:
-            # Convert the first character to uppercase
-            subject = subject.capitalize()
-            # Convert characters after space to uppercase
-            subject = ' '.join(word.capitalize() for word in subject.split(' '))
-            updated_subjects.append(subject)
-        return updated_subjects
+        for subject_data, subject_instance in zip(subjects_data, existing_subjects):
+            subject_instance.primary_subject = subject_data.get('primary_subject', subject_instance.primary_subject)
+            subject_instance.optional_subject = subject_data.get('optional_subject', subject_instance.optional_subject)
+            subject_instance.save()
+
+        return instance
+
+    # def validate_primary_subject(self, value):
+    #     updated_subjects = []
+    #     for subject in value:
+    #         # Convert the first character to uppercase
+    #         subject = subject.capitalize()
+    #         # Convert characters after space to uppercase
+    #         subject = ' '.join(word.capitalize() for word in subject.split(' '))
+    #         updated_subjects.append(subject)
+    #     return updated_subjects
+    #
+    # def validate_optional_subject(self, value):
+    #     updated_subjects = []
+    #     for subject in value:
+    #         # Convert the first character to uppercase
+    #         subject = subject.capitalize()
+    #         # Convert characters after space to uppercase
+    #         subject = ' '.join(word.capitalize() for word in subject.split(' '))
+    #         updated_subjects.append(subject)
+    #     return updated_subjects
 
 class SuperAdminCurriculumClassList(serializers.ModelSerializer):
     class Meta:
@@ -133,13 +172,3 @@ class SuperAdminCurriculumClassList(serializers.ModelSerializer):
         fields = ['class_name']
 
 
-class SuperAdminCurriculumSubjectList(serializers.ModelSerializer):
-    class Meta:
-        model = CurricullumList
-        fields = ['class_subject']
-
-
-class SuperAdminCurriculumOptionalSubjectList(serializers.ModelSerializer):
-    class Meta:
-        model = CurricullumList
-        fields = ['optional_subject']

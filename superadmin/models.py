@@ -40,21 +40,15 @@ class Announcement(models.Model):
     description = models.TextField()
 
 
-class Classes(models.Model):
-    school_id = models.CharField(max_length=255)
-    class_name = models.CharField(max_length=255)
+class CurricullumList(models.Model):
+    curriculum_name = models.CharField(max_length=255)
+    class_name = models.CharField(max_length=255, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, blank=True, null=True)
 
 
 class Subjects(models.Model):
     school_id = models.CharField(max_length=255)
-    subject_name = models.CharField(max_length=255)
-    class_name = models.ForeignKey(Classes, on_delete=models.CASCADE, blank=True, null=True)
-
-
-class CurricullumList(models.Model):
-    curriculum_name = models.CharField(max_length=255)
-    class_name = models.ForeignKey(Classes, on_delete=models.CASCADE)
-    class_subject = models.ForeignKey(Subjects, on_delete=models.CASCADE, related_name="admin_curriculum_primary_subject")
-    optional_subject = models.ForeignKey(Subjects, on_delete=models.CASCADE, related_name="admin_curriculum_optional_subject", blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
-    updated_at = models.DateTimeField(auto_now=True, blank=True, null=True)
+    curriculum_id = models.ForeignKey(CurricullumList, on_delete=models.CASCADE, blank=True, null=True)
+    primary_subject = models.CharField(max_length=255, blank=True, null=True)
+    optional_subject = models.CharField(max_length=255, blank=True, null=True)
