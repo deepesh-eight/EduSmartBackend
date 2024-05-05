@@ -745,6 +745,7 @@ class CreateTimeTableSerializer(serializers.ModelSerializer):
     exam_type = serializers.ChoiceField(
         choices=EXAME_TYPE_CHOICE
     )
+    curriculum = serializers.CharField(required=True)
     exam_month = serializers.DateField(required=True)
     more_subject = serializers.ListField(
         child=serializers.DictField(
@@ -755,7 +756,7 @@ class CreateTimeTableSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TimeTable
-        fields = ['class_name', 'class_section', 'exam_type', 'exam_month', 'more_subject']
+        fields = ['class_name', 'curriculum', 'class_section', 'exam_type', 'exam_month', 'more_subject']
 
 
 class TimeTableListSerializer(serializers.ModelSerializer):
@@ -783,7 +784,7 @@ class TimeTableListSerializer(serializers.ModelSerializer):
 class TimeTableDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = TimeTable
-        fields = ['id', 'class_name', 'class_section', 'exam_type', 'exam_month', 'more_subject']
+        fields = ['id', 'class_name', 'curriculum', 'class_section', 'exam_type', 'exam_month', 'more_subject']
 
 
 class TimeTableUpdateSerializer(serializers.ModelSerializer):
