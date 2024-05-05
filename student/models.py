@@ -44,7 +44,8 @@ class ZoomLink(models.Model):
 class StudentMaterial(models.Model):
     school_id = models.CharField(max_length=255, blank=True, null=True)
     class_name = models.CharField(max_length=255)
-    subject = models.CharField(max_length=255)
+    content_type = models.CharField(max_length=255,blank=True, null=True)
+    section = models.CharField(max_length=255, blank=True, null=True)
     curriculum = models.CharField(max_length=255)
     upload_link = models.URLField(max_length=500)
     title = models.CharField(max_length=255)
