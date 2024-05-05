@@ -659,11 +659,10 @@ class CurriculumClassListSerializer(serializers.ModelSerializer):
 
 
 class DayReviewSerializer(serializers.ModelSerializer):
-    school_id = serializers.CharField(required=False)
 
     class Meta:
         model = DayReview
-        fields = ['class_name', 'section', 'subject', 'discription', 'school_id']
+        fields = ['class_name', 'section', 'subject', 'discription', 'curriculum']
 
 
 class DayReviewDetailSerializer(serializers.ModelSerializer):
@@ -671,7 +670,7 @@ class DayReviewDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DayReview
-        fields = ['id', 'class_name', 'section', 'subject', 'discription', 'school_id', 'updated_at']
+        fields = ['id', 'class_name', 'section', 'subject', 'discription', 'curriculum', 'updated_at']
 
     def get_updated_at(self, obj):
         cleaned_date_str = str(obj.updated_at).split('.')[0]

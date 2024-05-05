@@ -271,6 +271,7 @@ class EventsCalender(models.Model):
 
 class DayReview(models.Model):
     school_id = models.CharField(max_length=255, null=True, blank=True)
+    curriculum = models.CharField(max_length=255, null=True, blank=True)
     class_name = models.CharField(max_length=100)
     section = models.CharField(max_length=150)
     subject = models.CharField(max_length=255)
