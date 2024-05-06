@@ -281,15 +281,15 @@ class StudentUserProfileSerializer(serializers.ModelSerializer):
         return obj.user.email if hasattr(obj, 'user') else None
 
     def get_subjects(self, obj):
-        curriculum = Curriculum.objects.get(curriculum_name=obj.curriculum, select_class=obj.class_enrolled)
-        subject_data = Subjects.objects.filter(curriculum_id=curriculum.id)
-        subject = []
-        if subject_data:
-            for subject_list in subject_data:
-                subject.append(subject_list.primary_subject)
-            return subject
-        else:
-            None
+        try:
+            curriculum = Curriculum.objects.get(curriculum_name=obj.curriculum, select_class=obj.class_enrolled)
+            subject_data = Subjects.objects.filter(curriculum_id=curriculum.id)
+            subjects = []
+            for subject in subject_data:
+                subjects.append(subject.primary_subject)
+            return subjects or None
+        except Curriculum.DoesNotExist as e:
+            raise serializers.ValidationError(f"Error retrieving subjects: {str(e)}")
 
 
     def get_age(self, obj):

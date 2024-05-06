@@ -1921,9 +1921,7 @@ class StudentList(APIView):
             student_data = StudentUser.objects.filter(class_enrolled=teacher_data.class_subject_section_details[0].get("class"), section=teacher_data.class_subject_section_details[0].get("section"))
             students_list = []
             for student in student_data:
-                students_list.append({
-                    "student_name": f"{student.name}-{student.roll_no}"
-                })
+                students_list.append(f"{student.name}-{student.roll_no}")
             response_data = create_response_data(
                                 status=status.HTTP_200_OK,
                                 message=UserResponseMessage.USER_LIST_MESSAGE,
