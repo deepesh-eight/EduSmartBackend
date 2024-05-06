@@ -1,6 +1,7 @@
 import calendar
 import datetime
 import json
+import re
 
 from django.db import IntegrityError
 from django.utils import timezone
@@ -1951,3 +1952,41 @@ class StudentList(APIView):
                 data={}
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class StudentSubjectListView(APIView):
+    """
+    This class is used to fetch the subject list of the student.
+    """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            student_name = request.query_params.get('student_name')
+            student_roll = re.sub(r'\D', '', student_name)
+            data = StudentUser.objects.get(user__school_id=request.user.school_id, roll_no=student_roll)
+            curriculum = Curriculum.objects.get(curriculum_name=data.curriculum, select_class=data.class_enrolled)
+            primary_subject = Subjects.objects.filter(curriculum_id=curriculum.id).values_list('primary_subject', flat=True)
+            primary_subject_list = list(primary_subject)
+
+            if isinstance(data.optional_subject, str):
+                optional_subject_list = [data.optional_subject]
+            else:
+                optional_subject_list = data.optional_subject
+
+            subject_data = optional_subject_list+primary_subject_list
+            response_data = create_response_data(
+                                    status=status.HTTP_200_OK,
+                                    message=CurriculumMessage.SUBJECT_LIST_MESSAGE,
+                                    data=subject_data
+                                    )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                                    status=status.HTTP_400_BAD_REQUEST,
+                                    message=e.args[0],
+                                    data={}
+                                    )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
