@@ -1202,6 +1202,21 @@ class CreateTimetableView(APIView):
                 #     "more_subject": more_subject_str,
                 # }
 
+                exam_month = datetime.datetime.strptime(request.data.get('exam_month'), "%Y-%m-%d").strftime("%Y-%m")
+                exam_type = request.data.get('exam_type')
+                existing_timetable = TimeTable.objects.filter(
+                    class_name=request.data.get('class_name'),
+                    class_section=request.data.get('class_section'),
+                    exam_type=exam_type,
+                    exam_month__startswith=exam_month
+                ).exists()
+                if existing_timetable:
+                    response_data = create_response_data(
+                        status=status.HTTP_400_BAD_REQUEST,
+                        message="Timetable already exists for this month and exam type.",
+                        data={}
+                    )
+                    return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
                 serializer = CreateTimeTableSerializer(data=request.data)
                 if serializer.is_valid(raise_exception=True):
                     serializer.save(school_id=request.user.school_id)
@@ -1914,11 +1929,12 @@ class StudentList(APIView):
     """
     This class is used to fetch list of the student according to teacher class.
     """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
     def get(self, request):
         try:
             user = request.user
-            teacher_data = TeacherUser.objects.get(user__name=user.name)
-            student_data = StudentUser.objects.filter(class_enrolled=teacher_data.class_subject_section_details[0].get("class"), section=teacher_data.class_subject_section_details[0].get("section"))
+            teacher_data = TeacherUser.objects.get(user__name=user.name, user__school_id=request.user.school_id)
+            student_data = StudentUser.objects.filter(class_enrolled=teacher_data.class_subject_section_details[0].get("class"), section=teacher_data.class_subject_section_details[0].get("section"), user__school_id=request.user.school_id)
             students_list = []
             for student in student_data:
                 students_list.append(f"{student.name}-{student.roll_no}")
