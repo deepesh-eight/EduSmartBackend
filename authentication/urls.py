@@ -82,6 +82,7 @@ urlpatterns = [
     path('exam/report/card/delete/<int:pk>/', ExamReportCardDeleteView.as_view(), name='exam_report_delete'),
     path('exam/report/card/detail/<int:pk>/', ExamReportCardDetailView.as_view(), name='exam_report_detail'),
     path('exam/report/card/update/<int:pk>/', ExamReportCardUpdateView.as_view(), name='exam_report_update'),
+    path('student/list/', StudentList.as_view(), name='student_list'),
 
     # Mobile App zoom link
     path('create/zoomlink/', CreateZoomLinkView.as_view(), name='create_zoom_link'),

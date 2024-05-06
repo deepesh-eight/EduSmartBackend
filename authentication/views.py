@@ -813,13 +813,13 @@ class TeacherCurriculumSectionListView(APIView):
                 curriculum = request.query_params.get("curriculum")
                 classes = request.query_params.get("class_name")
                 section_list = StudentUser.objects.filter(user__school_id=request.user.school_id, curriculum=curriculum,
-                                                          class_enrolled=classes)
-                serializer = CurriculumSectionListSerializer(section_list, many=True)
-                class_names = [item['section'] for item in serializer.data]
+                                                          class_enrolled=classes).values_list('section', flat=True).distinct()
+                # serializer = CurriculumSectionListSerializer(section_list, many=True)
+                # class_names = [item['section'] for item in serializer.data]
                 response_data = create_response_data(
                     status=status.HTTP_200_OK,
                     message=CurriculumMessage.SECTION_LIST_MESSAGE,
-                    data=class_names
+                    data=list(section_list)
                 )
                 return Response(response_data, status=status.HTTP_200_OK)
             else:
@@ -1901,6 +1901,35 @@ class StaffAttedanceFilterListView(APIView):
                 }
             }
             return Response(response, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class StudentList(APIView):
+    """
+    This class is used to fetch list of the student according to teacher class.
+    """
+    def get(self, request):
+        try:
+            user = request.user
+            teacher_data = TeacherUser.objects.get(user__name=user.name)
+            student_data = StudentUser.objects.filter(class_enrolled=teacher_data.class_subject_section_details[0].get("class"), section=teacher_data.class_subject_section_details[0].get("section"))
+            students_list = []
+            for student in student_data:
+                students_list.append({
+                    "student_name": f"{student.name}-{student.roll_no}"
+                })
+            response_data = create_response_data(
+                                status=status.HTTP_200_OK,
+                                message=UserResponseMessage.USER_LIST_MESSAGE,
+                                data=students_list
+                                )
+            return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
             response_data = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
