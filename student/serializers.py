@@ -3,12 +3,12 @@ import datetime
 from rest_framework import serializers
 
 from EduSmart import settings
-from authentication.models import StudentUser, User, TimeTable
+from authentication.models import StudentUser, User, TimeTable, TeacherUser
 from authentication.serializers import AddressDetailsSerializer
 from constants import USER_TYPE_CHOICES, GENDER_CHOICES, RELIGION_CHOICES, CLASS_CHOICES, BLOOD_GROUP_CHOICES, \
     ATTENDENCE_CHOICE
 from curriculum.models import Curriculum, Subjects
-from student.models import StudentAttendence
+from student.models import StudentAttendence, ExmaReportCard
 
 
 class StudentUserSignupSerializer(serializers.Serializer):
@@ -329,3 +329,36 @@ class StudentTimeTableListSerializer(serializers.ModelSerializer):
     class Meta:
         model = TimeTable
         fields = ['exam_type', 'more_subject']
+
+
+class StudentReportCardListSerializer(serializers.ModelSerializer):
+    father_name = serializers.SerializerMethodField()
+    mother_name = serializers.SerializerMethodField()
+    teacher_name = serializers.SerializerMethodField()
+    student_id = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ExmaReportCard
+        fields = ['id', 'class_name', 'curriculum', 'class_section', 'roll_no', 'student_id', 'student_name', 'exam_type',
+                 'marks_grades', 'total_marks', 'overall_grades', 'father_name', 'mother_name',
+                  'teacher_name']
+
+    def get_father_name(self, obj):
+        father_name = StudentUser.objects.get(roll_no=obj.roll_no)
+        return father_name.father_name
+
+    def get_mother_name(self, obj):
+        father_name = StudentUser.objects.get(roll_no=obj.roll_no)
+        return father_name.mother_name
+
+    def get_teacher_name(self, obj):
+        class_name = obj.class_name
+        if class_name:
+            teacher = TeacherUser.objects.filter(class_subject_section_details__0__class=class_name).first()
+            if teacher:
+                return teacher.full_name
+        return None
+
+    def get_student_id(self, obj):
+        student_id = StudentUser.objects.get(roll_no=obj.roll_no)
+        return student_id.id

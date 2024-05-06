@@ -25,6 +25,7 @@ urlpatterns = [
         path('optional/subject/list/', AdminOptionalSubjectList.as_view(), name='admin_optional_subject_list'),
 
         # Mobile API
-        path('timetable/list/', StudentTimeTableListView.as_view(), name='student_timetable_list')
+        path('timetable/list/', StudentTimeTableListView.as_view(), name='student_timetable_list'),
+        path('report/card/list/', StudentReportCardListView.as_view(), name='student_report_card_list')
 
 ]

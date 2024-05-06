@@ -13,15 +13,16 @@ from rest_framework.views import APIView
 
 from authentication.models import User, Class, AddressDetails, StudentUser, TeacherUser, TimeTable
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsStudentUser, IsTeacherUser, IsInSameSchool
-from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage, CurriculumMessage
+from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage, CurriculumMessage, \
+    TimeTableMessage, ReportCardMesssage
 from curriculum.models import Curriculum, Subjects
 from pagination import CustomPagination
-from student.models import StudentAttendence
+from student.models import StudentAttendence, ExmaReportCard
 from student.serializers import StudentUserSignupSerializer, StudentDetailSerializer, StudentListSerializer, \
     studentProfileSerializer, StudentAttendanceDetailSerializer, \
     StudentAttendanceListSerializer, StudentListBySectionSerializer, StudentAttendanceCreateSerializer, \
     AdminClassListSerializer, AdminOptionalSubjectListSerializer, StudentAttendanceSerializer, \
-    StudentTimeTableListSerializer
+    StudentTimeTableListSerializer, StudentReportCardListSerializer
 from utils import create_response_data, create_response_list_data, get_student_total_attendance, \
     get_student_total_absent, get_student_attendence_percentage, generate_random_password
 
@@ -770,12 +771,41 @@ class StudentTimeTableListView(APIView):
             serializer = StudentTimeTableListSerializer(time_table, many=True)
             response_data = create_response_data(
                     status=status.HTTP_200_OK,
-                    message=CurriculumMessage.CLASSES_LIST_MESSAGE,
+                    message=TimeTableMessage.TIMETABLE_FETCHED_SUCCESSFULLY,
                     data=serializer.data
                 )
             return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
             response_data=create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class StudentReportCardListView(APIView):
+    """
+    This class is used to fetch the report card of the student.
+    """
+    permission_classes = [IsStudentUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            user = request.user
+            student_data = StudentUser.objects.get(user__school_id=user.school_id, user__id=user.id)
+            report_card = ExmaReportCard.objects.filter(school_id=user.school_id, curriculum=student_data.curriculum,
+                                                  class_name=student_data.class_enrolled,
+                                                  class_section=student_data.section, status=1).last()
+            serializer = StudentReportCardListSerializer(report_card)
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=ReportCardMesssage.REPORT_CARD_FETCHED_SUCCESSFULLY,
+                data=serializer.data
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
                 message=e.args[0],
                 data={}
