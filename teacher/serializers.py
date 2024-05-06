@@ -885,7 +885,7 @@ class ZoomLinkCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ZoomLink
-        fields = ['class_name', 'section', 'subject', 'date', 'start_time', 'end_time', 'zoom_link']
+        fields = ['class_name', 'curriculum', 'section', 'subject', 'date', 'start_time', 'end_time', 'zoom_link']
 
 
 class ZoomLinkListSerializer(serializers.ModelSerializer):
@@ -893,7 +893,7 @@ class ZoomLinkListSerializer(serializers.ModelSerializer):
     end_time = serializers.SerializerMethodField()
     class Meta:
         model = ZoomLink
-        fields = ['class_name', 'section', 'subject', 'date', 'start_time', 'end_time', 'zoom_link']
+        fields = ['class_name', 'curriculum', 'section', 'subject', 'date', 'start_time', 'end_time', 'zoom_link']
 
     def get_start_time(self, obj):
         return obj.start_time.strftime("%I:%M %p")

@@ -30,6 +30,7 @@ class ExmaReportCard(models.Model):
 
 class ZoomLink(models.Model):
     school_id = models.CharField(max_length=255, blank=True, null=True)
+    curriculum = models.CharField(max_length=255, blank=True, null=True)
     class_name = models.CharField(max_length=100)
     section = models.CharField(max_length=100)
     subject = models.CharField(max_length=100)
