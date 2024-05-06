@@ -3,7 +3,7 @@ import datetime
 from rest_framework import serializers
 
 from EduSmart import settings
-from authentication.models import StudentUser, User
+from authentication.models import StudentUser, User, TimeTable
 from authentication.serializers import AddressDetailsSerializer
 from constants import USER_TYPE_CHOICES, GENDER_CHOICES, RELIGION_CHOICES, CLASS_CHOICES, BLOOD_GROUP_CHOICES, \
     ATTENDENCE_CHOICE
@@ -318,7 +318,14 @@ class AdminOptionalSubjectListSerializer(serializers.ModelSerializer):
         model = Subjects
         fields = ['optional_subject']
 
+
 class StudentAttendanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentAttendence
         fields = ['date','mark_attendence']
+
+
+class StudentTimeTableListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TimeTable
+        fields = ['exam_type', 'more_subject']
