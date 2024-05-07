@@ -1,4 +1,5 @@
 import datetime
+import re
 
 from rest_framework import serializers
 
@@ -336,6 +337,8 @@ class StudentReportCardListSerializer(serializers.ModelSerializer):
     mother_name = serializers.SerializerMethodField()
     teacher_name = serializers.SerializerMethodField()
     student_id = serializers.SerializerMethodField()
+    student_name = serializers.SerializerMethodField()
+    roll_no = serializers.SerializerMethodField()
 
     class Meta:
         model = ExmaReportCard
@@ -344,11 +347,15 @@ class StudentReportCardListSerializer(serializers.ModelSerializer):
                   'teacher_name']
 
     def get_father_name(self, obj):
-        father_name = StudentUser.objects.get(roll_no=obj.roll_no)
+        student = obj.student_name
+        roll_no = re.sub(r'\D', '', student)
+        father_name = StudentUser.objects.get(roll_no=roll_no)
         return father_name.father_name
 
     def get_mother_name(self, obj):
-        father_name = StudentUser.objects.get(roll_no=obj.roll_no)
+        student = obj.student_name
+        roll_no = re.sub(r'\D', '', student)
+        father_name = StudentUser.objects.get(roll_no=roll_no)
         return father_name.mother_name
 
     def get_teacher_name(self, obj):
@@ -360,8 +367,20 @@ class StudentReportCardListSerializer(serializers.ModelSerializer):
         return None
 
     def get_student_id(self, obj):
-        student_id = StudentUser.objects.get(roll_no=obj.roll_no)
+        student = obj.student_name
+        roll_no = re.sub(r'\D', '', student)
+        student_id = StudentUser.objects.get(roll_no=roll_no)
         return student_id.id
+
+    def get_student_name(self, obj):
+        student = obj.student_name
+        student_name = re.search(r'[a-zA-Z\s]+', student).group().strip()
+        return student_name
+
+    def get_roll_no(self, obj):
+        student = obj.student_name
+        roll_no = re.sub(r'\D', '', student)
+        return roll_no
 
 
 class StudentStudyMaterialListSerializer(serializers.ModelSerializer):
