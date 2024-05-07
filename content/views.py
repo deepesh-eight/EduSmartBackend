@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.db.models import Q
 from .models import Content
-from .serializers import ContentSerializer
+from .serializers import ContentSerializer, ContentListSerializer
 from rest_framework import status, permissions, generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -32,27 +32,35 @@ class SuperAdminContentCreateView(APIView):
 class ContentCreateView(APIView):
     permission_classes = [IsAdminUser, IsInSameSchool]
     def post(self, request, format=None):
-        serializer = ContentSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(school_id=request.user.school_id)
+        try:
+            serializer = ContentSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save(school_id=request.user.school_id)
+                response_data = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=ContentMessages.CONTENT_CREATED,
+                    data=serializer.data,
+                )
+                return Response(response_data, status=status.HTTP_200_OK)
             response_data = create_response_data(
-                status=status.HTTP_200_OK,
-                message=ContentMessages.CONTENT_CREATED,
-                data=serializer.data,
+                status=status.HTTP_400_BAD_REQUEST,
+                message=serializer.errors,
+                data={},
             )
-            return Response(response_data, status=status.HTTP_200_OK)
-        response_data = create_response_data(
-            status=status.HTTP_400_BAD_REQUEST,
-            message=serializer.errors,
-            data={},
-        )
-        return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
     
 class ContentListView(generics.ListAPIView):
     permission_classes = [IsAdminUser, IsInSameSchool]
 
     def get_queryset(self):
-        queryset = Content.objects.filter(Q(school_id=self.request.user.school_id) | Q(school_id__isnull=True))
+        queryset = Content.objects.filter(Q(school_id=self.request.user.school_id) | Q(school_id__isnull=True)).order_by('-id')
         content_type = self.request.query_params.get('content_type', None)
         is_recommended = self.request.query_params.get('is_recommended', None)
         if content_type is not None:
@@ -63,7 +71,7 @@ class ContentListView(generics.ListAPIView):
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
-        serializer = ContentSerializer(queryset, many=True)
+        serializer = ContentListSerializer(queryset, many=True)
         response_data = create_response_data(
             status=status.HTTP_200_OK,
             message=ContentMessages.CONTENT_FETCHED,
@@ -100,7 +108,7 @@ class StudentContentListView(generics.ListAPIView):
     permission_classes = [IsStudentUser, IsInSameSchool]
 
     def get_queryset(self):
-        queryset = Content.objects.filter(Q(school_id=self.request.user.school_id) | Q(school_id__isnull=True))
+        queryset = Content.objects.filter(Q(school_id=self.request.user.school_id) | Q(school_id__isnull=True)).order_by('-id')
         content_type = self.request.query_params.get('content_type', None)
         is_recommended = self.request.query_params.get('is_recommended', None)
         if content_type is not None:
@@ -111,7 +119,7 @@ class StudentContentListView(generics.ListAPIView):
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
-        serializer = ContentSerializer(queryset, many=True)
+        serializer = ContentListSerializer(queryset, many=True)
         response_data = create_response_data(
             status=status.HTTP_200_OK,
             message=ContentMessages.CONTENT_FETCHED,
