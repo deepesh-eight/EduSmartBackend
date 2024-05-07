@@ -1,3 +1,4 @@
+import re
 from datetime import date, timedelta, datetime
 import json
 
@@ -810,7 +811,6 @@ class ExamReportCreateSerializer(serializers.ModelSerializer):
     class_name = serializers.CharField(required=True)
     class_section = serializers.CharField(required=True)
     student_name = serializers.CharField(required=True)
-    roll_no = serializers.CharField(required=True)
     exam_type = serializers.CharField(required=True)
     exam_month = serializers.DateField(required=True)
     total_marks = serializers.CharField(required=True)
@@ -825,30 +825,48 @@ class ExamReportCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ExmaReportCard
-        fields = ['class_name', 'curriculum', 'class_section', 'student_name', 'roll_no', 'exam_type', 'exam_month', 'marks_grades', 'total_marks', 'overall_grades']
+        fields = ['class_name', 'curriculum', 'class_section', 'student_name', 'exam_type', 'exam_month', 'marks_grades', 'total_marks', 'overall_grades']
 
 
 class ExamReportListSerializer(serializers.ModelSerializer):
+    student_name = serializers.SerializerMethodField()
+    roll_no = serializers.SerializerMethodField()
     class Meta:
         model = ExmaReportCard
         fields = ['id', 'class_name', 'class_section', 'student_name', 'roll_no', 'exam_type']
+
+    def get_student_name(self, obj):
+        student = obj.student_name
+        student_name = re.search(r'[a-zA-Z\s]+', student).group().strip()
+        return student_name
+
+    def get_roll_no(self, obj):
+        student = obj.student_name
+        roll_no = re.sub(r'\D', '', student)
+        return roll_no
 
 
 class ExamReportCardViewSerializer(serializers.ModelSerializer):
     father_name = serializers.SerializerMethodField()
     mother_name = serializers.SerializerMethodField()
     teacher_name = serializers.SerializerMethodField()
+    student_name = serializers.SerializerMethodField()
+    roll_no = serializers.SerializerMethodField()
 
     class Meta:
         model = ExmaReportCard
         fields = ['id', 'class_name', 'curriculum', 'class_section', 'student_name', 'roll_no', 'exam_type', 'exam_month', 'marks_grades', 'total_marks', 'overall_grades', 'father_name', 'mother_name', 'teacher_name']
 
     def get_father_name(self, obj):
-        father_name = StudentUser.objects.get(roll_no=obj.roll_no)
+        student = obj.student_name
+        roll_no = re.sub(r'\D', '', student)
+        father_name = StudentUser.objects.get(roll_no=roll_no)
         return father_name.father_name
 
     def get_mother_name(self, obj):
-        father_name = StudentUser.objects.get(roll_no=obj.roll_no)
+        student = obj.student_name
+        roll_no = re.sub(r'\D', '', student)
+        father_name = StudentUser.objects.get(roll_no=roll_no)
         return father_name.mother_name
 
     def get_teacher_name(self, obj):
@@ -859,11 +877,21 @@ class ExamReportCardViewSerializer(serializers.ModelSerializer):
                 return teacher.full_name
         return None
 
+    def get_student_name(self, obj):
+        student = obj.student_name
+        student_name = re.search(r'[a-zA-Z\s]+', student).group().strip()
+        return student_name
+
+    def get_roll_no(self, obj):
+        student = obj.student_name
+        roll_no = re.sub(r'\D', '', student)
+        return roll_no
+
 
 class ExamReportcardUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ExmaReportCard
-        fields = ['class_name', 'class_section', 'student_name', 'roll_no', 'exam_type', 'exam_month', 'marks_grades', 'total_marks', 'overall_grades']
+        fields = ['class_name', 'class_section', 'student_name', 'exam_type', 'exam_month', 'marks_grades', 'total_marks', 'overall_grades']
 
 
 class ZoomLinkCreateSerializer(serializers.ModelSerializer):

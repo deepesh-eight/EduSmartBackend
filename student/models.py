@@ -19,7 +19,6 @@ class ExmaReportCard(models.Model):
     class_name = models.CharField(max_length=200)
     class_section = models.CharField(max_length=200)
     student_name = models.CharField(max_length=200)
-    roll_no = models.CharField(max_length=200)
     exam_type = models.CharField(max_length=200)
     exam_month = models.DateField()
     marks_grades = models.JSONField()
