@@ -8,7 +8,7 @@ from authentication.serializers import AddressDetailsSerializer
 from constants import USER_TYPE_CHOICES, GENDER_CHOICES, RELIGION_CHOICES, CLASS_CHOICES, BLOOD_GROUP_CHOICES, \
     ATTENDENCE_CHOICE
 from curriculum.models import Curriculum, Subjects
-from student.models import StudentAttendence, ExmaReportCard
+from student.models import StudentAttendence, ExmaReportCard, StudentMaterial
 
 
 class StudentUserSignupSerializer(serializers.Serializer):
@@ -362,3 +362,18 @@ class StudentReportCardListSerializer(serializers.ModelSerializer):
     def get_student_id(self, obj):
         student_id = StudentUser.objects.get(roll_no=obj.roll_no)
         return student_id.id
+
+
+class StudentStudyMaterialListSerializer(serializers.ModelSerializer):
+    upload_content = serializers.SerializerMethodField()
+    class Meta:
+        model = StudentMaterial
+        fields = ['id', 'class_name', 'section', 'subject', 'curriculum', 'upload_link', 'title', 'discription', 'upload_content', 'content_type']
+
+    def get_upload_content(self, obj):
+        if obj.upload_content:
+            if obj.upload_content.name.startswith(settings.base_url + settings.MEDIA_URL):
+                return str(obj.upload_content)
+            else:
+                return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.upload_content)}'
+        return None
