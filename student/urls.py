@@ -29,5 +29,6 @@ urlpatterns = [
         path('report/card/list/', StudentReportCardListView.as_view(), name='student_report_card_list'),
         path('report/card/filter/list/', StudentReportCardFilterListView.as_view(), name='student_report_card_filter_list'),
         path('study/material/list/', StudentStudyMaterialListView.as_view(), name='student_study_material_list'),
+        path('study/material/detail/<int:pk>/', StudentStudyMaterialDetailView.as_view(), name='student_study_material_detail'),
 
 ]

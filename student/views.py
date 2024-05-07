@@ -873,3 +873,39 @@ class StudentStudyMaterialListView(APIView):
                 data={}
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class StudentStudyMaterialDetailView(APIView):
+    """
+    This class is used to fetch detail of the study material.
+    """
+    permission_classes = [IsStudentUser, IsInSameSchool]
+
+    def get(self, request, pk):
+        try:
+            user = request.user
+            student_data = StudentUser.objects.get(user__school_id=user.school_id, user__id=user.id)
+            data = StudentMaterial.objects.get(id=pk,school_id=user.school_id, curriculum=student_data.curriculum,
+                                                  class_name=student_data.class_enrolled,
+                                                  section=student_data.section)
+            serializer = StudentStudyMaterialListSerializer(data)
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=StudyMaterialMessage.STUDY_MATERIAL_FETCHED_SUCCESSFULLY,
+                data=serializer.data,
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except StudentMaterial.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=StudyMaterialMessage.STUDY_MATERIAL_Not_Exist,
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
