@@ -811,3 +811,36 @@ class StudentReportCardListView(APIView):
                 data={}
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class StudentReportCardFilterListView(APIView):
+    """
+    This class is used to fetch the report card of the student according to filter values.
+    """
+    permission_classes = [IsStudentUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            user = request.user
+            select_class = request.query_params.get('select_class', None)
+            select_section = request.query_params.get('select_section', None)
+            select_exam = request.query_params.get('select_exam')
+            select_month = datetime.datetime.strptime(request.query_params.get('select_month'), "%Y-%m-%d").strftime("%Y-%m")
+            student_data = StudentUser.objects.get(user__school_id=user.school_id, user__id=user.id)
+            report_card = ExmaReportCard.objects.get(school_id=user.school_id, curriculum=student_data.curriculum,
+                                                  class_name=select_class,
+                                                  class_section=select_section, status=1, exam_type=select_exam, exam_month__startswith=select_month)
+            serializer = StudentReportCardListSerializer(report_card)
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=ReportCardMesssage.REPORT_CARD_FETCHED_SUCCESSFULLY,
+                data=serializer.data
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)

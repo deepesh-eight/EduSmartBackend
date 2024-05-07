@@ -26,6 +26,7 @@ urlpatterns = [
 
         # Mobile API
         path('timetable/list/', StudentTimeTableListView.as_view(), name='student_timetable_list'),
-        path('report/card/list/', StudentReportCardListView.as_view(), name='student_report_card_list')
+        path('report/card/list/', StudentReportCardListView.as_view(), name='student_report_card_list'),
+        path('report/card/filter/list/', StudentReportCardFilterListView.as_view(), name='student_report_card_filter_list'),
 
 ]
