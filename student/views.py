@@ -14,18 +14,19 @@ from rest_framework.views import APIView
 from authentication.models import User, Class, AddressDetails, StudentUser, TeacherUser, TimeTable
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsStudentUser, IsTeacherUser, IsInSameSchool
 from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage, CurriculumMessage, \
-    TimeTableMessage, ReportCardMesssage, StudyMaterialMessage
+    TimeTableMessage, ReportCardMesssage, StudyMaterialMessage, ZoomLinkMessage
 from curriculum.models import Curriculum, Subjects
 from pagination import CustomPagination
-from student.models import StudentAttendence, ExmaReportCard, StudentMaterial
+from student.models import StudentAttendence, ExmaReportCard, StudentMaterial, ZoomLink
 from student.serializers import StudentUserSignupSerializer, StudentDetailSerializer, StudentListSerializer, \
     studentProfileSerializer, StudentAttendanceDetailSerializer, \
     StudentAttendanceListSerializer, StudentListBySectionSerializer, StudentAttendanceCreateSerializer, \
     AdminClassListSerializer, AdminOptionalSubjectListSerializer, StudentAttendanceSerializer, \
-    StudentTimeTableListSerializer, StudentReportCardListSerializer, StudentStudyMaterialListSerializer
+    StudentTimeTableListSerializer, StudentReportCardListSerializer, StudentStudyMaterialListSerializer, \
+    StudentZoomLinkSerializer
 from utils import create_response_data, create_response_list_data, get_student_total_attendance, \
     get_student_total_absent, get_student_attendence_percentage, generate_random_password
-
+from pytz import timezone as pytz_timezone
 
 class StudentUserCreateView(APIView):
     permission_classes = [IsAdminUser, IsInSameSchool]
@@ -902,6 +903,39 @@ class StudentStudyMaterialDetailView(APIView):
                 data={},
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class StudentZoomLinkListView(APIView):
+    """
+    This class is used to fetch list of the zoom link
+    """
+    permission_classes = [IsStudentUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            user = request.user
+            student_data = StudentUser.objects.get(user__school_id=user.school_id, user__id=user.id)
+
+            current_date_time_ist = timezone.localtime(timezone.now(), pytz_timezone('Asia/Kolkata'))
+
+            current_date = current_date_time_ist.date()
+            currunt_time_str = current_date_time_ist.time()
+            zoom_link_data = ZoomLink.objects.filter(school_id=user.school_id, curriculum=student_data.curriculum, class_name=student_data.class_enrolled,
+                                                     section=student_data.section, date__gte=current_date, end_time__gt=currunt_time_str).order_by("date")
+            serializer = StudentZoomLinkSerializer(zoom_link_data, many=True)
+            response_data = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=ZoomLinkMessage.ZOOM_LINK_FETCHED_SUCCESSFULLY,
+                    data=serializer.data,
+                )
+            return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
             response_data = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,

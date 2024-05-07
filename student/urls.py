@@ -30,5 +30,5 @@ urlpatterns = [
         path('report/card/filter/list/', StudentReportCardFilterListView.as_view(), name='student_report_card_filter_list'),
         path('study/material/list/', StudentStudyMaterialListView.as_view(), name='student_study_material_list'),
         path('study/material/detail/<int:pk>/', StudentStudyMaterialDetailView.as_view(), name='student_study_material_detail'),
-
+        path('zoom/link/list/', StudentZoomLinkListView.as_view(), name='student_zoom_link_list')
 ]

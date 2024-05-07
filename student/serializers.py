@@ -9,7 +9,7 @@ from authentication.serializers import AddressDetailsSerializer
 from constants import USER_TYPE_CHOICES, GENDER_CHOICES, RELIGION_CHOICES, CLASS_CHOICES, BLOOD_GROUP_CHOICES, \
     ATTENDENCE_CHOICE
 from curriculum.models import Curriculum, Subjects
-from student.models import StudentAttendence, ExmaReportCard, StudentMaterial
+from student.models import StudentAttendence, ExmaReportCard, StudentMaterial, ZoomLink
 
 
 class StudentUserSignupSerializer(serializers.Serializer):
@@ -396,3 +396,18 @@ class StudentStudyMaterialListSerializer(serializers.ModelSerializer):
             else:
                 return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.upload_content)}'
         return None
+
+
+class StudentZoomLinkSerializer(serializers.ModelSerializer):
+    start_time = serializers.SerializerMethodField()
+    end_time = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ZoomLink
+        fields = ['class_name', 'curriculum', 'section', 'subject', 'date', 'start_time', 'end_time', 'zoom_link']
+
+    def get_start_time(self, obj):
+        return obj.start_time.strftime("%I:%M %p")
+
+    def get_end_time(self, obj):
+        return obj.end_time.strftime("%I:%M %p")
