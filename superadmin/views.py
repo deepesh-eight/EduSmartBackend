@@ -9,7 +9,9 @@ from rest_framework.views import APIView
 
 from authentication.models import User
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsInSameSchool
-from constants import SchoolMessage, UserLoginMessage, UserResponseMessage, CurriculumMessage
+from constants import SchoolMessage, UserLoginMessage, UserResponseMessage, CurriculumMessage, ContentMessages
+from content.models import Content
+from content.serializers import ContentListSerializer
 from pagination import CustomPagination
 from superadmin.models import SchoolProfile, CurricullumList
 from superadmin.serializers import SchoolCreateSerializer, SchoolProfileSerializer, SchoolProfileUpdateSerializer, \
@@ -428,6 +430,48 @@ class CurriculumDeleteView(APIView):
                 data={}
             )
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class BookContentList(APIView):
+    """
+    This class is used to fetch the list of the book content which is added by superadmin.
+    """
+    permission_classes = [IsSuperAdminUser]
+    pagination_class = CustomPagination
+
+    def get(self, request):
+        try:
+            content_type = self.request.query_params.get('content_type', None)
+            is_recommended = self.request.query_params.get('is_recommended', None)
+            data = Content.objects.filter(school_id__isnull=True).order_by('-id')
+            if content_type is not None:
+                data = data.filter(content_type=content_type)
+            if is_recommended is not None:
+                data = data.filter(is_recommended=is_recommended)
+            paginator = self.pagination_class()
+            paginated_queryset = paginator.paginate_queryset(data, request)
+            serializer = ContentListSerializer(paginated_queryset, many=True)
+            response_data = {
+                'status': status.HTTP_200_OK,
+                'count': len(serializer.data),
+                'message': ContentMessages.CONTENT_FETCHED,
+                'data': serializer.data,
+                'pagination': {
+                    'page_size': paginator.page_size,
+                    'next': paginator.get_next_link(),
+                    'previous': paginator.get_previous_link(),
+                    'total_pages': paginator.page.paginator.num_pages,
+                    'current_page': paginator.page.number,
+                }
+            }
+            return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
             response_data = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
