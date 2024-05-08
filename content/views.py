@@ -146,11 +146,11 @@ class ContentUpdateView(APIView):
     """
     This class is used to update the book content.
     """
-    permission_classes = [IsSuperAdminUser]
+    permission_classes = [IsAdminUser, IsInSameSchool]
 
     def patch(self, request, pk):
         try:
-            school_data = Content.objects.get(id=pk)
+            school_data = Content.objects.get(id=pk, school_id=request.user.school_id)
             serializer = ContentUpdateSerializer(school_data, data=request.data, partial=True)
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
