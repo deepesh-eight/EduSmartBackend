@@ -1,5 +1,7 @@
 from django.shortcuts import render
 from django.db.models import Q
+
+from pagination import CustomPagination
 from .models import Content
 from .serializers import ContentSerializer, ContentListSerializer
 from rest_framework import status, permissions, generics
@@ -58,6 +60,7 @@ class ContentCreateView(APIView):
     
 class ContentListView(generics.ListAPIView):
     permission_classes = [IsAdminUser, IsInSameSchool]
+    pagination_class = CustomPagination
 
     def get_queryset(self):
         queryset = Content.objects.filter(Q(school_id=self.request.user.school_id) | Q(school_id__isnull=True)).order_by('-id')
@@ -71,12 +74,22 @@ class ContentListView(generics.ListAPIView):
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
-        serializer = ContentListSerializer(queryset, many=True)
-        response_data = create_response_data(
-            status=status.HTTP_200_OK,
-            message=ContentMessages.CONTENT_FETCHED,
-            data=serializer.data,
-        )
+        paginator = self.pagination_class()
+        paginated_queryset = paginator.paginate_queryset(queryset, request)
+        serializer = ContentListSerializer(paginated_queryset, many=True)
+        response_data = {
+            'status': status.HTTP_200_OK,
+            'count': len(serializer.data),
+            'message': ContentMessages.CONTENT_FETCHED,
+            'data': serializer.data,
+            'pagination': {
+                'page_size': paginator.page_size,
+                'next': paginator.get_next_link(),
+                'previous': paginator.get_previous_link(),
+                'total_pages': paginator.page.paginator.num_pages,
+                'current_page': paginator.page.number,
+            }
+        }
         return Response(response_data, status=status.HTTP_200_OK)
     
 class ContentDeleteView(generics.DestroyAPIView):
