@@ -11,7 +11,7 @@ from authentication.models import User
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsInSameSchool
 from constants import SchoolMessage, UserLoginMessage, UserResponseMessage, CurriculumMessage, ContentMessages
 from content.models import Content
-from content.serializers import ContentListSerializer
+from content.serializers import ContentListSerializer, ContentUpdateSerializer
 from pagination import CustomPagination
 from superadmin.models import SchoolProfile, CurricullumList
 from superadmin.serializers import SchoolCreateSerializer, SchoolProfileSerializer, SchoolProfileUpdateSerializer, \
@@ -473,6 +473,47 @@ class BookContentList(APIView):
             }
             return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class BookContentUpdateView(APIView):
+    """
+    This class is used to update the book content.
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+
+    def patch(self, request, pk):
+        try:
+            school_data = Content.objects.get(id=pk, school_id=request.user.school_id)
+            serializer = ContentUpdateSerializer(school_data, data=request.data, partial=True)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                response_data = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=ContentMessages.CONTENT_UPDATED,
+                    data={}
+                )
+                return Response(response_data, status=status.HTTP_200_OK)
+            else:
+                response = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=serializer.errors,
+                    data=serializer.errors
+                )
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        except Content.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=ContentMessages.CONTENT_NOT_EXIST,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+        except ValidationError as e:
             response_data = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
                 message=e.args[0],

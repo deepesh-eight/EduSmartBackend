@@ -45,3 +45,9 @@ class ContentListSerializer(serializers.ModelSerializer):
             else:
                 return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.content_media)}'
         return None
+
+
+class ContentUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Content
+        fields = ['id','curriculum','content_media','content_media_link','image', 'content_type','content_name','content_creator','supporting_detail','description','is_recommended','classes','subject']

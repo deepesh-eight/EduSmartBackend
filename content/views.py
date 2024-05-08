@@ -1,9 +1,10 @@
 from django.shortcuts import render
 from django.db.models import Q
+from rest_framework.exceptions import ValidationError
 
 from pagination import CustomPagination
 from .models import Content
-from .serializers import ContentSerializer, ContentListSerializer
+from .serializers import ContentSerializer, ContentListSerializer, ContentUpdateSerializer
 from rest_framework import status, permissions, generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -139,3 +140,44 @@ class StudentContentListView(generics.ListAPIView):
             data=serializer.data,
         )
         return Response(response_data, status=status.HTTP_200_OK)
+
+
+class ContentUpdateView(APIView):
+    """
+    This class is used to update the book content.
+    """
+    permission_classes = [IsSuperAdminUser]
+
+    def patch(self, request, pk):
+        try:
+            school_data = Content.objects.get(id=pk)
+            serializer = ContentUpdateSerializer(school_data, data=request.data, partial=True)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                response_data = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=ContentMessages.CONTENT_UPDATED,
+                    data={}
+                )
+                return Response(response_data, status=status.HTTP_200_OK)
+            else:
+                response = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=serializer.errors,
+                    data=serializer.errors
+                )
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        except Content.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=ContentMessages.CONTENT_NOT_EXIST,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+        except ValidationError as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)

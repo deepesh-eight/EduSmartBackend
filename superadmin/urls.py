@@ -17,5 +17,6 @@ urlpatterns = [
         path('curriculum/delete/<int:pk>/', CurriculumDeleteView.as_view(), name='curriculum_delete'),
 
         # Book Related API
-        path('book/content/list/', BookContentList.as_view(), name='book_content_list')
+        path('book/content/list/', BookContentList.as_view(), name='book_content_list'),
+        path('book/update/<int:pk>/', BookContentUpdateView.as_view(), name='content-update'),
 ]

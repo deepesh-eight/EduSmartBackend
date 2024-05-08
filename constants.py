@@ -200,3 +200,5 @@ class ContentMessages:
     CONTENT_CREATED = "Content Created Successfully."
     CONTENT_FETCHED = "Content Fetched Successfully."
     CONTENT_DELETED = "Content Deleted Successfully."
+    CONTENT_UPDATED = 'Content updated Successfully.'
+    CONTENT_NOT_EXIST = 'Content does not exist.'
