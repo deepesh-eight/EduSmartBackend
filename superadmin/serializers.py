@@ -99,18 +99,30 @@ class SubjectsSerializer(serializers.ModelSerializer):
 
 
 class CurriculumCreateSerializer(serializers.ModelSerializer):
-    subjects = SubjectsSerializer(many=True, required=False)
+    primary_subject = serializers.ListField(child=serializers.CharField(), required=False)
+    optional_subject = serializers.ListField(child=serializers.CharField(), required=False)
 
     class Meta:
         model = CurricullumList
-        fields = ['curriculum_name', 'class_name', 'subjects']
+        fields = ['id', 'curriculum_name', 'class_name', 'primary_subject', 'optional_subject']
 
     def create(self, validated_data):
-        subjects_data = validated_data.pop('subjects')
+        primary_subjects_data = validated_data.pop('primary_subject', [])
+        optional_subjects_data = validated_data.pop('optional_subject', [])
+
         curriculum = CurricullumList.objects.create(**validated_data)
 
-        for subject_data in subjects_data:
-            Subjects.objects.create(curriculum_id=curriculum, **subject_data)
+        max_index = max(len(primary_subjects_data), len(optional_subjects_data))
+
+        for index in range(max_index):
+            primary_subject = primary_subjects_data[index] if index < len(primary_subjects_data) else None
+            optional_subject = optional_subjects_data[index] if index < len(optional_subjects_data) else None
+
+            Subjects.objects.create(
+                curriculum_id=curriculum,
+                primary_subject=primary_subject.strip() if primary_subject else None,
+                optional_subject=optional_subject.strip() if optional_subject else None
+            )
 
         return curriculum
 
@@ -118,9 +130,9 @@ class CurriculumCreateSerializer(serializers.ModelSerializer):
         curriculum_name = data.get('curriculum_name')
         class_name = data.get('class_name')
 
-        # Check if a curriculum with the provided name and class already exists
         if CurricullumList.objects.filter(curriculum_name=curriculum_name, class_name=class_name).exists():
-            raise serializers.ValidationError(f"A curriculum with name {curriculum_name} and class {class_name} already exists.")
+            raise serializers.ValidationError(
+                f"A curriculum with name {curriculum_name} and class {class_name} already exists.")
 
         return data
 
