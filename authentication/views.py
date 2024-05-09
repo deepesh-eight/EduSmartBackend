@@ -2009,7 +2009,7 @@ class AdminBookContentList(APIView):
                 search = self.request.query_params.get('search', None)
                 if search is not None:
                     content_data = content_data.filter(Q(content_type__icontains=search) | Q(content_name__icontains=search) | Q(curriculum__icontains=search) | Q
-                    (classes__icontains=search) | Q(subject__icontains=search) | Q(supporting_detail__icontains=search) | Q(description__icontains=search) | Q(category__icontains=search))
+                    (classes__icontains=search) | Q(subject__icontains=search) | Q(supporting_detail__icontains=search) | Q(description__icontains=search) | Q(category__icontains=search) | Q(content_creator__icontains=search))
                 if content_type is not None:
                     content_data = content_data.filter(content_type=content_type)
                 if is_recommended is not None:
