@@ -2003,33 +2003,43 @@ class AdminBookContentList(APIView):
     def get(self, request):
         try:
             content_data = Content.objects.filter(Q(school_id=self.request.user.school_id) | Q(school_id__isnull=True)).order_by('-id')
-            content_type = self.request.query_params.get('content_type', None)
-            is_recommended = self.request.query_params.get('is_recommended', None)
-            search = self.request.query_params.get('search', None)
-            if search is not None:
-                content_data = content_data.filter(Q(content_type__icontains=search) | Q(content_name__icontains=search) | Q(curriculum__icontains=search) | Q
-                (classes__icontains=search) | Q(subject__icontains=search) | Q(supporting_detail__icontains=search) | Q(description__icontains=search) | Q(category__icontains=search))
-            if content_type is not None:
-                content_data = content_data.filter(content_type=content_type)
-            if is_recommended is not None:
-                content_data = content_data.filter(is_recommended=is_recommended)
+            if self.request.query_params:
+                content_type = self.request.query_params.get('content_type', None)
+                is_recommended = self.request.query_params.get('is_recommended', None)
+                search = self.request.query_params.get('search', None)
+                if search is not None:
+                    content_data = content_data.filter(Q(content_type__icontains=search) | Q(content_name__icontains=search) | Q(curriculum__icontains=search) | Q
+                    (classes__icontains=search) | Q(subject__icontains=search) | Q(supporting_detail__icontains=search) | Q(description__icontains=search) | Q(category__icontains=search))
+                if content_type is not None:
+                    content_data = content_data.filter(content_type=content_type)
+                if is_recommended is not None:
+                    content_data = content_data.filter(is_recommended=is_recommended)
 
-            paginator = self.pagination_class()
-            paginated_queryset = paginator.paginate_queryset(content_data, request)
-            serializer = ContentListSerializer(paginated_queryset, many=True)
-            response_data = {
-                'status': status.HTTP_200_OK,
-                'count': len(serializer.data),
-                'message': ContentMessages.CONTENT_FETCHED,
-                'data': serializer.data,
-                'pagination': {
-                    'page_size': paginator.page_size,
-                    'next': paginator.get_next_link(),
-                    'previous': paginator.get_previous_link(),
-                    'total_pages': paginator.page.paginator.num_pages,
-                    'current_page': paginator.page.number,
+                paginator = self.pagination_class()
+                paginated_queryset = paginator.paginate_queryset(content_data, request)
+                serializer = ContentListSerializer(paginated_queryset, many=True)
+                response_data = {
+                    'status': status.HTTP_200_OK,
+                    'count': len(serializer.data),
+                    'message': ContentMessages.CONTENT_FETCHED,
+                    'data': serializer.data,
+                    'pagination': {
+                        'page_size': paginator.page_size,
+                        'next': paginator.get_next_link(),
+                        'previous': paginator.get_previous_link(),
+                        'total_pages': paginator.page.paginator.num_pages,
+                        'current_page': paginator.page.number,
+                    }
                 }
-            }
+                return Response(response_data, status=status.HTTP_200_OK)
+            else:
+                serializer = ContentListSerializer(content_data, many=True)
+                response_data = create_response_list_data(
+                        status=status.HTTP_200_OK,
+                        count=len(serializer.data),
+                        message=ContentMessages.CONTENT_FETCHED,
+                        data=serializer.data
+                    )
             return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
             response_data = create_response_data(
