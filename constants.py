@@ -78,6 +78,11 @@ CONTENT_TYPES = [
     ('e_video', 'E-Video'),
 ]
 
+CATEGORY_TYPES = [
+    ('class content', 'class content'),
+    ('other', 'other'),
+]
+
 class UserLoginMessage:
     USER_DOES_NOT_EXISTS = "User does not exists."
     INCORRECT_PASSWORD = "Incorrect password, please try again."

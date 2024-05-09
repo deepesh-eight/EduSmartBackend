@@ -2,6 +2,7 @@ import json
 from rest_framework import serializers
 
 from EduSmart import settings
+from constants import CATEGORY_TYPES
 from .models import Content, Curriculum
 
 class CurriculumData(serializers.ModelSerializer):
@@ -11,9 +12,12 @@ class CurriculumData(serializers.ModelSerializer):
 
 class ContentSerializer(serializers.ModelSerializer):
     # curriculum = serializers.SerializerMethodField()
+    category = serializers.ChoiceField(
+        choices=CATEGORY_TYPES
+    )
     class Meta:
         model = Content
-        fields = ['id','curriculum','content_media','content_media_link','image', 'content_type','content_name','content_creator','supporting_detail','description','is_recommended','classes','subject']
+        fields = ['id','curriculum','content_media','content_media_link', 'category', 'image', 'content_type','content_name','content_creator','supporting_detail','description','is_recommended','classes','subject']
 
     # def get_curriculum(self, obj):
     #     return obj.curriculum.curriculum_name if obj.curriculum else None

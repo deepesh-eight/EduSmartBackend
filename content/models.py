@@ -16,6 +16,7 @@ class Content(models.Model):
     supporting_detail = models.TextField(blank=True, null=True)
     description = models.TextField()
     is_recommended = models.BooleanField(default=False)
+    category = models.CharField(max_length=255, blank=True, null=True)
 
     def __str__(self) -> str:
         return f'{self.id}'
