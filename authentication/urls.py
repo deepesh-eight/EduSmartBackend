@@ -97,6 +97,8 @@ urlpatterns = [
     # Mobile E-book
     path('book/content/list/', AdminBookContentList.as_view(), name='book_content_list'),
     path('book/content/detail/<int:pk>/', AdminBookContentDetailView.as_view(), name='content-detail'),
+    path('book/create/', RecommendedBookCreateView.as_view(), name='create_recommended_book'),
+
     # Events
     path('events/create', EventCreateView.as_view(), name='create_event'),
     path('events/get-events', GetAllEvents.as_view(), name='get_events'),

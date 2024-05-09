@@ -3,7 +3,8 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from datetime import date
 from EduSmart import settings
-from constants import USER_TYPE_CHOICES, ROLE_CHOICES, ATTENDENCE_CHOICE
+from constants import USER_TYPE_CHOICES, ROLE_CHOICES, ATTENDENCE_CHOICE, CATEGORY_TYPES
+from content.models import Content
 from teacher.serializers import CertificateSerializer, ImageFieldStringAndFile
 from .models import User, AddressDetails, StaffUser, Certificate, StaffAttendence, EventsCalender
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -370,3 +371,13 @@ class StaffAttendanceFilterListSerializer(serializers.ModelSerializer):
             return name
         else:
             None
+
+
+class RecommendedBookCreateSerializer(serializers.ModelSerializer):
+    # curriculum = serializers.SerializerMethodField()
+    category = serializers.ChoiceField(
+        choices=CATEGORY_TYPES
+    )
+    class Meta:
+        model = Content
+        fields = ['id','curriculum','content_media','content_media_link', 'category', 'image', 'content_type','content_name','content_creator','supporting_detail','description','is_recommended','classes','subject']

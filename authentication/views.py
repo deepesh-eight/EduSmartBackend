@@ -23,7 +23,7 @@ from authentication.serializers import UserSignupSerializer, UsersListSerializer
     UserLoginSerializer, NonTeachingStaffSerializers, NonTeachingStaffListSerializers, \
     NonTeachingStaffDetailSerializers, NonTeachingStaffProfileSerializers, StaffAttendanceSerializer, \
     StaffAttendanceDetailSerializer, StaffAttendanceListSerializer, LogoutSerializer, EventSerializer, \
-    EventsCalendarSerializer, StaffAttendanceFilterListSerializer
+    EventsCalendarSerializer, StaffAttendanceFilterListSerializer, RecommendedBookCreateSerializer
 from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage, ScheduleMessage, \
     CurriculumMessage, DayReviewMessage, NotificationMessage, AnnouncementMessage, TimeTableMessage, ReportCardMesssage, \
     ZoomLinkMessage, StudyMaterialMessage, EventsMessages, ContentMessages
@@ -2068,5 +2068,37 @@ class AdminBookContentDetailView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
                 message=e.args[0],
                 data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class RecommendedBookCreateView(APIView):
+    """
+    This class is userd to upload Recommended Book.
+    """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+
+    def post(self, request):
+        try:
+            serializer = RecommendedBookCreateSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save(school_id=request.user.school_id)
+                response_data = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=ContentMessages.CONTENT_CREATED,
+                    data=serializer.data,
+                )
+                return Response(response_data, status=status.HTTP_200_OK)
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=serializer.errors,
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={},
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
