@@ -4,6 +4,7 @@ import json
 import re
 
 from django.db import IntegrityError
+from django.db.models import Q
 from django.utils import timezone
 from pytz import timezone as pytz_timezone
 from rest_framework import status, permissions
@@ -25,7 +26,9 @@ from authentication.serializers import UserSignupSerializer, UsersListSerializer
     EventsCalendarSerializer, StaffAttendanceFilterListSerializer
 from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage, ScheduleMessage, \
     CurriculumMessage, DayReviewMessage, NotificationMessage, AnnouncementMessage, TimeTableMessage, ReportCardMesssage, \
-    ZoomLinkMessage, StudyMaterialMessage, EventsMessages
+    ZoomLinkMessage, StudyMaterialMessage, EventsMessages, ContentMessages
+from content.models import Content
+from content.serializers import ContentListSerializer
 from curriculum.models import Curriculum, Subjects
 from pagination import CustomPagination
 from student.models import ExmaReportCard, ZoomLink, StudentMaterial
@@ -1990,3 +1993,76 @@ class StudentSubjectListView(APIView):
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
 
+class AdminBookContentList(APIView):
+    """
+    This class is used to fetch the list of the e-book content which is added by admin and super admin.
+    """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+    pagination_class = CustomPagination
+
+    def get(self, request):
+        try:
+            content_data = Content.objects.filter(Q(school_id=self.request.user.school_id) | Q(school_id__isnull=True)).order_by('-id')
+            content_type = self.request.query_params.get('content_type', None)
+            is_recommended = self.request.query_params.get('is_recommended', None)
+            if content_type is not None:
+                content_data = content_data.filter(content_type=content_type)
+            if is_recommended is not None:
+                content_data = content_data.filter(is_recommended=is_recommended)
+
+            paginator = self.pagination_class()
+            paginated_queryset = paginator.paginate_queryset(content_data, request)
+            serializer = ContentListSerializer(paginated_queryset, many=True)
+            response_data = {
+                'status': status.HTTP_200_OK,
+                'count': len(serializer.data),
+                'message': ContentMessages.CONTENT_FETCHED,
+                'data': serializer.data,
+                'pagination': {
+                    'page_size': paginator.page_size,
+                    'next': paginator.get_next_link(),
+                    'previous': paginator.get_previous_link(),
+                    'total_pages': paginator.page.paginator.num_pages,
+                    'current_page': paginator.page.number,
+                }
+            }
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AdminBookContentDetailView(APIView):
+    """
+    This class is used to fetch the detail of the content which is added by admin and super admin.
+    """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+
+    def get(self, request, pk):
+        try:
+            data = Content.objects.get(Q(school_id=self.request.user.school_id) | Q(school_id__isnull=True), id=pk)
+            serializer = ContentListSerializer(data)
+            response_data = create_response_data(
+                        status=status.HTTP_200_OK,
+                        message=ContentMessages.CONTENT_FETCHED,
+                        data=serializer.data
+                    )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Content.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=ContentMessages.CONTENT_NOT_EXIST,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+        except ValidationError as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
