@@ -489,7 +489,7 @@ class BookContentUpdateView(APIView):
 
     def patch(self, request, pk):
         try:
-            school_data = Content.objects.get(id=pk)
+            school_data = Content.objects.get(id=pk, school_id__isnull=True)
             serializer = ContentUpdateSerializer(school_data, data=request.data, partial=True)
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
@@ -520,3 +520,38 @@ class BookContentUpdateView(APIView):
                 data={}
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class BookContentDetailView(APIView):
+    """
+    This class is used to fetch the detail of the book content.
+    """
+    permission_classes = [IsSuperAdminUser]
+
+    def get(self, request, pk):
+        try:
+            data = Content.objects.get(id=pk, school_id__isnull=True)
+            serializer = ContentListSerializer(data)
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=ContentMessages.CONTENT_FETCHED,
+                data=serializer.data
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        except Content.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=ContentMessages.CONTENT_NOT_EXIST,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+
+        except ValidationError as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+

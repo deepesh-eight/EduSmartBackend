@@ -16,8 +16,9 @@ class Content(models.Model):
     supporting_detail = models.TextField(blank=True, null=True)
     description = models.TextField()
     is_recommended = models.BooleanField(default=False)
-    def __str__(self):
-        return self.name
+
+    def __str__(self) -> str:
+        return f'{self.id}'
 
     @property
     def is_generic(self):

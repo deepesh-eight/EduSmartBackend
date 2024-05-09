@@ -18,5 +18,6 @@ urlpatterns = [
 
         # Book Related API
         path('book/content/list/', BookContentList.as_view(), name='book_content_list'),
-        path('book/update/<int:pk>/', BookContentUpdateView.as_view(), name='content-update'),
+        path('book/update/<int:pk>/', BookContentUpdateView.as_view(), name='content_update'),
+        path('book/detail/<int:pk>/', BookContentDetailView.as_view(), name='content_detail'),
 ]

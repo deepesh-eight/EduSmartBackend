@@ -181,3 +181,35 @@ class ContentUpdateView(APIView):
                 data={}
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ContentDetailView(APIView):
+    """
+    This class is used to fetch the detail of the content.
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+
+    def get(self, request, pk):
+        try:
+            data = Content.objects.get(Q(school_id=self.request.user.school_id) | Q(school_id__isnull=True), id=pk)
+            serializer = ContentListSerializer(data)
+            response_data = create_response_data(
+                        status=status.HTTP_200_OK,
+                        message=ContentMessages.CONTENT_FETCHED,
+                        data=serializer.data
+                    )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Content.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=ContentMessages.CONTENT_NOT_EXIST,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+        except ValidationError as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
