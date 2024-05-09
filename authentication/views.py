@@ -2005,6 +2005,10 @@ class AdminBookContentList(APIView):
             content_data = Content.objects.filter(Q(school_id=self.request.user.school_id) | Q(school_id__isnull=True)).order_by('-id')
             content_type = self.request.query_params.get('content_type', None)
             is_recommended = self.request.query_params.get('is_recommended', None)
+            search = self.request.query_params.get('search', None)
+            if search is not None:
+                content_data = content_data.filter(Q(content_type__icontains=search) | Q(content_name__icontains=search) | Q(curriculum__icontains=search) | Q
+                (classes__icontains=search) | Q(subject__icontains=search) | Q(supporting_detail__icontains=search) | Q(description__icontains=search) | Q(category__icontains=search))
             if content_type is not None:
                 content_data = content_data.filter(content_type=content_type)
             if is_recommended is not None:
