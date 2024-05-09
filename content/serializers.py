@@ -52,6 +52,9 @@ class ContentListSerializer(serializers.ModelSerializer):
 
 
 class ContentUpdateSerializer(serializers.ModelSerializer):
+    category = serializers.ChoiceField(
+        choices=CATEGORY_TYPES
+    )
     class Meta:
         model = Content
-        fields = ['id','curriculum','content_media','content_media_link','image', 'content_type','content_name','content_creator','supporting_detail','description','is_recommended','classes','subject']
+        fields = ['id','curriculum','content_media','content_media_link', 'category', 'image', 'content_type','content_name','content_creator','supporting_detail','description','is_recommended','classes','subject']
