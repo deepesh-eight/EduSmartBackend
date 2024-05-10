@@ -99,6 +99,11 @@ urlpatterns = [
     path('book/content/detail/<int:pk>/', AdminBookContentDetailView.as_view(), name='content-detail'),
     path('book/create/', RecommendedBookCreateView.as_view(), name='create_recommended_book'),
 
+    # Class Event Image
+    path('class/event/create/', ClassEventCreate.as_view(), name='class_event_create'),
+    path('class/event/list/', ClassEventListView.as_view(), name='class_event_list'),
+    path('class/event/detail/<int:pk>/', ClassEventDetailView.as_view(), name='class_event_detail'),
+
     # Events
     path('events/create', EventCreateView.as_view(), name='create_event'),
     path('events/get-events', GetAllEvents.as_view(), name='get_events'),

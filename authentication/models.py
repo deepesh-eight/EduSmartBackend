@@ -303,3 +303,22 @@ class TimeTable(models.Model):
     exam_month = models.DateField()
     more_subject = models.JSONField()
     status = models.CharField(max_length=100,default=0)
+
+
+class ClassEvent(models.Model):
+    school_id = models.CharField(max_length=255, null=True, blank=True)
+    curriculum = models.CharField(max_length=255, blank=True, null=True)
+    select_class = models.CharField(max_length=255)
+    section = models.CharField(max_length=150)
+    date = models.DateField()
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    title = models.CharField(max_length=255)
+    discription = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+class ClassEventImage(models.Model):
+    class_event = models.ForeignKey(ClassEvent, on_delete=models.CASCADE, related_name='class_event_image')
+    event_image = models.FileField(upload_to='class_event_image/')

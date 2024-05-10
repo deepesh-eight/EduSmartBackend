@@ -207,3 +207,9 @@ class ContentMessages:
     CONTENT_DELETED = "Content Deleted Successfully."
     CONTENT_UPDATED = 'Content updated Successfully.'
     CONTENT_NOT_EXIST = 'Content does not exist.'
+
+
+class ClassEventMessage:
+    CLASS_EVENT_CREATED = "Class event created Successfully."
+    CLASS_EVENT_LIST = "Class event fetched Successfully."
+    CLASS_EVENT_NOT_EXIST = "Class event does not exist."

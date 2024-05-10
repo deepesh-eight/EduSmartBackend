@@ -1,12 +1,13 @@
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
-from datetime import date
+from datetime import date, datetime
 from EduSmart import settings
 from constants import USER_TYPE_CHOICES, ROLE_CHOICES, ATTENDENCE_CHOICE, CATEGORY_TYPES
 from content.models import Content
 from teacher.serializers import CertificateSerializer, ImageFieldStringAndFile
-from .models import User, AddressDetails, StaffUser, Certificate, StaffAttendence, EventsCalender
+from .models import User, AddressDetails, StaffUser, Certificate, StaffAttendence, EventsCalender, ClassEvent, \
+    ClassEventImage
 from django.core.exceptions import ValidationError as DjangoValidationError
 
 class UserSignupSerializer(serializers.Serializer):
@@ -381,3 +382,79 @@ class RecommendedBookCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Content
         fields = ['id','curriculum','content_media','content_media_link', 'category', 'image', 'content_type','content_name','content_creator','supporting_detail','description','is_recommended','classes','subject']
+
+
+class CustomTimeField(serializers.TimeField):
+    def to_internal_value(self, value):
+        try:
+            # Convert 12-hour time format to 24-hour time format
+            if isinstance(value, str):
+                value = datetime.strptime(value, '%I:%M %p').strftime('%H:%M:%S')
+        except ValueError:
+            raise serializers.ValidationError('Time has wrong format. Use hh:mm[:ss[.uuuuuu]] instead.')
+        return super().to_internal_value(value)
+
+
+class ClassEventCreateSerializer(serializers.Serializer):
+    curriculum = serializers.CharField(required=True)
+    select_class = serializers.CharField(required=True)
+    section = serializers.CharField(required=True)
+    date = serializers.DateField(required=True)
+    start_time = CustomTimeField(required=False)
+    end_time = CustomTimeField(required=False)
+    title = serializers.CharField(required=True)
+    discription = serializers.CharField(max_length=255)
+    event_image = serializers.ListField(
+        child=serializers.FileField(),
+        required=False
+    )
+
+    def validate_event_image(self, value):
+        if len(value) > 2:
+            raise serializers.ValidationError("Can't add more than 2 images.")
+        return value
+
+
+class ClassEventListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ClassEvent
+        fields = ['id', 'date', 'title', 'discription']
+
+
+class ClassEventImageSerializer(serializers.ModelSerializer):
+    event_image= serializers.SerializerMethodField()
+    class Meta:
+        model = ClassEventImage
+        fields = ['event_image']
+
+    def get_event_image(self, obj):
+        if obj.event_image:
+            return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.event_image)}'
+        return None
+
+
+class ClassEventDetailSerializer(serializers.ModelSerializer):
+    curriculum = serializers.CharField(required=True)
+    select_class = serializers.CharField(required=True)
+    section = serializers.CharField(required=True)
+    date = serializers.DateField(required=True)
+    start_time = serializers.SerializerMethodField()
+    end_time = serializers.SerializerMethodField()
+    title = serializers.CharField(required=True)
+    discription = serializers.CharField(max_length=255)
+    event_image = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ClassEvent
+        fields = ['id', 'curriculum', 'select_class', 'section', 'date', 'start_time', 'end_time', 'title', 'discription', 'event_image']
+
+    def get_event_image(self, obj):
+        event_image = ClassEventImage.objects.filter(class_event=obj.id)
+        event_image_list = ClassEventImageSerializer(event_image, many=True)
+        return event_image_list.data
+
+    def get_start_time(self, obj):
+        return obj.start_time.strftime("%I:%M %p")
+
+    def get_end_time(self, obj):
+        return obj.end_time.strftime("%I:%M %p")

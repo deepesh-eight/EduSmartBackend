@@ -16,17 +16,18 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils.dateparse import parse_date
 
 from authentication.models import User, AddressDetails, ErrorLogging, Certificate, StaffUser, StaffAttendence, \
-    TeacherUser, StudentUser, TeachersSchedule, DayReview, TeacherAttendence, Notification, TimeTable, EventsCalender
+    TeacherUser, StudentUser, TeachersSchedule, DayReview, TeacherAttendence, Notification, TimeTable, EventsCalender, ClassEvent, ClassEventImage
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsManagementUser, IsPayRollManagementUser, \
     IsBoardingUser, IsInSameSchool, IsTeacherUser
 from authentication.serializers import UserSignupSerializer, UsersListSerializer, UpdateProfileSerializer, \
     UserLoginSerializer, NonTeachingStaffSerializers, NonTeachingStaffListSerializers, \
     NonTeachingStaffDetailSerializers, NonTeachingStaffProfileSerializers, StaffAttendanceSerializer, \
     StaffAttendanceDetailSerializer, StaffAttendanceListSerializer, LogoutSerializer, EventSerializer, \
-    EventsCalendarSerializer, StaffAttendanceFilterListSerializer, RecommendedBookCreateSerializer
+    EventsCalendarSerializer, StaffAttendanceFilterListSerializer, RecommendedBookCreateSerializer, \
+    ClassEventCreateSerializer, ClassEventListSerializer, ClassEventDetailSerializer
 from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage, ScheduleMessage, \
     CurriculumMessage, DayReviewMessage, NotificationMessage, AnnouncementMessage, TimeTableMessage, ReportCardMesssage, \
-    ZoomLinkMessage, StudyMaterialMessage, EventsMessages, ContentMessages
+    ZoomLinkMessage, StudyMaterialMessage, EventsMessages, ContentMessages, ClassEventMessage
 from content.models import Content
 from content.serializers import ContentListSerializer
 from curriculum.models import Curriculum, Subjects
@@ -2112,3 +2113,137 @@ class RecommendedBookCreateView(APIView):
                 data={},
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ClassEventCreate(APIView):
+    """
+    This class is used to create class event's.
+    """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+
+    def post(self, request):
+        try:
+            serializer = ClassEventCreateSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            curriculum = serializer.validated_data['curriculum']
+            select_class = serializer.validated_data['select_class']
+            section = serializer.validated_data['section']
+            date = serializer.validated_data['date']
+            start_time = serializer.validated_data.get('start_time', None)
+            end_time = serializer.validated_data.get('end_time', None)
+            title = serializer.validated_data['title']
+            discription = serializer.validated_data.get('discription', None)
+            event_image = serializer.validated_data.get('event_image', [])
+
+            class_event = ClassEvent.objects.create(
+                school_id=request.user.school_id, curriculum=curriculum, select_class=select_class, section=section, date=date, start_time=start_time, end_time=end_time,
+                title=title, discription=discription
+            )
+            for image in event_image:
+                ClassEventImage.objects.create(class_event=class_event, event_image=image)
+            data = {
+                "curriculum": class_event.curriculum,
+                "select_class": class_event.select_class,
+                "section": class_event.section,
+                "date": class_event.date,
+                "start_time": class_event.start_time,
+                "end_time": class_event.end_time,
+                "title": class_event.title,
+                "discription": class_event.discription
+            }
+            response_data = create_response_data(
+                status=status.HTTP_201_CREATED,
+                message=ClassEventMessage.CLASS_EVENT_CREATED,
+                data=data
+            )
+            return Response(response_data, status=status.HTTP_201_CREATED)
+        except ValidationError:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=serializer.errors,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ClassEventListView(APIView):
+    """
+    This class is used to fetch list of the class event which is added by teacher.
+    """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+    pagination_class = CustomPagination
+
+    def get(self, request):
+        try:
+            current_date_time_ist = timezone.localtime(timezone.now(), pytz_timezone('Asia/Kolkata'))
+            current_date = current_date_time_ist.date()
+            content_data = ClassEvent.objects.filter(school_id=request.user.school_id, date__gte=current_date).order_by('-id')
+            date = request.query_params.get('date', None)
+            if date is not None:
+                content_data = content_data.filter(date=date)
+            # Paginate the queryset
+            paginator = self.pagination_class()
+            paginated_queryset = paginator.paginate_queryset(content_data, request)
+
+            serializer = ClassEventListSerializer(paginated_queryset, many=True)
+            response_data= {
+                'status': status.HTTP_200_OK,
+                'message': ClassEventMessage.CLASS_EVENT_LIST,
+                'count': len(serializer.data),
+                'data': serializer.data,
+                'pagination': {
+                    'page_size': paginator.page_size,
+                    'next': paginator.get_next_link(),
+                    'previous': paginator.get_previous_link(),
+                    'total_pages': paginator.page.paginator.num_pages,
+                    'current_page': paginator.page.number,
+                }
+            }
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ClassEventDetailView(APIView):
+    """
+    This class is used to fetch the detail of the class event which is added by teacher.
+    """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+
+    def get(self, request, pk):
+        try:
+            class_event = ClassEvent.objects.get(school_id= request.user.school_id, id=pk)
+            serializer = ClassEventDetailSerializer(class_event)
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=ClassEventMessage.CLASS_EVENT_LIST,
+                data=serializer.data,
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except ClassEvent.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=ClassEventMessage.CLASS_EVENT_NOT_EXIST,
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
