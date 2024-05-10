@@ -104,7 +104,7 @@ class ContentDeleteView(generics.DestroyAPIView):
     permission_classes = [IsAdminUser, IsInSameSchool]
 
     def get_queryset(self):
-        return Content.objects.filter(school_id=self.request.user.school_id)
+        return Content.objects.filter(school_id=self.request.user.school_id, is_recommended=True)
 
     def delete(self, request, *args, **kwargs):
         try:

@@ -555,3 +555,34 @@ class BookContentDetailView(APIView):
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
+
+class BookContentDeleteView(APIView):
+    """
+    This class is used to delete the book content which is added by superadmin.
+    """
+    permission_classes = [IsSuperAdminUser]
+
+    def delete(self, request, pk):
+        try:
+            content_data = Content.objects.get(id=pk, school_id__isnull=True)
+            content_data.delete()
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=ContentMessages.CONTENT_DELETED,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Content.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=ContentMessages.CONTENT_NOT_EXIST,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+        except ValidationError as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
