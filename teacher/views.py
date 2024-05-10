@@ -366,7 +366,7 @@ class TeacherScheduleCreateView(APIView):
             teacher = serializer.validated_data['teacher']
 
             try:
-                teacher = TeacherUser.objects.get(full_name=teacher, user__school_id=request.user.school_id)
+                teacher = TeacherUser.objects.get(id=teacher, user__school_id=request.user.school_id)
             except TeacherUser.DoesNotExist:
                 response = create_response_data(
                     status=status.HTTP_400_BAD_REQUEST,
@@ -784,10 +784,9 @@ class TeachersListView(APIView):
 
     def get(self, request):
         try:
-            teacher_list = TeacherUser.objects.filter(user__is_active=True, user__school_id=request.user.school_id).values('full_name')
-            data = {
-                "teacher_name": [teacher['full_name'] for teacher in teacher_list]
-            }
+            teacher_list = TeacherUser.objects.filter(user__is_active=True, user__school_id=request.user.school_id).values('id', 'full_name')
+            data = [{"id": teacher['id'], "teacher_name": teacher['full_name']} for teacher in teacher_list]
+
             response_data = create_response_data(
                 status=status.HTTP_200_OK,
                 message=CurriculumMessage.TEACHER_LIST_MESSAGE,
@@ -812,7 +811,7 @@ class TeachersCurriculumListView(APIView):
     def get(self, request):
         try:
             teacher_name = request.query_params.get('teacher_name')
-            teacher_list = TeacherUser.objects.get(user__is_active=True, user__school_id=request.user.school_id, full_name=teacher_name)
+            teacher_list = TeacherUser.objects.get(user__is_active=True, user__school_id=request.user.school_id, id=teacher_name)
             # data = {
             #     "curriculum": [teacher['curriculum'] for teacher in teacher_list.class_subject_section_details]
             # }
@@ -849,7 +848,7 @@ class TeachersClassListView(APIView):
     def get(self, request):
         try:
             teacher_name = request.query_params.get('teacher_name')
-            teacher_list = TeacherUser.objects.get(user__is_active=True, user__school_id=request.user.school_id, full_name=teacher_name)
+            teacher_list = TeacherUser.objects.get(user__is_active=True, user__school_id=request.user.school_id, id=teacher_name)
             class_set = set()
             for teacher in teacher_list.class_subject_section_details:
                 class_set.add(teacher['class'])
@@ -883,7 +882,7 @@ class TeachersSectionListView(APIView):
     def get(self, request):
         try:
             teacher_name = request.query_params.get('teacher_name')
-            teacher_list = TeacherUser.objects.get(user__is_active=True, user__school_id=request.user.school_id, full_name=teacher_name)
+            teacher_list = TeacherUser.objects.get(user__is_active=True, user__school_id=request.user.school_id, id=teacher_name)
             section_set = set()
             for teacher in teacher_list.class_subject_section_details:
                 section_set.add(teacher['section'])
@@ -917,7 +916,7 @@ class TeachersSubjectListView(APIView):
     def get(self, request):
         try:
             teacher_name = request.query_params.get('teacher_name')
-            teacher_list = TeacherUser.objects.get(user__is_active=True, user__school_id=request.user.school_id, full_name=teacher_name)
+            teacher_list = TeacherUser.objects.get(user__is_active=True, user__school_id=request.user.school_id, id=teacher_name)
             subject_set = set()
             for teacher in teacher_list.class_subject_section_details:
                 subject_set.add(teacher['subject'])
