@@ -458,3 +458,40 @@ class ClassEventDetailSerializer(serializers.ModelSerializer):
 
     def get_end_time(self, obj):
         return obj.end_time.strftime("%I:%M %p")
+
+
+class ClassEventUpdateSerializer(serializers.Serializer):
+    curriculum = serializers.CharField(required=True)
+    select_class = serializers.CharField(required=True)
+    section = serializers.CharField(required=True)
+    date = serializers.DateField(required=True)
+    start_time = CustomTimeField(required=False)
+    end_time = CustomTimeField(required=False)
+    title = serializers.CharField(required=True)
+    discription = serializers.CharField(max_length=255)
+    event_image = serializers.ListField(
+        child=serializers.FileField(),
+        required=False
+    )
+
+    class Meta:
+        model = ClassEvent
+
+    def update(self, instance, validated_data):
+        instance.curriculum = validated_data.get('curriculum', instance.curriculum)
+        instance.select_class = validated_data.get('select_class', instance.select_class)
+        instance.section = validated_data.get('section', instance.section)
+        instance.date = validated_data.get('date', instance.date)
+        instance.start_time = validated_data.get('start_time', instance.start_time)
+        instance.end_time = validated_data.get('end_time', instance.end_time)
+        instance.title = validated_data.get('title', instance.title)
+        instance.discription = validated_data.get('discription', instance.discription)
+
+        instance.save()
+
+        return instance
+
+    def validate_event_image(self, value):
+        if len(value) > 2:
+            raise serializers.ValidationError("Can't add more than 2 images.")
+        return value

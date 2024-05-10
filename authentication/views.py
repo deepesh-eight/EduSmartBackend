@@ -24,7 +24,7 @@ from authentication.serializers import UserSignupSerializer, UsersListSerializer
     NonTeachingStaffDetailSerializers, NonTeachingStaffProfileSerializers, StaffAttendanceSerializer, \
     StaffAttendanceDetailSerializer, StaffAttendanceListSerializer, LogoutSerializer, EventSerializer, \
     EventsCalendarSerializer, StaffAttendanceFilterListSerializer, RecommendedBookCreateSerializer, \
-    ClassEventCreateSerializer, ClassEventListSerializer, ClassEventDetailSerializer
+    ClassEventCreateSerializer, ClassEventListSerializer, ClassEventDetailSerializer, ClassEventUpdateSerializer
 from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage, ScheduleMessage, \
     CurriculumMessage, DayReviewMessage, NotificationMessage, AnnouncementMessage, TimeTableMessage, ReportCardMesssage, \
     ZoomLinkMessage, StudyMaterialMessage, EventsMessages, ContentMessages, ClassEventMessage
@@ -2247,3 +2247,98 @@ class ClassEventDetailView(APIView):
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
+
+class ClassEventUpdateView(APIView):
+    """
+    This class is used to update the detail of the class event which is added by teacher.
+    """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+
+    def patch(self, request, pk):
+        try:
+            files_data = []
+            event_image = request.data.getlist('event_image')
+
+            for file in event_image:
+                files_data.append(file)
+            data = {
+                'curriculum': request.data.get('curriculum'),
+                'select_class': request.data.get('select_class'),
+                'section': request.data.get('section'),
+                'date': request.data.get('date'),
+                'start_time': request.data.get('start_time'),
+                'end_time': request.data.get('end_time'),
+                'title': request.data.get('title'),
+                'discription': request.data.get('discription'),
+                'event_image': files_data
+            }
+            class_event = ClassEvent.objects.get(school_id= request.user.school_id, id=pk)
+            # class_image = ClassEventImage.objects.get(class_event=class_event)
+            serializer = ClassEventUpdateSerializer(class_event, data=data, partial=True)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                # Update certificates separately
+                if files_data:
+                    ClassEventImage.objects.filter(class_event=class_event).delete()  # Delete existing certificates
+                    for event_image_data in files_data:
+                        ClassEventImage.objects.create(class_event=class_event, event_image=event_image_data)
+                response_data = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=ClassEventMessage.CLASS_EVENT_UPDATED,
+                    data={},
+                )
+                return Response(response_data, status=status.HTTP_200_OK)
+            else:
+                response = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=serializer.errors,
+                    data=serializer.errors
+                )
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        except ClassEvent.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=ClassEventMessage.CLASS_EVENT_NOT_EXIST,
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ClassEventDeleteView(APIView):
+    """
+    This class is used to delete the detail of the class event which is added by teacher.
+    """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+
+    def delete(self, request, pk):
+        try:
+            class_event = ClassEvent.objects.get(school_id= request.user.school_id, id=pk)
+            class_image = ClassEventImage.objects.filter(class_event=class_event).delete()
+            class_event.delete()
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=ClassEventMessage.CLASS_EVENT_DELETED,
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except ClassEvent.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=ClassEventMessage.CLASS_EVENT_NOT_EXIST,
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)

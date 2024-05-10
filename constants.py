@@ -210,6 +210,8 @@ class ContentMessages:
 
 
 class ClassEventMessage:
-    CLASS_EVENT_CREATED = "Class event created Successfully."
-    CLASS_EVENT_LIST = "Class event fetched Successfully."
+    CLASS_EVENT_CREATED = "Class Event created successfully."
+    CLASS_EVENT_LIST = "Class event fetched successfully."
     CLASS_EVENT_NOT_EXIST = "Class event does not exist."
+    CLASS_EVENT_UPDATED = "Class event updated successfully."
+    CLASS_EVENT_DELETED = "Class event deleted successfully."

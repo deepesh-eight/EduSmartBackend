@@ -103,6 +103,8 @@ urlpatterns = [
     path('class/event/create/', ClassEventCreate.as_view(), name='class_event_create'),
     path('class/event/list/', ClassEventListView.as_view(), name='class_event_list'),
     path('class/event/detail/<int:pk>/', ClassEventDetailView.as_view(), name='class_event_detail'),
+    path('class/event/update/<int:pk>/', ClassEventUpdateView.as_view(), name='class_event_update'),
+    path('class/event/delete/<int:pk>/', ClassEventDeleteView.as_view(), name='class_event_delete'),
 
     # Events
     path('events/create', EventCreateView.as_view(), name='create_event'),
