@@ -823,12 +823,13 @@ class StudentReportCardFilterListView(APIView):
     def get(self, request):
         try:
             user = request.user
+            curriculum = request.query_params.get('curriculum', None)
             select_class = request.query_params.get('select_class', None)
             select_section = request.query_params.get('select_section', None)
             select_exam = request.query_params.get('select_exam')
             select_month = datetime.datetime.strptime(request.query_params.get('select_month'), "%Y-%m-%d").strftime("%Y-%m")
-            student_data = StudentUser.objects.get(user__school_id=user.school_id, user__id=user.id)
-            report_card = ExmaReportCard.objects.get(school_id=user.school_id, curriculum=student_data.curriculum,
+            # student_data = StudentUser.objects.get(user__school_id=user.school_id, user__id=user.id)
+            report_card = ExmaReportCard.objects.get(school_id=user.school_id, curriculum=curriculum,
                                                   class_name=select_class,
                                                   class_section=select_section, status=1, exam_type=select_exam, exam_month__startswith=select_month)
             serializer = StudentReportCardListSerializer(report_card)
