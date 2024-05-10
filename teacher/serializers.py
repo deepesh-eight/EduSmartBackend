@@ -271,7 +271,7 @@ class ScheduleDetailSerializer(serializers.ModelSerializer):
 
     def get_teacher(self, obj):
         teacher_data = TeacherUser.objects.get(id=obj.teacher_id)
-        return teacher_data.full_name
+        return teacher_data.id
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
@@ -329,7 +329,7 @@ class ScheduleListSerializer(serializers.ModelSerializer):
 
     def get_teacher(self,obj):
         teacher_data = TeacherUser.objects.get(id=obj.teacher_id)
-        return teacher_data.full_name
+        return teacher_data.id
 
     def get_role(self, obj):
         teacher_email = self.get_teacher_email(obj)
