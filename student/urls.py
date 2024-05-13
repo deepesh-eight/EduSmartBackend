@@ -34,4 +34,5 @@ urlpatterns = [
 
         # Student Mobile API
         path('e/book/list/', StudentEBookListView.as_view(), name='e_book_list'),
+        path('e/book/detail/<int:pk>/', StudentEBookDetailView.as_view(), name='e_book_detail'),
 ]

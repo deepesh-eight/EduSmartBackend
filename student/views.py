@@ -960,7 +960,7 @@ class StudentZoomLinkListView(APIView):
 
 class StudentEBookListView(APIView):
     """
-    This class is used to fetch the list of the e-book.
+    This class is used to fetch the list of the content.
     """
     permission_classes = [IsStudentUser, IsInSameSchool]
     pagination_class = CustomPagination
@@ -1007,6 +1007,38 @@ class StudentEBookListView(APIView):
                     )
             return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class StudentEBookDetailView(APIView):
+    """
+    This class is used to fetch the detail of the contetent.
+    """
+    permission_classes = [IsStudentUser, IsInSameSchool]
+
+    def get(self, request, pk):
+        try:
+            data = Content.objects.get(school_id__isnull=True, id=pk)
+            serializer = StudentContentListSerializer(data)
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=ContentMessages.CONTENT_FETCHED,
+                data=serializer.data
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Content.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=ContentMessages.CONTENT_NOT_EXIST,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+        except ValidationError as e:
             response_data = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
                 message=e.args[0],
