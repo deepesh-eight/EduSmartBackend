@@ -1056,10 +1056,12 @@ class StudentClassEventListView(APIView):
 
     def get(self, request):
         try:
+            user = request.user
             current_date_time_ist = timezone.localtime(timezone.now(), pytz_timezone('Asia/Kolkata'))
             current_date = current_date_time_ist.date()
-            content_data = ClassEvent.objects.filter(school_id=request.user.school_id,
-                                                     date__gte=current_date).order_by('-id')
+            student_user = StudentUser.objects.get(user__school_id=user.school_id, user=request.user.id)
+            content_data = ClassEvent.objects.filter(school_id=request.user.school_id,curriculum=student_user.curriculum,select_class=student_user.class_enrolled,
+                                                     section=student_user.section, date__gte=current_date).order_by('-id')
             date = request.query_params.get('date', None)
             if date is not None:
                 content_data = content_data.filter(date=date)
