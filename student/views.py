@@ -1,6 +1,7 @@
 import calendar
 import datetime
 import json
+from collections import defaultdict
 
 from django.db import IntegrityError
 from django.db.models import Count
@@ -291,50 +292,60 @@ class ClassStudentListView(APIView):
     def get(self, request):
         try:
             current_date = timezone.now().date()
-            curriculum_data = Curriculum.objects.filter(school_id=request.user.school_id).values('class_name', 'section').distinct()
-            class_teacher_info = []
-            for data in curriculum_data:
-                class_name = data['class_name']
-                section = data['section']
-                teacher_info = TeacherUser.objects.filter(class_subject_section_details__0__class=class_name, class_subject_section_details__0__section=section,
-                                                          user__school_id=request.user.school_id).values('full_name')
-                class_teacher_info.append({
-                    'class_name': class_name,
-                    'section': section,
-                    'teachers': [teacher['full_name'] for teacher in teacher_info]
-                })
+            # Fetch distinct class names from the curriculum
+            curriculum_data = Curriculum.objects.filter(school_id=request.user.school_id).values('select_class').distinct()
 
+            # Initialize a defaultdict to store sections for each class
+            class_sections = defaultdict(list)
+            for curriculum_entry in curriculum_data:
+                class_name = curriculum_entry['select_class']
+                # Fetch sections associated with each class from StudentUser
+                sections = StudentUser.objects.filter(class_enrolled=class_name, user__school_id=request.user.school_id).values_list('section', flat=True).distinct()
+                class_sections[class_name] = list(sections)
+
+            class_teacher_info = []
             class_student_count = []
-            for data in curriculum_data:
-                class_name = data['class_name']
-                section = data['section']
-                student_count = StudentUser.objects.filter(class_enrolled=class_name, section=section, user__school_id=request.user.school_id).count()
-                class_student_count.append({
-                    'class_name': class_name,
-                    'section': section,
-                    'student_count': student_count
-                })
             class_attendance_info = []
-            for data in curriculum_data:
-                class_name = data['class_name']
-                section = data['section']
-                total_present = StudentAttendence.objects.filter(date=current_date, student__class_enrolled=class_name, student__section=section,
-                                                                 mark_attendence='P').count()
-                total_absent = StudentAttendence.objects.filter(date=current_date, student__class_enrolled=class_name, student__section=section,
-                                                                mark_attendence='A').count()
-                class_attendance_info.append({
-                    'class_name': class_name,
-                    'section': section,
-                    'total_present': total_present,
-                    'total_absent': total_absent
-                })
+
+            # Iterate through each class and its associated sections
+            for class_name, sections in class_sections.items():
+                for section in sections:
+                    # Fetch teacher info for the class and section
+                    teacher_info = TeacherUser.objects.filter(class_subject_section_details__0__class=class_name, class_subject_section_details__0__section=section,
+                                                              user__school_id=request.user.school_id).values('full_name')
+
+                    # Append teacher info
+                    class_teacher_info.append({
+                        'class_name': class_name,
+                        'section': section,
+                        'teachers': [teacher['full_name'] for teacher in teacher_info]
+                    })
+
+                    # Count students for the class and section
+                    student_count = StudentUser.objects.filter(class_enrolled=class_name, section=section, user__school_id=request.user.school_id).count()
+                    class_student_count.append({
+                        'class_name': class_name,
+                        'section': section,
+                        'student_count': student_count
+                    })
+
+                    # Calculate attendance for the class and section
+                    total_present = StudentAttendence.objects.filter(date=current_date, student__class_enrolled=class_name, student__section=section,
+                                                                     mark_attendence='P').count()
+                    total_absent = StudentAttendence.objects.filter(date=current_date, student__class_enrolled=class_name, student__section=section,
+                                                                    mark_attendence='A').count()
+                    class_attendance_info.append({
+                        'class_name': class_name,
+                        'section': section,
+                        'total_present': total_present,
+                        'total_absent': total_absent
+                    })
 
             response_data = []
-            for curriculum_info, teacher_info, student_info, attendance_info in zip(curriculum_data, class_teacher_info,
-                                                                   class_student_count, class_attendance_info):
+            for teacher_info, student_info, attendance_info in zip(class_teacher_info, class_student_count, class_attendance_info):
                 response_data.append({
-                    'class': curriculum_info['class_name'],
-                    'section': curriculum_info['section'],
+                    'class_name': teacher_info['class_name'],
+                    'section': teacher_info['section'],
                     'class_teacher': teacher_info['teachers'],
                     'class_strength': student_info['student_count'],
                     'total_present': attendance_info['total_present'],
