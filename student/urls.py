@@ -38,6 +38,7 @@ urlpatterns = [
 
         # Student Mobile Event API
         path('class/event/list/', StudentClassEventListView.as_view(), name='class_event_list'),
+        path('class/event/detail/<int:pk>/', StudentClassEventDetailView.as_view(), name='class_event_detail'),
 
         # Student Mobile teacher day & review
         path('day/review/list/', StudentDayReview.as_view(), name='day_review_list'),

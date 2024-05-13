@@ -15,6 +15,7 @@ from rest_framework.views import APIView
 from authentication.models import User, Class, AddressDetails, StudentUser, TeacherUser, TimeTable, ClassEvent, \
     DayReview
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsStudentUser, IsTeacherUser, IsInSameSchool
+from authentication.serializers import ClassEventDetailSerializer
 from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage, CurriculumMessage, \
     TimeTableMessage, ReportCardMesssage, StudyMaterialMessage, ZoomLinkMessage, ContentMessages, ClassEventMessage, \
     ScheduleMessage
@@ -1087,6 +1088,38 @@ class StudentClassEventListView(APIView):
                 }
             }
             return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class StudentClassEventDetailView(APIView):
+    """
+    This class is used to fetch the detail of the class event which is added by teacher.
+    """
+    permission_classes = [IsStudentUser, IsInSameSchool]
+
+    def get(self, request, pk):
+        try:
+            class_event = ClassEvent.objects.get(school_id=request.user.school_id, id=pk)
+            serializer = ClassEventDetailSerializer(class_event)
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=ClassEventMessage.CLASS_EVENT_LIST,
+                data=serializer.data,
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except ClassEvent.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=ClassEventMessage.CLASS_EVENT_NOT_EXIST,
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             response_data = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
