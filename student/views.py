@@ -12,10 +12,12 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from authentication.models import User, Class, AddressDetails, StudentUser, TeacherUser, TimeTable, ClassEvent
+from authentication.models import User, Class, AddressDetails, StudentUser, TeacherUser, TimeTable, ClassEvent, \
+    DayReview
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsStudentUser, IsTeacherUser, IsInSameSchool
 from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage, CurriculumMessage, \
-    TimeTableMessage, ReportCardMesssage, StudyMaterialMessage, ZoomLinkMessage, ContentMessages, ClassEventMessage
+    TimeTableMessage, ReportCardMesssage, StudyMaterialMessage, ZoomLinkMessage, ContentMessages, ClassEventMessage, \
+    ScheduleMessage
 from content.models import Content
 from curriculum.models import Curriculum, Subjects
 from pagination import CustomPagination
@@ -25,7 +27,8 @@ from student.serializers import StudentUserSignupSerializer, StudentDetailSerial
     StudentAttendanceListSerializer, StudentListBySectionSerializer, StudentAttendanceCreateSerializer, \
     AdminClassListSerializer, AdminOptionalSubjectListSerializer, StudentAttendanceSerializer, \
     StudentTimeTableListSerializer, StudentReportCardListSerializer, StudentStudyMaterialListSerializer, \
-    StudentZoomLinkSerializer, StudentContentListSerializer, StudentClassEventListSerializer
+    StudentZoomLinkSerializer, StudentContentListSerializer, StudentClassEventListSerializer, \
+    StudentDayReviewDetailSerializer
 from utils import create_response_data, create_response_list_data, get_student_total_attendance, \
     get_student_total_absent, get_student_attendence_percentage, generate_random_password
 from pytz import timezone as pytz_timezone
@@ -1091,3 +1094,52 @@ class StudentClassEventListView(APIView):
                 data={},
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class StudentDayReview(APIView):
+    """
+    This class is used to fetch the list of the day & review list.
+    """
+    permission_classes = [IsStudentUser, IsInSameSchool]
+    pagination_class = CustomPagination
+
+    def get(self, request):
+        user = request.user
+        current_date_time_ist = timezone.localtime(timezone.now(), pytz_timezone('Asia/Kolkata'))
+        current_date_str = current_date_time_ist.date()
+        yesterday_date = current_date_time_ist - datetime.timedelta(days=1)
+
+        student_user = StudentUser.objects.get(user__school_id=user.school_id, user=user.id)
+        queryset = DayReview.objects.filter(school_id=request.user.school_id,curriculum=student_user.curriculum,class_name=student_user.class_enrolled,
+                                                     section=student_user.section, updated_at__date=current_date_str)
+        if request.query_params:
+            updated_at = request.query_params.get('updated_at', None)
+            yesterday = request.query_params.get('yesterday', None)
+            if yesterday is not None:
+                queryset = DayReview.objects.filter(school_id=request.user.school_id, curriculum=student_user.curriculum, class_name=student_user.class_enrolled,
+                                                     section=student_user.section, updated_at__date=yesterday_date.date())
+            if updated_at:
+                queryset = DayReview.objects.filter(school_id=request.user.school_id, curriculum=student_user.curriculum, class_name=student_user.class_enrolled,
+                                                     section=student_user.section, updated_at__date=updated_at)
+
+            # Paginate the queryset
+            paginator = self.pagination_class()
+            paginated_queryset = paginator.paginate_queryset(queryset, request)
+
+            serializers = StudentDayReviewDetailSerializer(paginated_queryset, many=True)
+            response_data = {
+                'status': status.HTTP_200_OK,
+                'count': len(serializers.data),
+                'message': ScheduleMessage.SCHEDULE_LIST_MESSAGE,
+                'data': serializers.data,
+            }
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        serializer = StudentDayReviewDetailSerializer(queryset, many=True)
+        response = create_response_list_data(
+            status=status.HTTP_200_OK,
+            count=len(serializer.data),
+            message=ScheduleMessage.SCHEDULE_LIST_MESSAGE,
+            data=serializer.data,
+        )
+        return Response(response, status=status.HTTP_200_OK)

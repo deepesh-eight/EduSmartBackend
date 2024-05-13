@@ -4,7 +4,7 @@ import re
 from rest_framework import serializers
 
 from EduSmart import settings
-from authentication.models import StudentUser, User, TimeTable, TeacherUser, ClassEvent
+from authentication.models import StudentUser, User, TimeTable, TeacherUser, ClassEvent, DayReview
 from authentication.serializers import AddressDetailsSerializer
 from constants import USER_TYPE_CHOICES, GENDER_CHOICES, RELIGION_CHOICES, CLASS_CHOICES, BLOOD_GROUP_CHOICES, \
     ATTENDENCE_CHOICE
@@ -442,3 +442,28 @@ class StudentClassEventListSerializer(serializers.ModelSerializer):
     class Meta:
         model = ClassEvent
         fields = ['id', 'date', 'title', 'discription']
+
+
+class StudentDayReviewDetailSerializer(serializers.ModelSerializer):
+    teacher_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = DayReview
+        fields = ['id', 'teacher_name', 'subject', 'discription']
+
+    def get_teacher_name(self, obj):
+        class_name = obj.class_name
+        section = obj.section
+        curriculum = obj.curriculum
+        subject = obj.subject
+
+        # Filter TeacherUser objects based on the provided criteria
+        teacher_data = TeacherUser.objects.filter(class_subject_section_details__0__class=class_name,
+                                                  class_subject_section_details__0__section=section,
+                                                  class_subject_section_details__0__curriculum=curriculum,
+                                                  class_subject_section_details__0__subject=subject)
+
+        if teacher_data.exists():
+            return teacher_data[0].full_name
+        else:
+            return None
