@@ -12,10 +12,10 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from authentication.models import User, Class, AddressDetails, StudentUser, TeacherUser, TimeTable
+from authentication.models import User, Class, AddressDetails, StudentUser, TeacherUser, TimeTable, ClassEvent
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsStudentUser, IsTeacherUser, IsInSameSchool
 from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage, CurriculumMessage, \
-    TimeTableMessage, ReportCardMesssage, StudyMaterialMessage, ZoomLinkMessage, ContentMessages
+    TimeTableMessage, ReportCardMesssage, StudyMaterialMessage, ZoomLinkMessage, ContentMessages, ClassEventMessage
 from content.models import Content
 from curriculum.models import Curriculum, Subjects
 from pagination import CustomPagination
@@ -25,7 +25,7 @@ from student.serializers import StudentUserSignupSerializer, StudentDetailSerial
     StudentAttendanceListSerializer, StudentListBySectionSerializer, StudentAttendanceCreateSerializer, \
     AdminClassListSerializer, AdminOptionalSubjectListSerializer, StudentAttendanceSerializer, \
     StudentTimeTableListSerializer, StudentReportCardListSerializer, StudentStudyMaterialListSerializer, \
-    StudentZoomLinkSerializer, StudentContentListSerializer
+    StudentZoomLinkSerializer, StudentContentListSerializer, StudentClassEventListSerializer
 from utils import create_response_data, create_response_list_data, get_student_total_attendance, \
     get_student_total_absent, get_student_attendence_percentage, generate_random_password
 from pytz import timezone as pytz_timezone
@@ -1043,5 +1043,49 @@ class StudentEBookDetailView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
                 message=e.args[0],
                 data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class StudentClassEventListView(APIView):
+    """
+    This class is used to fetch list of the class event which is added by teacher.
+    """
+    permission_classes = [IsStudentUser, IsInSameSchool]
+    pagination_class = CustomPagination
+
+    def get(self, request):
+        try:
+            current_date_time_ist = timezone.localtime(timezone.now(), pytz_timezone('Asia/Kolkata'))
+            current_date = current_date_time_ist.date()
+            content_data = ClassEvent.objects.filter(school_id=request.user.school_id,
+                                                     date__gte=current_date).order_by('-id')
+            date = request.query_params.get('date', None)
+            if date is not None:
+                content_data = content_data.filter(date=date)
+            # Paginate the queryset
+            paginator = self.pagination_class()
+            paginated_queryset = paginator.paginate_queryset(content_data, request)
+
+            serializer = StudentClassEventListSerializer(paginated_queryset, many=True)
+            response_data = {
+                'status': status.HTTP_200_OK,
+                'message': ClassEventMessage.CLASS_EVENT_LIST,
+                'count': len(serializer.data),
+                'data': serializer.data,
+                'pagination': {
+                    'page_size': paginator.page_size,
+                    'next': paginator.get_next_link(),
+                    'previous': paginator.get_previous_link(),
+                    'total_pages': paginator.page.paginator.num_pages,
+                    'current_page': paginator.page.number,
+                }
+            }
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={},
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)

@@ -4,7 +4,7 @@ import re
 from rest_framework import serializers
 
 from EduSmart import settings
-from authentication.models import StudentUser, User, TimeTable, TeacherUser
+from authentication.models import StudentUser, User, TimeTable, TeacherUser, ClassEvent
 from authentication.serializers import AddressDetailsSerializer
 from constants import USER_TYPE_CHOICES, GENDER_CHOICES, RELIGION_CHOICES, CLASS_CHOICES, BLOOD_GROUP_CHOICES, \
     ATTENDENCE_CHOICE
@@ -436,3 +436,9 @@ class StudentContentListSerializer(serializers.ModelSerializer):
             else:
                 return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.content_media)}'
         return None
+
+
+class StudentClassEventListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ClassEvent
+        fields = ['id', 'date', 'title', 'discription']

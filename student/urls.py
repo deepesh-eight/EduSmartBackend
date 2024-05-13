@@ -32,7 +32,11 @@ urlpatterns = [
         path('study/material/detail/<int:pk>/', StudentStudyMaterialDetailView.as_view(), name='student_study_material_detail'),
         path('zoom/link/list/', StudentZoomLinkListView.as_view(), name='student_zoom_link_list'),
 
-        # Student Mobile API
+        # Student Mobile Content API
         path('e/book/list/', StudentEBookListView.as_view(), name='e_book_list'),
         path('e/book/detail/<int:pk>/', StudentEBookDetailView.as_view(), name='e_book_detail'),
+
+        # Student Mobile Event API
+        path('class/event/list/', StudentClassEventListView.as_view(), name='class_event_list'),
+
 ]
