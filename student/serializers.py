@@ -8,6 +8,7 @@ from authentication.models import StudentUser, User, TimeTable, TeacherUser
 from authentication.serializers import AddressDetailsSerializer
 from constants import USER_TYPE_CHOICES, GENDER_CHOICES, RELIGION_CHOICES, CLASS_CHOICES, BLOOD_GROUP_CHOICES, \
     ATTENDENCE_CHOICE
+from content.models import Content
 from curriculum.models import Curriculum, Subjects
 from student.models import StudentAttendence, ExmaReportCard, StudentMaterial, ZoomLink
 
@@ -411,3 +412,27 @@ class StudentZoomLinkSerializer(serializers.ModelSerializer):
 
     def get_end_time(self, obj):
         return obj.end_time.strftime("%I:%M %p")
+
+
+class StudentContentListSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+    content_media = serializers.SerializerMethodField()
+    class Meta:
+        model = Content
+        fields = ['id','curriculum','content_media', 'image', 'content_media_link','content_type', 'category', 'content_name','content_creator','supporting_detail','description','is_recommended','classes','subject']
+
+    def get_image(self, obj):
+        if obj.image:
+            if obj.image.name.startswith(settings.base_url + settings.MEDIA_URL):
+                return str(obj.image)
+            else:
+                return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.image)}'
+        return None
+
+    def get_content_media(self, obj):
+        if obj.content_media:
+            if obj.content_media.name.startswith(settings.base_url + settings.MEDIA_URL):
+                return str(obj.content_media)
+            else:
+                return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.content_media)}'
+        return None

@@ -4,7 +4,7 @@ import json
 from collections import defaultdict
 
 from django.db import IntegrityError
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import status, generics
@@ -15,7 +15,8 @@ from rest_framework.views import APIView
 from authentication.models import User, Class, AddressDetails, StudentUser, TeacherUser, TimeTable
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsStudentUser, IsTeacherUser, IsInSameSchool
 from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage, CurriculumMessage, \
-    TimeTableMessage, ReportCardMesssage, StudyMaterialMessage, ZoomLinkMessage
+    TimeTableMessage, ReportCardMesssage, StudyMaterialMessage, ZoomLinkMessage, ContentMessages
+from content.models import Content
 from curriculum.models import Curriculum, Subjects
 from pagination import CustomPagination
 from student.models import StudentAttendence, ExmaReportCard, StudentMaterial, ZoomLink
@@ -24,7 +25,7 @@ from student.serializers import StudentUserSignupSerializer, StudentDetailSerial
     StudentAttendanceListSerializer, StudentListBySectionSerializer, StudentAttendanceCreateSerializer, \
     AdminClassListSerializer, AdminOptionalSubjectListSerializer, StudentAttendanceSerializer, \
     StudentTimeTableListSerializer, StudentReportCardListSerializer, StudentStudyMaterialListSerializer, \
-    StudentZoomLinkSerializer
+    StudentZoomLinkSerializer, StudentContentListSerializer
 from utils import create_response_data, create_response_list_data, get_student_total_attendance, \
     get_student_total_absent, get_student_attendence_percentage, generate_random_password
 from pytz import timezone as pytz_timezone
@@ -953,5 +954,62 @@ class StudentZoomLinkListView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
                 message=e.args[0],
                 data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class StudentEBookListView(APIView):
+    """
+    This class is used to fetch the list of the e-book.
+    """
+    permission_classes = [IsStudentUser, IsInSameSchool]
+    pagination_class = CustomPagination
+
+    def get(self, request):
+        try:
+            content_data = Content.objects.filter(Q(school_id=self.request.user.school_id) | Q(school_id__isnull=True)).order_by('-id')
+            if self.request.query_params:
+                content_type = self.request.query_params.get('content_type', None)
+                is_recommended = self.request.query_params.get('is_recommended', None)
+                search = self.request.query_params.get('search', None)
+                if search is not None:
+                    content_data = content_data.filter(Q(content_type__icontains=search) | Q(content_name__icontains=search) | Q(curriculum__icontains=search) | Q
+                    (classes__icontains=search) | Q(subject__icontains=search) | Q(supporting_detail__icontains=search) | Q(description__icontains=search) | Q(category__icontains=search) | Q(content_creator__icontains=search))
+                if content_type is not None:
+                    content_data = content_data.filter(content_type=content_type)
+                if is_recommended is not None:
+                    content_data = content_data.filter(is_recommended=is_recommended)
+
+                paginator = self.pagination_class()
+                paginated_queryset = paginator.paginate_queryset(content_data, request)
+                serializer = StudentContentListSerializer(paginated_queryset, many=True)
+                response_data = {
+                    'status': status.HTTP_200_OK,
+                    'count': len(serializer.data),
+                    'message': ContentMessages.CONTENT_FETCHED,
+                    'data': serializer.data,
+                    'pagination': {
+                        'page_size': paginator.page_size,
+                        'next': paginator.get_next_link(),
+                        'previous': paginator.get_previous_link(),
+                        'total_pages': paginator.page.paginator.num_pages,
+                        'current_page': paginator.page.number,
+                    }
+                }
+                return Response(response_data, status=status.HTTP_200_OK)
+            else:
+                serializer = StudentContentListSerializer(content_data, many=True)
+                response_data = create_response_list_data(
+                        status=status.HTTP_200_OK,
+                        count=len(serializer.data),
+                        message=ContentMessages.CONTENT_FETCHED,
+                        data=serializer.data
+                    )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)

@@ -24,11 +24,14 @@ urlpatterns = [
         path('classes/list/', AdminClassesList.as_view(), name='admin_classes_list'),
         path('optional/subject/list/', AdminOptionalSubjectList.as_view(), name='admin_optional_subject_list'),
 
-        # Mobile API
+        # Student Mobile API
         path('timetable/list/', StudentTimeTableListView.as_view(), name='student_timetable_list'),
         path('report/card/list/', StudentReportCardListView.as_view(), name='student_report_card_list'),
         path('report/card/filter/list/', StudentReportCardFilterListView.as_view(), name='student_report_card_filter_list'),
         path('study/material/list/', StudentStudyMaterialListView.as_view(), name='student_study_material_list'),
         path('study/material/detail/<int:pk>/', StudentStudyMaterialDetailView.as_view(), name='student_study_material_detail'),
-        path('zoom/link/list/', StudentZoomLinkListView.as_view(), name='student_zoom_link_list')
+        path('zoom/link/list/', StudentZoomLinkListView.as_view(), name='student_zoom_link_list'),
+
+        # Student Mobile API
+        path('e/book/list/', StudentEBookListView.as_view(), name='e_book_list'),
 ]
