@@ -542,3 +542,24 @@ class EventDetailSerializer(serializers.ModelSerializer):
             else:
                 return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.event_image)}'
         return None
+
+
+class TeacherEventListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EventsCalender
+        fields = ['id', 'start_date', 'end_date', 'title', 'description']
+
+
+class TeacherEventDetailSerializer(serializers.ModelSerializer):
+    event_image = serializers.SerializerMethodField()
+    class Meta:
+        model = EventsCalender
+        fields = ['id', 'is_event_calendar', 'is_one_day_event', 'event_image', 'start_date', 'end_date', 'start_time', 'end_time', 'title', 'description']
+
+    def get_event_image(self, obj):
+        if obj.event_image:
+            if obj.event_image.name.startswith(settings.base_url + settings.MEDIA_URL):
+                return str(obj.event_image)
+            else:
+                return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.event_image)}'
+        return None
