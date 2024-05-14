@@ -2416,3 +2416,35 @@ class EventDetailView(APIView):
                 data={},
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class EventDeleteView(APIView):
+    """
+    This class is used to delete the event.
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+
+    def delete(self, request, pk):
+        try:
+            event_data = EventsCalender.objects.get(id=pk, school_id=request.user.school_id, is_one_day_event=True)
+            event_data.delete()
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=EventsMessages.EVENT_DATA_DELETED,
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except EventsCalender.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=EventsMessages.EVENT_DATA_NOT_EXIST,
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)

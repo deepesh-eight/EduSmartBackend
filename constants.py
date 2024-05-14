@@ -194,6 +194,7 @@ class EventsMessages:
     PROVIDE_VALID_DATE = "Please Provide Valid Date"
     EVENTS_DATA_FETCHED_SUCCESSFULLY = "Events Data Fetched Successfully."
     EVENT_DATA_NOT_EXIST = "Event does not exist."
+    EVENT_DATA_DELETED = "Event deleted successfully."
 
 class BusMessages:
     BUS_ROUTE_CREATED = "Route Created Successfully."
