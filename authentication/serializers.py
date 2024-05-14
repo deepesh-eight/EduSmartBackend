@@ -356,7 +356,7 @@ class EventSerializer(serializers.Serializer):
     end_time = CustomTimeField(required=False)
     start_date = serializers.DateField(required=False)
     end_date = serializers.DateField(required=False)
-    event = serializers.ListField(
+    event_image = serializers.ListField(
         child=serializers.FileField(),
         required=False
     )

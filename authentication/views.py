@@ -2575,15 +2575,30 @@ class TeacherCalendarListView(APIView):
             current_date = current_date_time_ist.date()
 
             calendar = request.query_params.get('is_event_calendar', None)
+            date = request.query_params.get('date', None)
             calendar_data = EventsCalender.objects.filter(school_id=request.user.school_id, start_date__gte=current_date).order_by('start_date')
             if calendar is not None:
                 calendar_data = calendar_data.filter(is_event_calendar=calendar)
-            serializer = AcademicCalendarSerializer(calendar_data, many=True)
-            response_data = create_response_data(
-                status=status.HTTP_200_OK,
-                message=EventsMessages.EVENTS_DATA_FETCHED_SUCCESSFULLY,
-                data=serializer.data,
-            )
+
+            if date is not None:
+                calendar_data = calendar_data.filter(start_date=date)
+            paginator = self.pagination_class()
+            paginated_queryset = paginator.paginate_queryset(calendar_data, request)
+
+            serializer = AcademicCalendarSerializer(paginated_queryset, many=True)
+            response_data = {
+                'status': status.HTTP_200_OK,
+                'count': len(serializer.data),
+                'message': EventsMessages.EVENTS_DATA_FETCHED_SUCCESSFULLY,
+                'data': serializer.data,
+                'pagination': {
+                    'page_size': paginator.page_size,
+                    'next': paginator.get_next_link(),
+                    'previous': paginator.get_previous_link(),
+                    'total_pages': paginator.page.paginator.num_pages,
+                    'current_page': paginator.page.number,
+                }
+            }
             return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
             response_data = create_response_data(
