@@ -1027,7 +1027,7 @@ class StudentEBookDetailView(APIView):
 
     def get(self, request, pk):
         try:
-            data = Content.objects.get(school_id__isnull=True, id=pk)
+            data = Content.objects.get(Q(school_id=self.request.user.school_id) | Q(school_id__isnull=True), id=pk)
             serializer = StudentContentListSerializer(data)
             response_data = create_response_data(
                 status=status.HTTP_200_OK,
