@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
-from datetime import date, datetime
+from django.utils import timezone
+from pytz import timezone as pytz_timezone
 from EduSmart import settings
 from constants import USER_TYPE_CHOICES, ROLE_CHOICES, ATTENDENCE_CHOICE, CATEGORY_TYPES
 from content.models import Content
@@ -501,3 +502,18 @@ class AcademicCalendarSerializer(serializers.ModelSerializer):
     class Meta:
         model = EventsCalender
         fields = ['id', 'is_event_calendar', 'start_date', 'end_date', 'title', 'description']
+
+
+class EventListSerializer(serializers.ModelSerializer):
+    event_name = serializers.SerializerMethodField()
+    class Meta:
+        model = EventsCalender
+        fields = ['id', 'event_name', 'is_event_calendar', 'start_date', 'start_time', 'end_time', 'end_date', 'title', 'description']
+
+    def get_event_name(self, obj):
+        current_date_time_ist = timezone.localtime(timezone.now(), pytz_timezone('Asia/Kolkata'))
+        current_date = current_date_time_ist.date()
+        if obj.start_date == current_date:
+            return "Today Event"
+        else:
+            return "Upcoming Event"
