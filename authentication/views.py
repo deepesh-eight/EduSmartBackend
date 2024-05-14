@@ -16,7 +16,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils.dateparse import parse_date
 
 from authentication.models import User, AddressDetails, ErrorLogging, Certificate, StaffUser, StaffAttendence, \
-    TeacherUser, StudentUser, TeachersSchedule, DayReview, TeacherAttendence, Notification, TimeTable, EventsCalender, ClassEvent, ClassEventImage
+    TeacherUser, StudentUser, TeachersSchedule, DayReview, TeacherAttendence, Notification, TimeTable, EventsCalender, \
+    ClassEvent, ClassEventImage, EventImage
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsManagementUser, IsPayRollManagementUser, \
     IsBoardingUser, IsInSameSchool, IsTeacherUser
 from authentication.serializers import UserSignupSerializer, UsersListSerializer, UpdateProfileSerializer, \
@@ -1790,22 +1791,55 @@ class StudyMaterialDetailView(APIView):
 
 class EventCreateView(APIView):
     permission_classes = [IsAdminUser, IsInSameSchool]
+
     def post(self, request):
-        serializer = EventSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(school_id=request.user.school_id)
-            response_data = create_response_data(
-                status=status.HTTP_200_OK,
-                message=EventsMessages.EVENT_CREATED_SUCCESSFULLY,
-                data=serializer.data,
+        try:
+            serializer = EventSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            is_one_day_event = serializer.validated_data.get('is_one_day_event', None)
+            is_event_calendar = serializer.validated_data.get('is_event_calendar', None)
+            title = serializer.validated_data.get('title', None)
+            description = serializer.validated_data.get('description', None)
+            start_time = serializer.validated_data.get('start_time', None)
+            end_time = serializer.validated_data.get('end_time', None)
+            start_date = serializer.validated_data.get('start_date', None)
+            end_date = serializer.validated_data.get('end_date', None)
+            event_image = serializer.validated_data.get('event_image', [])
+
+            event = EventsCalender.objects.create(
+                school_id=request.user.school_id, is_one_day_event=is_one_day_event, is_event_calendar=is_event_calendar, title=title,
+                description=description, start_time=start_time, end_time=end_time,
+                start_date=start_date, end_date=end_date
             )
-            return Response(response_data, status=status.HTTP_200_OK)
-        response_data = create_response_data(
+            for image in event_image:
+                EventImage.objects.create(event=event, event_image=image)
+            data = {
+                "id": event.id,
+                "title": event.title,
+                "description": event.description,
+            }
+            response_data = create_response_data(
+                status=status.HTTP_201_CREATED,
+                message=EventsMessages.EVENT_CREATED_SUCCESSFULLY,
+                data=data
+            )
+            return Response(response_data, status=status.HTTP_201_CREATED)
+
+        except ValidationError:
+            response_data = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
                 message=serializer.errors,
-                data={},
+                data={}
             )
-        return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
     
 class GetAllEvents(APIView):
     permission_classes = [IsAdminUser]

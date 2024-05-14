@@ -8,10 +8,20 @@ from constants import USER_TYPE_CHOICES, ROLE_CHOICES, ATTENDENCE_CHOICE, CATEGO
 from content.models import Content
 from teacher.serializers import CertificateSerializer, ImageFieldStringAndFile
 from .models import User, AddressDetails, StaffUser, Certificate, StaffAttendence, EventsCalender, ClassEvent, \
-    ClassEventImage
+    ClassEventImage, EventImage
 from django.core.exceptions import ValidationError as DjangoValidationError
 from datetime import datetime
 
+
+class CustomTimeField(serializers.TimeField):
+    def to_internal_value(self, value):
+        try:
+            # Convert 12-hour time format to 24-hour time format
+            if isinstance(value, str):
+                value = datetime.strptime(value, '%I:%M %p').strftime('%H:%M:%S')
+        except ValueError:
+            raise serializers.ValidationError('Time has wrong format. Use hh:mm[:ss[.uuuuuu]] instead.')
+        return super().to_internal_value(value)
 class UserSignupSerializer(serializers.Serializer):
     name = serializers.CharField(required=True)
     email = serializers.EmailField(required=True)
@@ -335,16 +345,32 @@ class LogoutSerializer(serializers.Serializer):
             #     raise AuthenticationFailed(self.error_messages['bad_token'])
         except TokenError:
             raise AuthenticationFailed(self.error_messages['bad_token'])
-        
-class EventSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = EventsCalender
-        fields = ['is_one_day_event', 'is_event_calendar', 'title', 'description', 'event_image', 'start_time', 'end_time', 'start_date', 'end_date']
+
+
+class EventSerializer(serializers.Serializer):
+    is_one_day_event = serializers.BooleanField(required=False)
+    is_event_calendar = serializers.BooleanField(required=False)
+    title = serializers.CharField(required=False)
+    description = serializers.CharField(required=False)
+    start_time = CustomTimeField(required=False)
+    end_time = CustomTimeField(required=False)
+    start_date = serializers.DateField(required=False)
+    end_date = serializers.DateField(required=False)
+    event = serializers.ListField(
+        child=serializers.FileField(),
+        required=False
+    )
 
     # def validate(self, data):
     #     if data['end_date'] < data['start_date']:
     #         raise serializers.ValidationError("End date must be after start date.")
     #     return data
+
+    def validate_event(self, value):
+        if len(value) > 2:
+            raise serializers.ValidationError("Can't add more than 2 images.")
+        return value
+
 
 class EventsCalendarSerializer(serializers.ModelSerializer):
     class Meta:
@@ -384,17 +410,6 @@ class RecommendedBookCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Content
         fields = ['id','curriculum','content_media','content_media_link', 'category', 'image', 'content_type','content_name','content_creator','supporting_detail','description','is_recommended','classes','subject']
-
-
-class CustomTimeField(serializers.TimeField):
-    def to_internal_value(self, value):
-        try:
-            # Convert 12-hour time format to 24-hour time format
-            if isinstance(value, str):
-                value = datetime.strptime(value, '%I:%M %p').strftime('%H:%M:%S')
-        except ValueError:
-            raise serializers.ValidationError('Time has wrong format. Use hh:mm[:ss[.uuuuuu]] instead.')
-        return super().to_internal_value(value)
 
 
 class ClassEventCreateSerializer(serializers.Serializer):

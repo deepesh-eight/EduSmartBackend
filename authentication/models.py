@@ -269,6 +269,11 @@ class EventsCalender(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+
+class EventImage(models.Model):
+    event = models.ForeignKey(EventsCalender, on_delete=models.CASCADE)
+    event_image = models.FileField(upload_to='event_image/')
+
 class DayReview(models.Model):
     school_id = models.CharField(max_length=255, null=True, blank=True)
     curriculum = models.CharField(max_length=255, null=True, blank=True)
