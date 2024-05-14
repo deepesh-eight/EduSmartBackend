@@ -312,9 +312,10 @@ class ScheduleListSerializer(serializers.ModelSerializer):
     role = serializers.SerializerMethodField()
     class_duration = serializers.SerializerMethodField()
     total_classes = serializers.SerializerMethodField()
+    teacher_id = serializers.SerializerMethodField()
     class Meta:
         model = TeachersSchedule
-        fields = ['id', 'teacher', 'role', 'class_duration', 'total_classes']
+        fields = ['id', 'teacher_id', 'teacher', 'role', 'class_duration', 'total_classes']
 
     def get_teacher_role(self, teacher_name):
         try:
@@ -327,9 +328,13 @@ class ScheduleListSerializer(serializers.ModelSerializer):
         teacher_data = TeacherUser.objects.get(id=obj.teacher_id)
         return teacher_data.user.email
 
-    def get_teacher(self,obj):
+    def get_teacher_id(self,obj):
         teacher_data = TeacherUser.objects.get(id=obj.teacher_id)
         return teacher_data.id
+
+    def get_teacher(self,obj):
+        teacher_data = TeacherUser.objects.get(id=obj.teacher_id)
+        return teacher_data.full_name
 
     def get_role(self, obj):
         teacher_email = self.get_teacher_email(obj)
