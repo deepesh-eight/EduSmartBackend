@@ -495,3 +495,9 @@ class ClassEventUpdateSerializer(serializers.Serializer):
         if len(value) > 2:
             raise serializers.ValidationError("Can't add more than 2 images.")
         return value
+
+
+class AcademicCalendarSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EventsCalender
+        fields = ['id', 'is_event_calendar', 'start_date', 'end_date', 'title', 'description']

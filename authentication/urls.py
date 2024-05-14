@@ -109,4 +109,5 @@ urlpatterns = [
     # Events
     path('events/create', EventCreateView.as_view(), name='create_event'),
     path('events/get-events', GetAllEvents.as_view(), name='get_events'),
+    path('calendar/list/', CalendarListView.as_view(), name='calendar_list')
 ]

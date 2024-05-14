@@ -24,7 +24,8 @@ from authentication.serializers import UserSignupSerializer, UsersListSerializer
     NonTeachingStaffDetailSerializers, NonTeachingStaffProfileSerializers, StaffAttendanceSerializer, \
     StaffAttendanceDetailSerializer, StaffAttendanceListSerializer, LogoutSerializer, EventSerializer, \
     EventsCalendarSerializer, StaffAttendanceFilterListSerializer, RecommendedBookCreateSerializer, \
-    ClassEventCreateSerializer, ClassEventListSerializer, ClassEventDetailSerializer, ClassEventUpdateSerializer
+    ClassEventCreateSerializer, ClassEventListSerializer, ClassEventDetailSerializer, ClassEventUpdateSerializer, \
+    AcademicCalendarSerializer
 from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage, ScheduleMessage, \
     CurriculumMessage, DayReviewMessage, NotificationMessage, AnnouncementMessage, TimeTableMessage, ReportCardMesssage, \
     ZoomLinkMessage, StudyMaterialMessage, EventsMessages, ContentMessages, ClassEventMessage
@@ -2311,3 +2312,32 @@ class ClassEventDeleteView(APIView):
                 data={},
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CalendarListView(APIView):
+    """
+    This class is used to fetch the list of the academic calendar.
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            calendar = request.query_params.get('is_event_calendar', None)
+            calendar_data =  EventsCalender.objects.filter(school_id=request.user.school_id).order_by('-id')
+            if calendar is not None:
+                calendar_data = calendar_data.filter(is_event_calendar=calendar)
+            serializer = AcademicCalendarSerializer(calendar_data, many=True)
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=EventsMessages.EVENTS_DATA_FETCHED_SUCCESSFULLY,
+                data=serializer.data,
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data=serializer.data,
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
