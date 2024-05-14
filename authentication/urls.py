@@ -115,6 +115,8 @@ urlpatterns = [
     path('event/delete/<int:pk>/', EventDeleteView.as_view(), name='event_delete'),
 
     # Mobile Event API
-    path('teacher/event/list/', TeacherEventListView.as_view(), name='event_list'),
-    path('teacher/event/detail/<int:pk>/', TeacherEventDetailView.as_view(), name='event_detail'),
+    path('teacher/event/list/', TeacherEventListView.as_view(), name='teacher_event_list'),
+    path('teacher/event/detail/<int:pk>/', TeacherEventDetailView.as_view(), name='teacher_event_detail'),
+    path('teacher/calendar/list/', TeacherCalendarListView.as_view(), name='teacher_calendar_list'),
+    path('teacher/calendar/detail/<int:pk>/', TeacherCalendarDetailView.as_view(), name='teacher_calendar_detail'),
 ]

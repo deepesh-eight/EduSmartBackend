@@ -563,3 +563,9 @@ class TeacherEventDetailSerializer(serializers.ModelSerializer):
             else:
                 return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.event_image)}'
         return None
+
+
+class TeacherCalendarDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EventsCalender
+        fields = ['id', 'is_event_calendar', 'start_date', 'end_date', 'start_time', 'end_time', 'title', 'description']

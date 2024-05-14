@@ -26,7 +26,7 @@ from authentication.serializers import UserSignupSerializer, UsersListSerializer
     EventsCalendarSerializer, StaffAttendanceFilterListSerializer, RecommendedBookCreateSerializer, \
     ClassEventCreateSerializer, ClassEventListSerializer, ClassEventDetailSerializer, ClassEventUpdateSerializer, \
     AcademicCalendarSerializer, EventListSerializer, EventDetailSerializer, TeacherEventListSerializer, \
-    TeacherEventDetailSerializer
+    TeacherEventDetailSerializer, TeacherCalendarDetailSerializer
 from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage, ScheduleMessage, \
     CurriculumMessage, DayReviewMessage, NotificationMessage, AnnouncementMessage, TimeTableMessage, ReportCardMesssage, \
     ZoomLinkMessage, StudyMaterialMessage, EventsMessages, ContentMessages, ClassEventMessage
@@ -2506,6 +2506,70 @@ class TeacherEventDetailView(APIView):
         try:
             event_data = EventsCalender.objects.get(id=pk, school_id=request.user.school_id)
             serializer = TeacherEventDetailSerializer(event_data)
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=EventsMessages.EVENTS_DATA_FETCHED_SUCCESSFULLY,
+                data=serializer.data,
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except EventsCalender.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=EventsMessages.EVENT_DATA_NOT_EXIST,
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TeacherCalendarListView(APIView):
+    """
+    This class is used to fetch list of the academic calendar list.
+    """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+    pagination_class = CustomPagination
+
+    def get(self, request):
+        try:
+            current_date_time_ist = timezone.localtime(timezone.now(), pytz_timezone('Asia/Kolkata'))
+            current_date = current_date_time_ist.date()
+
+            calendar = request.query_params.get('is_event_calendar', None)
+            calendar_data = EventsCalender.objects.filter(school_id=request.user.school_id, start_date__gte=current_date).order_by('start_date')
+            if calendar is not None:
+                calendar_data = calendar_data.filter(is_event_calendar=calendar)
+            serializer = AcademicCalendarSerializer(calendar_data, many=True)
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=EventsMessages.EVENTS_DATA_FETCHED_SUCCESSFULLY,
+                data=serializer.data,
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data=serializer.data,
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TeacherCalendarDetailView(APIView):
+    """
+    This class is used to fetch the detail of the academic calendar list.
+    """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+
+    def get(self, request, pk):
+        try:
+            event_data = EventsCalender.objects.get(id=pk, school_id=request.user.school_id)
+            serializer = TeacherCalendarDetailSerializer(event_data)
             response_data = create_response_data(
                 status=status.HTTP_200_OK,
                 message=EventsMessages.EVENTS_DATA_FETCHED_SUCCESSFULLY,
