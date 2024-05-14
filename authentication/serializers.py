@@ -339,10 +339,10 @@ class EventSerializer(serializers.ModelSerializer):
         model = EventsCalender
         fields = ['is_one_day_event', 'is_event_calendar', 'title', 'description', 'event_image', 'start_time', 'end_time', 'start_date', 'end_date']
 
-    def validate(self, data):
-        if data['end_date'] < data['start_date']:
-            raise serializers.ValidationError("End date must be after start date.")
-        return data
+    # def validate(self, data):
+    #     if data['end_date'] < data['start_date']:
+    #         raise serializers.ValidationError("End date must be after start date.")
+    #     return data
 
 class EventsCalendarSerializer(serializers.ModelSerializer):
     class Meta:
