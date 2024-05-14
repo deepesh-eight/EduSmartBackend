@@ -25,7 +25,7 @@ from authentication.serializers import UserSignupSerializer, UsersListSerializer
     StaffAttendanceDetailSerializer, StaffAttendanceListSerializer, LogoutSerializer, EventSerializer, \
     EventsCalendarSerializer, StaffAttendanceFilterListSerializer, RecommendedBookCreateSerializer, \
     ClassEventCreateSerializer, ClassEventListSerializer, ClassEventDetailSerializer, ClassEventUpdateSerializer, \
-    AcademicCalendarSerializer, EventListSerializer
+    AcademicCalendarSerializer, EventListSerializer, EventDetailSerializer
 from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage, ScheduleMessage, \
     CurriculumMessage, DayReviewMessage, NotificationMessage, AnnouncementMessage, TimeTableMessage, ReportCardMesssage, \
     ZoomLinkMessage, StudyMaterialMessage, EventsMessages, ContentMessages, ClassEventMessage
@@ -2347,6 +2347,7 @@ class EventListView(APIView):
     This class is used to fetch the list of the academic calendar.
     """
     permission_classes = [IsAdminUser, IsInSameSchool]
+    pagination_class = CustomPagination
 
     def get(self, request):
         try:
@@ -2357,17 +2358,61 @@ class EventListView(APIView):
             event_data =  EventsCalender.objects.filter(school_id=request.user.school_id, start_date__gte=current_date).order_by('start_date')
             if event is not None:
                 event_data = event_data.filter(is_one_day_event=event)
-            serializer = EventListSerializer(event_data, many=True)
+
+            paginator = self.pagination_class()
+            paginated_queryset = paginator.paginate_queryset(event_data, request)
+
+            serializer = EventListSerializer(paginated_queryset, many=True)
+            response_data = {
+                'status': status.HTTP_200_OK,
+                'count': len(serializer.data),
+                'message': EventsMessages.EVENTS_DATA_FETCHED_SUCCESSFULLY,
+                'data': serializer.data,
+                'pagination': {
+                    'page_size': paginator.page_size,
+                    'next': paginator.get_next_link(),
+                    'previous': paginator.get_previous_link(),
+                    'total_pages': paginator.page.paginator.num_pages,
+                    'current_page': paginator.page.number,
+                }
+            }
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class EventDetailView(APIView):
+    """
+    This class is used to fetch the detail of the event.
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+
+    def get(self, request, pk):
+        try:
+            event_data = EventsCalender.objects.get(id=pk, school_id=request.user.school_id)
+            serializer = EventDetailSerializer(event_data)
             response_data = create_response_data(
                 status=status.HTTP_200_OK,
                 message=EventsMessages.EVENTS_DATA_FETCHED_SUCCESSFULLY,
                 data=serializer.data,
             )
             return Response(response_data, status=status.HTTP_200_OK)
+        except EventsCalender.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=EventsMessages.EVENT_DATA_NOT_EXIST,
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             response_data = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
                 message=e.args[0],
-                data=serializer.data,
+                data={},
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)

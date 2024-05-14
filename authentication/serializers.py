@@ -10,6 +10,7 @@ from teacher.serializers import CertificateSerializer, ImageFieldStringAndFile
 from .models import User, AddressDetails, StaffUser, Certificate, StaffAttendence, EventsCalender, ClassEvent, \
     ClassEventImage
 from django.core.exceptions import ValidationError as DjangoValidationError
+from datetime import datetime
 
 class UserSignupSerializer(serializers.Serializer):
     name = serializers.CharField(required=True)
@@ -506,9 +507,10 @@ class AcademicCalendarSerializer(serializers.ModelSerializer):
 
 class EventListSerializer(serializers.ModelSerializer):
     event_name = serializers.SerializerMethodField()
+    event_image = serializers.SerializerMethodField()
     class Meta:
         model = EventsCalender
-        fields = ['id', 'event_name', 'is_event_calendar', 'start_date', 'start_time', 'end_time', 'end_date', 'title', 'description']
+        fields = ['id', 'event_name', 'event_image', 'is_event_calendar', 'start_date', 'start_time', 'end_time', 'end_date', 'title', 'description']
 
     def get_event_name(self, obj):
         current_date_time_ist = timezone.localtime(timezone.now(), pytz_timezone('Asia/Kolkata'))
@@ -517,3 +519,26 @@ class EventListSerializer(serializers.ModelSerializer):
             return "Today Event"
         else:
             return "Upcoming Event"
+
+    def get_event_image(self, obj):
+        if obj.event_image:
+            if obj.event_image.name.startswith(settings.base_url + settings.MEDIA_URL):
+                return str(obj.event_image)
+            else:
+                return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.event_image)}'
+        return None
+
+
+class EventDetailSerializer(serializers.ModelSerializer):
+    event_image = serializers.SerializerMethodField()
+    class Meta:
+        model = EventsCalender
+        fields = ['id', 'is_event_calendar', 'is_one_day_event', 'event_image', 'start_date', 'end_date', 'start_time', 'end_time', 'title', 'description']
+
+    def get_event_image(self, obj):
+        if obj.event_image:
+            if obj.event_image.name.startswith(settings.base_url + settings.MEDIA_URL):
+                return str(obj.event_image)
+            else:
+                return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.event_image)}'
+        return None
