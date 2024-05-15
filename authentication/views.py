@@ -2654,9 +2654,20 @@ class ExamScheduleListView(APIView):
             user = request.user
             time_table = TimeTable.objects.filter(school_id=user.school_id, status=1)
             exam_type = request.query_params.get('exam_type')
+            exam_month = request.query_params.get('exam_month')
+            exam_year = request.query_params.get('exam_year')
 
             if exam_type is not None:
                 time_table = time_table.filter(exam_type=exam_type)
+
+            if exam_month is not None:
+                month_name, year_str = exam_month.split(',')
+                year = int(year_str.strip())
+                month_number = datetime.datetime.strptime(month_name.strip().lower(), "%B").month
+                time_table = time_table.filter(exam_month__year=year, exam_month__month=month_number)
+
+            if exam_year is not None:
+                time_table = time_table.filter(exam_month__year=exam_year)
 
             paginator = self.pagination_class()
             paginated_queryset = paginator.paginate_queryset(time_table, request)
