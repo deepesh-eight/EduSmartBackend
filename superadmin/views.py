@@ -1,6 +1,7 @@
 import json
 
 from django.db import IntegrityError
+from django.db.models import Q
 from django.shortcuts import render
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
@@ -451,6 +452,15 @@ class BookContentList(APIView):
             content_type = self.request.query_params.get('content_type', None)
             is_recommended = self.request.query_params.get('is_recommended', None)
             data = Content.objects.filter(school_id__isnull=True).order_by('-id')
+            search = self.request.query_params.get('search', None)
+            if search is not None:
+                data = data.filter(
+                    Q(content_type__icontains=search) | Q(content_name__icontains=search) | Q(
+                        curriculum__icontains=search) | Q
+                    (classes__icontains=search) | Q(subject__icontains=search) | Q(
+                        supporting_detail__icontains=search) | Q(
+                        description__icontains=search) | Q(category__icontains=search) | Q(
+                        content_creator__icontains=search))
             if content_type is not None:
                 data = data.filter(content_type=content_type)
             if is_recommended is not None:
