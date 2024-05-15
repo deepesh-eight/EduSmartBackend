@@ -128,4 +128,7 @@ urlpatterns = [
     # Mobile Teacher 'student information'
     path('student/info/list/', StudentInfoListView.as_view(), name='student_info_list'),
     path('student/info/detail/<int:pk>/', StudentInfoDetailView.as_view(), name='student_info_detail'),
+
+    # Mobile send notification
+    path('student/remark/', StudentRemorkView.as_view(), name='student_remark'),
 ]

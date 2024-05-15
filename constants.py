@@ -148,6 +148,7 @@ class DayReviewMessage:
 class NotificationMessage:
     NOTIFICATION_CREATED_SUCCESSFULLY = "Notification created successfully."
     NOTIFICATION_FETCHED_SUCCESSFULLY = "Notification fetched successfully."
+    STUDENT_REMARK_NOTIFICATION = "send a remark."
 
 
 class AnnouncementMessage:
