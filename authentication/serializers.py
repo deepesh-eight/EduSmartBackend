@@ -7,11 +7,14 @@ from EduSmart import settings
 from constants import USER_TYPE_CHOICES, ROLE_CHOICES, ATTENDENCE_CHOICE, CATEGORY_TYPES
 from content.models import Content
 from curriculum.models import Subjects, Curriculum
+from student.models import StudentAttendence
+from superadmin.models import SchoolProfile
 from teacher.serializers import CertificateSerializer, ImageFieldStringAndFile
+from utils import get_student_total_attendance
 from .models import User, AddressDetails, StaffUser, Certificate, StaffAttendence, EventsCalender, ClassEvent, \
     ClassEventImage, EventImage, TimeTable, TeacherUser, StudentUser
 from django.core.exceptions import ValidationError as DjangoValidationError
-from datetime import datetime
+from datetime import datetime, date
 
 
 class CustomTimeField(serializers.TimeField):
@@ -648,6 +651,8 @@ class StudentInfoDetailSerializer(serializers.ModelSerializer):
     email = serializers.SerializerMethodField()
     curriculum = serializers.SerializerMethodField()
     subjects = serializers.SerializerMethodField()
+    total_attendance = serializers.SerializerMethodField()
+    school_name = serializers.SerializerMethodField()
 
     # optional_subjects = serializers.SerializerMethodField()
 
@@ -659,7 +664,8 @@ class StudentInfoDetailSerializer(serializers.ModelSerializer):
                   'father_phone_number',
                   'father_occupation', 'mother_name', 'mother_phone_number', 'mother_occupation', 'email',
                   'permanent_address', 'curriculum',
-                  'subjects', 'bus_number', 'bus_route', 'enrollment_no', 'roll_no', 'optional_subject', 'guardian_no']
+                  'subjects', 'bus_number', 'bus_route', 'enrollment_no', 'roll_no', 'optional_subject', 'guardian_no', 'total_attendance',
+                  'school_name']
 
     def get_curriculum(self, obj):
         return obj.curriculum if hasattr(obj, 'curriculum') else None
@@ -685,3 +691,18 @@ class StudentInfoDetailSerializer(serializers.ModelSerializer):
             return subjects or None
         except Curriculum.DoesNotExist as e:
             raise serializers.ValidationError(f"Error retrieving subjects: {str(e)}")
+
+    def get_total_attendance(self, obj):
+        student = obj.id
+        year = date.today().year
+        total_attendance = StudentAttendence.objects.filter(
+            student=student, date__year=year, mark_attendence='P').count()
+        return total_attendance
+
+    def get_school_name(self, obj):
+        School_name = SchoolProfile.objects.get(school_id=obj.user.school_id)
+        if School_name:
+            return School_name.school_name
+        else:
+            None
+
