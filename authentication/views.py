@@ -2698,8 +2698,20 @@ class ExamScheduleDetailView(APIView):
             section = request.query_params.get('section')
             curriculum = request.query_params.get('curriculum')
             exam_type = request.query_params.get('exam_type')
+            exam_month = request.query_params.get('exam_month')
 
             time_table = TimeTable.objects.filter(school_id=user.school_id, status=1, curriculum=curriculum, class_name=class_name, class_section=section, exam_type=exam_type)
+            if exam_month:
+                try:
+                    month_name, year_str = exam_month.split(',')
+                    year = int(year_str.strip())
+
+                    month_number = datetime.datetime.strptime(month_name.strip().lower(), "%B").month
+
+                    time_table = time_table.filter(exam_month__year=year, exam_month__month=month_number)
+                except ValueError:
+                    pass
+
             serializer = ExamScheduleDetailSerializer(time_table, many=True)
             response_data = create_response_data(
                 status=status.HTTP_200_OK,

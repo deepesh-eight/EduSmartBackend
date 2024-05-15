@@ -588,10 +588,11 @@ class TeacherCalendarDetailSerializer(serializers.ModelSerializer):
 
 class ExamScheduleListSerializer(serializers.ModelSerializer):
     start_date = serializers.SerializerMethodField()
-    end_date = serializers.SerializerMethodField()
+    # end_date = serializers.SerializerMethodField()
+    exam_month = serializers.SerializerMethodField()
     class Meta:
         model = TimeTable
-        fields = ['curriculum', 'class_name', 'class_section', 'exam_type', 'start_date', 'end_date']
+        fields = ['curriculum', 'class_name', 'class_section', 'exam_type', 'start_date', 'exam_month']
 
     def get_start_date(self, obj):
         data = obj.more_subject
@@ -601,14 +602,24 @@ class ExamScheduleListSerializer(serializers.ModelSerializer):
         else:
             return None
 
-    def get_end_date(self, obj):
-        data = obj.more_subject
-        if data:
-            for date in data:
-                end_data = date.get('date')
-            return end_data
-        else:
-            return None
+    # def get_end_date(self, obj):
+    #     data = obj.more_subject
+    #     if data:
+    #         for date in data:
+    #             end_data = date.get('date')
+    #         return end_data
+    #     else:
+    #         return None
+
+    def get_exam_month(self, obj):
+        exam_month_str = obj.exam_month  # Assuming 'exm_month' is a date string
+
+        exam_date = datetime.strptime(str(exam_month_str), "%Y-%m-%d")
+
+        year = exam_date.year
+        month_name = exam_date.strftime("%B")
+
+        return f"{month_name}, {year}"
 
 
 class ExamScheduleDetailSerializer(serializers.ModelSerializer):
