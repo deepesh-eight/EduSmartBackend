@@ -28,7 +28,7 @@ from authentication.serializers import UserSignupSerializer, UsersListSerializer
     ClassEventCreateSerializer, ClassEventListSerializer, ClassEventDetailSerializer, ClassEventUpdateSerializer, \
     AcademicCalendarSerializer, EventListSerializer, EventDetailSerializer, TeacherEventListSerializer, \
     TeacherEventDetailSerializer, TeacherCalendarDetailSerializer, ExamScheduleListSerializer, \
-    ExamScheduleDetailSerializer
+    ExamScheduleDetailSerializer, StudentInfoListSerializer, StudentInfoDetailSerializer
 from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage, ScheduleMessage, \
     CurriculumMessage, DayReviewMessage, NotificationMessage, AnnouncementMessage, TimeTableMessage, ReportCardMesssage, \
     ZoomLinkMessage, StudyMaterialMessage, EventsMessages, ContentMessages, ClassEventMessage
@@ -2737,3 +2737,65 @@ class ExamScheduleDetailView(APIView):
                 data={}
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class StudentInfoListView(APIView):
+    """
+    This class is used to fetch list of the student with their name and id according to teacher class.
+    """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            user = request.user
+            teacher_data = TeacherUser.objects.get(user__name=user.name, user__school_id=request.user.school_id)
+            student_data = StudentUser.objects.filter(class_enrolled=teacher_data.class_subject_section_details[0].get("class"),
+                                                      section=teacher_data.class_subject_section_details[0].get("section"), user__school_id=request.user.school_id)
+            serializer = StudentInfoListSerializer(student_data, many=True)
+            response_data = create_response_data(
+                                status=status.HTTP_200_OK,
+                                message=UserResponseMessage.USER_LIST_MESSAGE,
+                                data=serializer.data
+                                )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class StudentInfoDetailView(APIView):
+    """
+    This class is used to fetch the detail of the student.
+    """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+
+    def get(self, request, pk):
+        try:
+            data = StudentUser.objects.get(user__school_id=request.user.school_id, id=pk)
+            serializer = StudentInfoDetailSerializer(data)
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=UserResponseMessage.USER_LIST_MESSAGE,
+                data=serializer.data
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except StudentUser.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=UserResponseMessage.USER_DOES_NOT_EXISTS,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+

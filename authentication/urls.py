@@ -124,4 +124,8 @@ urlpatterns = [
     path('teacher/event/detail/<int:pk>/', TeacherEventDetailView.as_view(), name='teacher_event_detail'),
     path('teacher/calendar/list/', TeacherCalendarListView.as_view(), name='teacher_calendar_list'),
     path('teacher/calendar/detail/<int:pk>/', TeacherCalendarDetailView.as_view(), name='teacher_calendar_detail'),
+
+    # Mobile Teacher 'student information'
+    path('student/info/list/', StudentInfoListView.as_view(), name='student_info_list'),
+    path('student/info/detail/<int:pk>/', StudentInfoDetailView.as_view(), name='student_info_detail'),
 ]

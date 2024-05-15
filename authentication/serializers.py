@@ -6,9 +6,10 @@ from pytz import timezone as pytz_timezone
 from EduSmart import settings
 from constants import USER_TYPE_CHOICES, ROLE_CHOICES, ATTENDENCE_CHOICE, CATEGORY_TYPES
 from content.models import Content
+from curriculum.models import Subjects, Curriculum
 from teacher.serializers import CertificateSerializer, ImageFieldStringAndFile
 from .models import User, AddressDetails, StaffUser, Certificate, StaffAttendence, EventsCalender, ClassEvent, \
-    ClassEventImage, EventImage, TimeTable, TeacherUser
+    ClassEventImage, EventImage, TimeTable, TeacherUser, StudentUser
 from django.core.exceptions import ValidationError as DjangoValidationError
 from datetime import datetime
 
@@ -635,3 +636,52 @@ class ExamScheduleDetailSerializer(serializers.ModelSerializer):
             return teacher.full_name
         else:
             None
+
+
+class StudentInfoListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StudentUser
+        fields = ['id', 'name']
+
+class StudentInfoDetailSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+    email = serializers.SerializerMethodField()
+    curriculum = serializers.SerializerMethodField()
+    subjects = serializers.SerializerMethodField()
+
+    # optional_subjects = serializers.SerializerMethodField()
+
+    class Meta:
+        model = StudentUser
+        fields = ['id', 'name', 'image', 'class_enrolled', 'section', 'admission_date', 'dob', 'gender', 'religion',
+                  'blood_group',
+                  'school_fee', 'bus_fee', 'canteen_fee', 'other_fee', 'due_fee', 'total_fee', 'father_name',
+                  'father_phone_number',
+                  'father_occupation', 'mother_name', 'mother_phone_number', 'mother_occupation', 'email',
+                  'permanent_address', 'curriculum',
+                  'subjects', 'bus_number', 'bus_route', 'enrollment_no', 'roll_no', 'optional_subject', 'guardian_no']
+
+    def get_curriculum(self, obj):
+        return obj.curriculum if hasattr(obj, 'curriculum') else None
+
+    def get_image(self, obj):
+        if obj.image:
+            if obj.image.name.startswith(settings.base_url + settings.MEDIA_URL):
+                return str(obj.image)
+            else:
+                return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.image)}'
+        return None
+
+    def get_email(self, obj):
+        return obj.user.email if hasattr(obj, 'user') else None
+
+    def get_subjects(self, obj):
+        try:
+            curriculum = Curriculum.objects.get(curriculum_name=obj.curriculum, select_class=obj.class_enrolled)
+            subject_data = Subjects.objects.filter(curriculum_id=curriculum.id)
+            subjects = []
+            for subject in subject_data:
+                subjects.append(subject.primary_subject)
+            return subjects or None
+        except Curriculum.DoesNotExist as e:
+            raise serializers.ValidationError(f"Error retrieving subjects: {str(e)}")
