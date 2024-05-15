@@ -8,7 +8,7 @@ from constants import USER_TYPE_CHOICES, ROLE_CHOICES, ATTENDENCE_CHOICE, CATEGO
 from content.models import Content
 from teacher.serializers import CertificateSerializer, ImageFieldStringAndFile
 from .models import User, AddressDetails, StaffUser, Certificate, StaffAttendence, EventsCalender, ClassEvent, \
-    ClassEventImage, EventImage
+    ClassEventImage, EventImage, TimeTable
 from django.core.exceptions import ValidationError as DjangoValidationError
 from datetime import datetime
 
@@ -584,3 +584,34 @@ class TeacherCalendarDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = EventsCalender
         fields = ['id', 'is_event_calendar', 'start_date', 'end_date', 'start_time', 'end_time', 'title', 'description']
+
+
+class ExamScheduleListSerializer(serializers.ModelSerializer):
+    start_date = serializers.SerializerMethodField()
+    end_date = serializers.SerializerMethodField()
+    class Meta:
+        model = TimeTable
+        fields = ['curriculum', 'class_name', 'class_section', 'exam_type', 'start_date', 'end_date']
+
+    def get_start_date(self, obj):
+        data = obj.more_subject
+        if data:
+            for date in data:
+                return date.get('date')
+        else:
+            return None
+
+    def get_end_date(self, obj):
+        data = obj.more_subject
+        if data:
+            for date in data:
+                end_data = date.get('date')
+            return end_data
+        else:
+            return None
+
+
+class ExamScheduleDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TimeTable
+        fields = ['class_name', 'class_section', 'exam_type', 'more_subject']

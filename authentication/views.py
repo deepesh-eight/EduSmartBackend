@@ -27,7 +27,8 @@ from authentication.serializers import UserSignupSerializer, UsersListSerializer
     EventsCalendarSerializer, StaffAttendanceFilterListSerializer, RecommendedBookCreateSerializer, \
     ClassEventCreateSerializer, ClassEventListSerializer, ClassEventDetailSerializer, ClassEventUpdateSerializer, \
     AcademicCalendarSerializer, EventListSerializer, EventDetailSerializer, TeacherEventListSerializer, \
-    TeacherEventDetailSerializer, TeacherCalendarDetailSerializer
+    TeacherEventDetailSerializer, TeacherCalendarDetailSerializer, ExamScheduleListSerializer, \
+    ExamScheduleDetailSerializer
 from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage, ScheduleMessage, \
     CurriculumMessage, DayReviewMessage, NotificationMessage, AnnouncementMessage, TimeTableMessage, ReportCardMesssage, \
     ZoomLinkMessage, StudyMaterialMessage, EventsMessages, ContentMessages, ClassEventMessage
@@ -2637,5 +2638,64 @@ class TeacherCalendarDetailView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
                 message=e.args[0],
                 data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ExamScheduleListView(APIView):
+    """
+    This class is used to fetch the list of the exam schedule which is added
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+    pagination_class = CustomPagination
+
+    def get(self, request):
+        try:
+            user = request.user
+            time_table = TimeTable.objects.filter(school_id=user.school_id, status=1)
+            serializer = ExamScheduleListSerializer(time_table, many=True)
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=TimeTableMessage.TIMETABLE_FETCHED_SUCCESSFULLY,
+                data=serializer.data
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ExamScheduleDetailView(APIView):
+    """
+    This class is used to fetch the detail of the exam schedule which is added
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+    pagination_class = CustomPagination
+
+    def get(self, request):
+        try:
+            user = request.user
+            class_name = request.query_params.get('class')
+            section = request.query_params.get('section')
+            curriculum = request.query_params.get('curriculum')
+            exam_type = request.query_params.get('exam_type')
+
+            time_table = TimeTable.objects.filter(school_id=user.school_id, status=1, curriculum=curriculum, class_name=class_name, class_section=section, exam_type=exam_type)
+            serializer = ExamScheduleDetailSerializer(time_table, many=True)
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=TimeTableMessage.TIMETABLE_FETCHED_SUCCESSFULLY,
+                data=serializer.data
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)

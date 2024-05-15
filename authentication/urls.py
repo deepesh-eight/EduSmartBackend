@@ -114,6 +114,11 @@ urlpatterns = [
     path('event/detail/<int:pk>/', EventDetailView.as_view(), name='event_detail'),
     path('event/delete/<int:pk>/', EventDeleteView.as_view(), name='event_delete'),
 
+    # TimeTable API for dashboard
+    path('exam/schedule/list/', ExamScheduleListView.as_view(), name='exam_schedule_list'),
+    path('exam/schedule/detail/', ExamScheduleDetailView.as_view(), name='exam_schedule_detail'),
+
+
     # Mobile Event API
     path('teacher/event/list/', TeacherEventListView.as_view(), name='teacher_event_list'),
     path('teacher/event/detail/<int:pk>/', TeacherEventDetailView.as_view(), name='teacher_event_detail'),
