@@ -2747,10 +2747,12 @@ class StudentInfoListView(APIView):
 
     def get(self, request):
         try:
-            user = request.user
-            teacher_data = TeacherUser.objects.get(user__name=user.name, user__school_id=request.user.school_id)
-            student_data = StudentUser.objects.filter(class_enrolled=teacher_data.class_subject_section_details[0].get("class"),
-                                                      section=teacher_data.class_subject_section_details[0].get("section"), user__school_id=request.user.school_id)
+            curriculum = request.query_params.get('curriculum')
+            class_name = request.query_params.get('class')
+            section = request.query_params.get('section')
+            # teacher_data = TeacherUser.objects.get(user__name=user.name, user__school_id=request.user.school_id)
+            student_data = StudentUser.objects.filter(curriculum=curriculum, class_enrolled=class_name,
+                                                      section=section, user__school_id=request.user.school_id)
             serializer = StudentInfoListSerializer(student_data, many=True)
             response_data = create_response_data(
                                 status=status.HTTP_200_OK,
