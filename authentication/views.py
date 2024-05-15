@@ -2653,12 +2653,27 @@ class ExamScheduleListView(APIView):
         try:
             user = request.user
             time_table = TimeTable.objects.filter(school_id=user.school_id, status=1)
-            serializer = ExamScheduleListSerializer(time_table, many=True)
-            response_data = create_response_data(
-                status=status.HTTP_200_OK,
-                message=TimeTableMessage.TIMETABLE_FETCHED_SUCCESSFULLY,
-                data=serializer.data
-            )
+            exam_type = request.query_params.get('exam_type')
+
+            if exam_type is not None:
+                time_table = time_table.filter(exam_type=exam_type)
+
+            paginator = self.pagination_class()
+            paginated_queryset = paginator.paginate_queryset(time_table, request)
+            serializer = ExamScheduleListSerializer(paginated_queryset, many=True)
+            response_data = {
+                'status': status.HTTP_200_OK,
+                'count': len(serializer.data),
+                'message': TimeTableMessage.TIMETABLE_FETCHED_SUCCESSFULLY,
+                'data': serializer.data,
+                'pagination': {
+                'page_size': paginator.page_size,
+                'next': paginator.get_next_link(),
+                'previous': paginator.get_previous_link(),
+                'total_pages': paginator.page.paginator.num_pages,
+                'current_page': paginator.page.number,
+            }
+            }
             return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
             response_data = create_response_data(
