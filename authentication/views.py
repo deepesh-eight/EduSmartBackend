@@ -2489,7 +2489,7 @@ class TeacherEventListView(APIView):
     """
     This class is used to fetch the list of the event which is added by admin user.
     """
-    permission_classes = [IsTeacherUser, IsInSameSchool]
+    permission_classes = [permissions.IsAuthenticated, IsInSameSchool]
     pagination_class = CustomPagination
 
     def get(self, request):
@@ -2534,7 +2534,7 @@ class TeacherEventDetailView(APIView):
     """
     This class is used to fetch detail of the event which is added by admin user.
     """
-    permission_classes = [IsTeacherUser, IsInSameSchool]
+    permission_classes = [permissions.IsAuthenticated, IsInSameSchool]
 
     def get(self, request, pk):
         try:
@@ -2566,7 +2566,7 @@ class TeacherCalendarListView(APIView):
     """
     This class is used to fetch list of the academic calendar list.
     """
-    permission_classes = [IsTeacherUser, IsInSameSchool]
+    permission_classes = [permissions.IsAuthenticated, IsInSameSchool]
     pagination_class = CustomPagination
 
     def get(self, request):
@@ -2613,7 +2613,7 @@ class TeacherCalendarDetailView(APIView):
     """
     This class is used to fetch the detail of the academic calendar list.
     """
-    permission_classes = [IsTeacherUser, IsInSameSchool]
+    permission_classes = [permissions.IsAuthenticated, IsInSameSchool]
 
     def get(self, request, pk):
         try:
