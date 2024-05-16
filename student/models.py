@@ -62,6 +62,7 @@ class StudentMaterial(models.Model):
 
 class ConnectWithTeacher(models.Model):
     school_id = models.CharField(max_length=255, blank=True, null=True)
+    student = models.ForeignKey(StudentUser, on_delete=models.CASCADE, blank=True, null=True)
     teacher = models.ForeignKey(TeacherUser, on_delete=models.CASCADE, blank=True, null=True)
     curriculum = models.CharField(max_length=255,blank=True, null=True)
     class_name = models.CharField(max_length=255)

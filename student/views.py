@@ -1305,8 +1305,9 @@ class ConnectWithTeacherView(APIView):
                 )
                 return Response(response, status=status.HTTP_404_NOT_FOUND)
             teacher = TeacherUser.objects.get(id=teacher_id)
+            student = StudentUser.objects.get(user=user.id)
             chat_data = ConnectWithTeacher.objects.create(school_id=user.school_id, teacher=teacher, curriculum=student_data.curriculum, class_name=student_data.class_enrolled, section=student_data.section,
-                                                          subject=subject, start_time=str(start_time), end_time=str(end_time))
+                                                          subject=subject, start_time=str(start_time), end_time=str(end_time), student=student)
 
             response = create_response_data(
                 status=status.HTTP_201_CREATED,
