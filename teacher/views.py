@@ -1002,9 +1002,10 @@ class AvailabilityCreateView(APIView):
     def post(self, request):
         try:
             user = request.user
+            teacher = TeacherUser.objects.get(user=request.user.id, user__school_id=user.school_id)
             serializer = AvailabilityCreateSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
-                serializer.save(school_id=user.school_id)
+                serializer.save(teacher=teacher, school_id=user.school_id)
                 response_data = create_response_data(
                     status=status.HTTP_201_CREATED,
                     message=TeacherAvailabilityMessage.TEACHER_AVAILABILITY_CREATED,
