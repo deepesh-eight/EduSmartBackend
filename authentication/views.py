@@ -2809,24 +2809,32 @@ class StudentRemorkView(APIView):
     permission_classes = [IsTeacherUser, IsInSameSchool]
 
     def post(self, request):
-        sender = request.user.id
-        title = f"{request.user.name} {NotificationMessage.STUDENT_REMARK_NOTIFICATION}"
-        description = request.data.get('description')
-        reciver_id = request.data.get('reciver_id')
+        try:
+            sender = request.user.id
+            title = f"{request.user.name} {NotificationMessage.STUDENT_REMARK_NOTIFICATION}"
+            description = request.data.get('description')
+            reciver_id = request.data.get('reciver_id')
 
-        student_id = StudentUser.objects.get(id=reciver_id)
-        reciver_user = StudentUser.objects.get(id=reciver_id, user=student_id.user.id)
-        user = User.objects.get(id=sender)
-        notification_create = Notification.objects.create(sender=user, title=title, description=description, reciver_id=reciver_user.user.id)
-        response_data = {
-            'sender': notification_create.sender_id,
-            'title': notification_create.title,
-            'description': notification_create.description,
-            'reciver_id': notification_create.reciver_id,
-        }
-        response = create_response_data(
-            status=status.HTTP_201_CREATED,
-            message=UserResponseMessage.USER_LIST_MESSAGE,
-            data=response_data
-        )
-        return Response(response, status=status.HTTP_201_CREATED)
+            student_id = StudentUser.objects.get(id=reciver_id)
+            reciver_user = StudentUser.objects.get(id=reciver_id, user=student_id.user.id)
+            user = User.objects.get(id=sender)
+            notification_create = Notification.objects.create(sender=user, title=title, description=description, reciver_id=reciver_user.user.id)
+            response_data = {
+                'sender': notification_create.sender_id,
+                'title': notification_create.title,
+                'description': notification_create.description,
+                'reciver_id': notification_create.reciver_id,
+            }
+            response = create_response_data(
+                status=status.HTTP_201_CREATED,
+                message=NotificationMessage.NOTIFICATION_CREATED_SUCCESSFULLY,
+                data=response_data
+            )
+            return Response(response, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)

@@ -262,16 +262,21 @@ class ScheduleCreateSerializer(serializers.Serializer):
 
 class ScheduleDetailSerializer(serializers.ModelSerializer):
     teacher = serializers.SerializerMethodField()
+    teacher_name = serializers.SerializerMethodField()
     # teacher_id = serializers.SerializerMethodField()
     schedule_data = serializers.ListField(child=serializers.DictField(), required=False)
 
     class Meta:
         model = TeachersSchedule
-        fields = ['start_date', 'end_date', 'teacher', 'schedule_data']
+        fields = ['start_date', 'end_date', 'teacher', 'teacher_name', 'schedule_data']
 
     def get_teacher(self, obj):
         teacher_data = TeacherUser.objects.get(id=obj.teacher_id)
         return teacher_data.id
+
+    def get_teacher_name(self, obj):
+        teacher_data = TeacherUser.objects.get(id=obj.teacher_id)
+        return teacher_data.full_name
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
