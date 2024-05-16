@@ -10,7 +10,7 @@ from constants import USER_TYPE_CHOICES, GENDER_CHOICES, RELIGION_CHOICES, CLASS
     ATTENDENCE_CHOICE
 from content.models import Content
 from curriculum.models import Curriculum, Subjects
-from student.models import StudentAttendence, ExmaReportCard, StudentMaterial, ZoomLink
+from student.models import StudentAttendence, ExmaReportCard, StudentMaterial, ZoomLink, ConnectWithTeacher
 
 
 class StudentUserSignupSerializer(serializers.Serializer):
@@ -494,3 +494,15 @@ class ConnectWithTeacherSerializer(serializers.Serializer):
     end_time = CustomTimeField(required=True)
 
 
+class ChatHistorySerializer(serializers.ModelSerializer):
+    teacher_name = serializers.SerializerMethodField()
+    class Meta:
+        model = ConnectWithTeacher
+        fields = ['id', 'teacher_name', 'class_name', 'section', 'subject']
+
+    def get_teacher_name(self, obj):
+        teacher_name = TeacherUser.objects.get(id=obj.teacher.id)
+        if teacher_name:
+            return teacher_name.full_name
+        else:
+            None

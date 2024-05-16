@@ -46,5 +46,6 @@ urlpatterns = [
         # Student Mobile connect with teacher
         path('connect/with/teacher/', ConnectWithTeacherView.as_view(), name='connect_with_teacher'),
         path('subject/list/', StudentSubjectListView.as_view(), name='student_subject_list'),
-        path('availability/time/list/', AvailabilityTimeListView.as_view(), name='availability_time_list')
+        path('availability/time/list/', AvailabilityTimeListView.as_view(), name='availability_time_list'),
+        path('chat/history/', ChatHistoryView.as_view(), name='chat_history'),
 ]

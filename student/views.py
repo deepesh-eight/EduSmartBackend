@@ -29,7 +29,7 @@ from student.serializers import StudentUserSignupSerializer, StudentDetailSerial
     AdminClassListSerializer, AdminOptionalSubjectListSerializer, StudentAttendanceSerializer, \
     StudentTimeTableListSerializer, StudentReportCardListSerializer, StudentStudyMaterialListSerializer, \
     StudentZoomLinkSerializer, StudentContentListSerializer, StudentClassEventListSerializer, \
-    StudentDayReviewDetailSerializer, ConnectWithTeacherSerializer, StudentSubjectListSerializer
+    StudentDayReviewDetailSerializer, ConnectWithTeacherSerializer, StudentSubjectListSerializer, ChatHistorySerializer
 from utils import create_response_data, create_response_list_data, get_student_total_attendance, \
     get_student_total_absent, get_student_attendence_percentage, generate_random_password
 from pytz import timezone as pytz_timezone
@@ -1302,6 +1302,32 @@ class ConnectWithTeacherView(APIView):
                 data={}
             )
             return Response(response, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ChatHistoryView(APIView):
+    """
+    This class is used to fetch history of the chat.
+    """
+    permission_classes = [IsStudentUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            chat_data = ConnectWithTeacher.objects.filter(school_id=request.user.school_id)
+            serializer = ChatHistorySerializer(chat_data, many=True)
+            response = create_response_data(
+                status=status.HTTP_200_OK,
+                message=ChatMessage.CHAT_HISTORY_FETCH,
+                data=serializer.data
+            )
+            return Response(response, status=status.HTTP_200_OK)
+
         except Exception as e:
             response = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,

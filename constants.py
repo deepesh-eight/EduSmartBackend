@@ -229,3 +229,4 @@ class TeacherAvailabilityMessage:
 
 class ChatMessage:
     CHAT_REQUEST_CREATED = "Chat request created successfully with the teacher."
+    CHAT_HISTORY_FETCH = "Chat history fetched successfully."
