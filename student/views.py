@@ -18,7 +18,7 @@ from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsStudentU
 from authentication.serializers import ClassEventDetailSerializer
 from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage, CurriculumMessage, \
     TimeTableMessage, ReportCardMesssage, StudyMaterialMessage, ZoomLinkMessage, ContentMessages, ClassEventMessage, \
-    ScheduleMessage, ChatMessage
+    ScheduleMessage, ChatMessage, TeacherAvailabilityMessage
 from content.models import Content
 from curriculum.models import Curriculum, Subjects
 from pagination import CustomPagination
@@ -1243,7 +1243,7 @@ class AvailabilityTimeListView(APIView):
 
                         response_data = create_response_data(
                             status=status.HTTP_200_OK,
-                            message=CurriculumMessage.SUBJECT_LIST_MESSAGE,
+                            message=TeacherAvailabilityMessage.TEACHER_AVAILABILITY_TIME,
                             data={"start_time": start_time, "end_time": end_time},
                         )
                         return Response(response_data, status=status.HTTP_200_OK)
