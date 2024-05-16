@@ -1230,23 +1230,35 @@ class AvailabilityTimeListView(APIView):
             subject = request.query_params.get('subject')
             student_data = StudentUser.objects.get(user__school_id=user.school_id, user=user.id)
             teacher_schedule = TeachersSchedule.objects.filter(school_id=user.school_id, end_date__gte=str(current_date))
+            availability_times = []
+
             for schedule in teacher_schedule:
                 for entry in schedule.schedule_data:
                     if entry['curriculum'] == student_data.curriculum \
                             and entry['class'] == student_data.class_enrolled \
                             and entry['section'] == student_data.section \
                             and entry['subject'] == subject:
-                        availability_time = Availability.objects.get(school_id=user.school_id, teacher=schedule.teacher.id)
+                        availability_time_data = Availability.objects.filter(school_id=user.school_id, teacher=schedule.teacher.id)
 
-                        start_time = datetime.datetime.strptime(str(availability_time.start_time), '%H:%M:%S').strftime('%I:%M %p')
-                        end_time = datetime.datetime.strptime(str(availability_time.end_time), '%H:%M:%S').strftime('%I:%M %p')
+                        for availability_time in availability_time_data:
+                            start_time = datetime.datetime.strptime(str(availability_time.start_time), '%H:%M:%S').strftime('%I:%M %p')
+                            end_time = datetime.datetime.strptime(str(availability_time.end_time), '%H:%M:%S').strftime('%I:%M %p')
+                            availability_times.append({"start_time": start_time, "end_time": end_time})
+            if availability_times:
+                response_data = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=TeacherAvailabilityMessage.TEACHER_AVAILABILITY_TIME,
+                    data=availability_times,
+                )
+                return Response(response_data, status=status.HTTP_200_OK)
+            else:
+                response_data = create_response_data(
+                    status=status.HTTP_404_NOT_FOUND,
+                    message="No availability times found for the given criteria",
+                    data={},
+                )
+                return Response(response_data, status=status.HTTP_404_NOT_FOUND)
 
-                        response_data = create_response_data(
-                            status=status.HTTP_200_OK,
-                            message=TeacherAvailabilityMessage.TEACHER_AVAILABILITY_TIME,
-                            data={"start_time": start_time, "end_time": end_time},
-                        )
-                        return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
             response_data = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
