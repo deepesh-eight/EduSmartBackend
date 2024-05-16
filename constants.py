@@ -224,3 +224,7 @@ class TeacherAvailabilityMessage:
     TEACHER_AVAILABILITY_CREATED = "Teacher availability created successfully."
     TEACHER_AVAILABILITY_UPDATED = "Teacher availability updated successfully."
     TEACHER_AVAILABILITY_NOT_EXIST = "Teacher availability is not  availabile."
+
+
+class ChatMessage:
+    CHAT_REQUEST_CREATED = "Chat request created successfully with the teacher."

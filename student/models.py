@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils import timezone
 
-from authentication.models import StudentUser
+from authentication.models import StudentUser, TeacherUser
 
 
 # Create your models here.
@@ -55,6 +55,20 @@ class StudentMaterial(models.Model):
     upload_content = models.FileField(upload_to='study_material/')
     created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, blank=True, null=True)
+
+    def __str__(self):
+        return f'{self.id}'
+
+
+class ConnectWithTeacher(models.Model):
+    school_id = models.CharField(max_length=255, blank=True, null=True)
+    teacher = models.ForeignKey(TeacherUser, on_delete=models.CASCADE, blank=True, null=True)
+    curriculum = models.CharField(max_length=255,blank=True, null=True)
+    class_name = models.CharField(max_length=255)
+    section = models.CharField(max_length=255)
+    subject = models.CharField(max_length=255)
+    start_time = models.TimeField()
+    end_time = models.TimeField()
 
     def __str__(self):
         return f'{self.id}'

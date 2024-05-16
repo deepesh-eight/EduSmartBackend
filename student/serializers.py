@@ -5,7 +5,7 @@ from rest_framework import serializers
 
 from EduSmart import settings
 from authentication.models import StudentUser, User, TimeTable, TeacherUser, ClassEvent, DayReview
-from authentication.serializers import AddressDetailsSerializer
+from authentication.serializers import AddressDetailsSerializer, CustomTimeField
 from constants import USER_TYPE_CHOICES, GENDER_CHOICES, RELIGION_CHOICES, CLASS_CHOICES, BLOOD_GROUP_CHOICES, \
     ATTENDENCE_CHOICE
 from content.models import Content
@@ -467,3 +467,30 @@ class StudentDayReviewDetailSerializer(serializers.ModelSerializer):
             return teacher_data[0].full_name
         else:
             return None
+
+
+class StudentSubjectListSerializer(serializers.ModelSerializer):
+    subject = serializers.SerializerMethodField()
+
+    class Meta:
+        model = StudentUser
+        fields = ['id', 'subject', 'optional_subject']
+
+    def get_subject(self, obj):
+        try:
+            curriculum = Curriculum.objects.get(curriculum_name=obj.curriculum, select_class=obj.class_enrolled)
+            subject_data = Subjects.objects.filter(curriculum_id=curriculum.id)
+            subjects = []
+            for subject in subject_data:
+                subjects.append(subject.primary_subject)
+            return subjects or None
+        except Curriculum.DoesNotExist as e:
+            raise serializers.ValidationError(f"Error retrieving subjects: {str(e)}")
+
+
+class ConnectWithTeacherSerializer(serializers.Serializer):
+    subject = serializers.CharField(required=True)
+    start_time = CustomTimeField(required=True)
+    end_time = CustomTimeField(required=True)
+
+

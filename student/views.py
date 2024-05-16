@@ -13,23 +13,23 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from authentication.models import User, Class, AddressDetails, StudentUser, TeacherUser, TimeTable, ClassEvent, \
-    DayReview
+    DayReview, TeachersSchedule, Availability
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsStudentUser, IsTeacherUser, IsInSameSchool
 from authentication.serializers import ClassEventDetailSerializer
 from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage, CurriculumMessage, \
     TimeTableMessage, ReportCardMesssage, StudyMaterialMessage, ZoomLinkMessage, ContentMessages, ClassEventMessage, \
-    ScheduleMessage
+    ScheduleMessage, ChatMessage
 from content.models import Content
 from curriculum.models import Curriculum, Subjects
 from pagination import CustomPagination
-from student.models import StudentAttendence, ExmaReportCard, StudentMaterial, ZoomLink
+from student.models import StudentAttendence, ExmaReportCard, StudentMaterial, ZoomLink, ConnectWithTeacher
 from student.serializers import StudentUserSignupSerializer, StudentDetailSerializer, StudentListSerializer, \
     studentProfileSerializer, StudentAttendanceDetailSerializer, \
     StudentAttendanceListSerializer, StudentListBySectionSerializer, StudentAttendanceCreateSerializer, \
     AdminClassListSerializer, AdminOptionalSubjectListSerializer, StudentAttendanceSerializer, \
     StudentTimeTableListSerializer, StudentReportCardListSerializer, StudentStudyMaterialListSerializer, \
     StudentZoomLinkSerializer, StudentContentListSerializer, StudentClassEventListSerializer, \
-    StudentDayReviewDetailSerializer
+    StudentDayReviewDetailSerializer, ConnectWithTeacherSerializer, StudentSubjectListSerializer
 from utils import create_response_data, create_response_list_data, get_student_total_attendance, \
     get_student_total_absent, get_student_attendence_percentage, generate_random_password
 from pytz import timezone as pytz_timezone
@@ -1176,3 +1176,136 @@ class StudentDayReview(APIView):
             data=serializer.data,
         )
         return Response(response, status=status.HTTP_200_OK)
+
+
+class StudentSubjectListView(APIView):
+    """
+    This class is used to fetch the list of the subject of the student.
+    """
+    permission_classes = [IsStudentUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            user = request.user
+            data = StudentUser.objects.get(user=user.id, user__school_id=user.school_id)
+            serializer = StudentSubjectListSerializer(data)
+            primary_subject = serializer.data.get('subject', [])
+            optional_subject = serializer.data.get('optional_subject', [])
+            primary_subjects = [subj for subj in primary_subject if subj]
+            if isinstance(optional_subject, str):
+                optional_subject = [subj.strip() for subj in optional_subject.split(',')]
+
+            subject_list = primary_subjects + optional_subject
+            data = {
+                "id": serializer.data.get('id'),
+                "subject": subject_list,
+            }
+
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=CurriculumMessage.SUBJECT_LIST_MESSAGE,
+                data=data,
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AvailabilityTimeListView(APIView):
+    """
+    This class is used to fetch the list of the availability time of the teacher.
+    """
+    permission_classes = [IsStudentUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            user= request.user
+            current_date_time_ist = timezone.localtime(timezone.now(), pytz_timezone('Asia/Kolkata'))
+            current_date = current_date_time_ist.date()
+            subject = request.query_params.get('subject')
+            student_data = StudentUser.objects.get(user__school_id=user.school_id, user=user.id)
+            teacher_schedule = TeachersSchedule.objects.filter(school_id=user.school_id, end_date__gte=str(current_date))
+            for schedule in teacher_schedule:
+                for entry in schedule.schedule_data:
+                    if entry['curriculum'] == student_data.curriculum \
+                            and entry['class'] == student_data.class_enrolled \
+                            and entry['section'] == student_data.section \
+                            and entry['subject'] == subject:
+                        availability_time = Availability.objects.get(school_id=user.school_id, teacher=schedule.teacher.id)
+
+                        start_time = datetime.datetime.strptime(str(availability_time.start_time), '%H:%M:%S').strftime('%I:%M %p')
+                        end_time = datetime.datetime.strptime(str(availability_time.end_time), '%H:%M:%S').strftime('%I:%M %p')
+
+                        response_data = create_response_data(
+                            status=status.HTTP_200_OK,
+                            message=CurriculumMessage.SUBJECT_LIST_MESSAGE,
+                            data={"start_time": start_time, "end_time": end_time},
+                        )
+                        return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ConnectWithTeacherView(APIView):
+    """
+    This class is used to connect student with teacher for chat.
+    """
+    permission_classes = [IsStudentUser, IsInSameSchool]
+
+    def post(self, request):
+        try:
+            user = request.user
+            student_data = StudentUser.objects.get(user__school_id=user.school_id, user=user.id)
+            serializer = ConnectWithTeacherSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            subject = serializer.validated_data['subject']
+            start_time = serializer.validated_data['start_time']
+            end_time = serializer.validated_data['end_time']
+
+            teacher_schedules = TeachersSchedule.objects.all()
+
+            for schedule in teacher_schedules:
+                for entry in schedule.schedule_data:
+                    if entry['curriculum'] == student_data.curriculum \
+                            and entry['class'] == student_data.class_enrolled \
+                            and entry['section'] == student_data.section \
+                            and entry['subject'] == subject:
+                        teacher_id = schedule.teacher_id
+                        break
+                else:
+                    continue
+                break
+            else:
+                response = create_response_data(
+                    status=status.HTTP_404_NOT_FOUND,
+                    message="No teacher available for the provided schedule",
+                    data={}
+                )
+                return Response(response, status=status.HTTP_404_NOT_FOUND)
+            teacher = TeacherUser.objects.get(id=teacher_id)
+            chat_data = ConnectWithTeacher.objects.create(school_id=user.school_id, teacher=teacher, curriculum=student_data.curriculum, class_name=student_data.class_enrolled, section=student_data.section,
+                                                          subject=subject, start_time=str(start_time), end_time=str(end_time))
+
+            response = create_response_data(
+                status=status.HTTP_201_CREATED,
+                message=ChatMessage.CHAT_REQUEST_CREATED,
+                data={}
+            )
+            return Response(response, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
