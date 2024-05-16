@@ -34,7 +34,7 @@ class CurriculumSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Curriculum
-        fields = ['id', 'curriculum_name', 'select_class', 'primary_subject', 'optional_subject', 'syllabus', 'discription']
+        fields = ['id', 'curriculum_name', 'select_class', 'primary_subject', 'optional_subject', 'syllabus', 'discription', 'curriculum_type']
 
     def create(self, validated_data):
         primary_subjects_data = validated_data.pop('primary_subject', [])
@@ -101,7 +101,7 @@ class CurriculumDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Curriculum
-        fields = ['id', 'curriculum_name', 'select_class', 'primary_subject', 'optional_subject', 'syllabus', 'discription']
+        fields = ['id', 'curriculum_name', 'select_class', 'primary_subject', 'optional_subject', 'syllabus', 'discription', 'curriculum_type']
 
     def get_syllabus(self, obj):
         if obj.syllabus:

@@ -14,6 +14,7 @@ class Curriculum(models.Model):
     select_class = models.CharField(max_length=255, blank=True, null=True)
     syllabus = models.FileField(upload_to='syllabus/', null=True, blank=True)
     discription = models.TextField(null=True, blank=True)
+    curriculum_type = models.CharField(max_length=255, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
 
