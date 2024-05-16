@@ -29,5 +29,9 @@ urlpatterns = [
 
         # Curriculum API'S
         path('section/list/', SectionListView.as_view(), name='class_list'),
-        path('subjects/list/', SubjectListView.as_view(), name='subject_list')
+        path('subjects/list/', SubjectListView.as_view(), name='subject_list'),
+
+        # Mobile Chat API'S
+        path('availability/create/', AvailabilityCreateView.as_view(), name='availability_create'),
+        path('availability/update/<int:pk>/', AvailabilityUpdateView.as_view(), name='availability_update'),
 ]

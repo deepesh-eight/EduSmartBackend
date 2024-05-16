@@ -327,3 +327,11 @@ class ClassEvent(models.Model):
 class ClassEventImage(models.Model):
     class_event = models.ForeignKey(ClassEvent, on_delete=models.CASCADE, related_name='class_event_image')
     event_image = models.FileField(upload_to='class_event_image/')
+
+
+class Availability(models.Model):
+    school_id = models.CharField(max_length=255)
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)

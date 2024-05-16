@@ -11,18 +11,20 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from authentication.models import User, Class, TeacherUser, StudentUser, Certificate, TeachersSchedule, \
-    TeacherAttendence, StaffUser
+    TeacherAttendence, StaffUser, Availability
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsTeacherUser, IsInSameSchool
 from authentication.serializers import UserLoginSerializer
 from authentication.views import NonTeachingStaffDetailView
-from constants import UserLoginMessage, UserResponseMessage, ScheduleMessage, AttendenceMarkedMessage, CurriculumMessage
+from constants import UserLoginMessage, UserResponseMessage, ScheduleMessage, AttendenceMarkedMessage, \
+    CurriculumMessage, TeacherAvailabilityMessage
 from curriculum.models import Curriculum, Subjects
 from pagination import CustomPagination
 from student.views import FetchStudentDetailView
 from teacher.serializers import TeacherUserSignupSerializer, TeacherDetailSerializer, TeacherListSerializer, \
     TeacherProfileSerializer, ScheduleCreateSerializer, ScheduleDetailSerializer, ScheduleListSerializer, \
     ScheduleUpdateSerializer, TeacherAttendanceSerializer, TeacherAttendanceDetailSerializer, \
-    TeacherAttendanceListSerializer, SectionListSerializer, SubjectListSerializer, TeacherAttendanceFilterListSerializer
+    TeacherAttendanceListSerializer, SectionListSerializer, SubjectListSerializer, \
+    TeacherAttendanceFilterListSerializer, AvailabilityCreateSerializer, AvailabilityUpdateSerializer
 from utils import create_response_data, create_response_list_data, generate_random_password,get_teacher_total_attendance, \
     get_teacher_monthly_attendance, get_teacher_total_absent, get_teacher_monthly_absent
 
@@ -989,3 +991,82 @@ class AttedanceFilterListView(APIView):
                 data={}
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AvailabilityCreateView(APIView):
+    """
+    This class is used to create the availability time of the teacher.
+    """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+
+    def post(self, request):
+        try:
+            user = request.user
+            serializer = AvailabilityCreateSerializer(data=request.data)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save(school_id=user.school_id)
+                response_data = create_response_data(
+                    status=status.HTTP_201_CREATED,
+                    message=TeacherAvailabilityMessage.TEACHER_AVAILABILITY_CREATED,
+                    data=serializer.data
+                )
+                return Response(response_data, status=status.HTTP_201_CREATED)
+            else:
+                response_data= create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=serializer.errors,
+                    data={}
+                )
+                return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AvailabilityUpdateView(APIView):
+    """
+    This class is used to update the availability time of the teacher.
+    """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+
+    def patch(self, request, pk):
+        try:
+            user = request.user
+            availability_data = Availability.objects.get(id=pk, school_id=user.school_id)
+            serializer = AvailabilityUpdateSerializer(availability_data, data=request.data, partial=True)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                if serializer.is_valid(raise_exception=True):
+                    serializer.save(school_id=user.school_id)
+                    response_data = create_response_data(
+                        status=status.HTTP_201_CREATED,
+                        message=TeacherAvailabilityMessage.TEACHER_AVAILABILITY_UPDATED,
+                        data=serializer.data
+                    )
+                    return Response(response_data, status=status.HTTP_201_CREATED)
+                else:
+                    response_data = create_response_data(
+                        status=status.HTTP_400_BAD_REQUEST,
+                        message=serializer.errors,
+                        data={}
+                    )
+                    return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        except Availability.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=TeacherAvailabilityMessage.TEACHER_AVAILABILITY_NOT_EXIST,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+

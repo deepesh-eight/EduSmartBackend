@@ -218,3 +218,9 @@ class ClassEventMessage:
     CLASS_EVENT_NOT_EXIST = "Class event does not exist."
     CLASS_EVENT_UPDATED = "Class event updated successfully."
     CLASS_EVENT_DELETED = "Class event deleted successfully."
+
+
+class TeacherAvailabilityMessage:
+    TEACHER_AVAILABILITY_CREATED = "Teacher availability created successfully."
+    TEACHER_AVAILABILITY_UPDATED = "Teacher availability updated successfully."
+    TEACHER_AVAILABILITY_NOT_EXIST = "Teacher availability is not  availabile."

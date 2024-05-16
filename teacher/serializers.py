@@ -9,7 +9,7 @@ from rest_framework import serializers
 
 from EduSmart import settings
 from authentication.models import TeacherUser, Certificate, TeachersSchedule, TeacherAttendence, DayReview, \
-    Notification, TimeTable, StudentUser
+    Notification, TimeTable, StudentUser, Availability
 from constants import USER_TYPE_CHOICES, GENDER_CHOICES, RELIGION_CHOICES, BLOOD_GROUP_CHOICES, CLASS_CHOICES, \
     SUBJECT_CHOICES, ROLE_CHOICES, ATTENDENCE_CHOICE, EXAME_TYPE_CHOICE
 from curriculum.models import Curriculum, Subjects
@@ -991,3 +991,32 @@ class SubjectListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subjects
         fields = ['primary_subject', 'optional_subject']
+
+
+class CustomTimeField(serializers.TimeField):
+    def to_internal_value(self, value):
+        try:
+            # Convert 12-hour time format to 24-hour time format
+            if isinstance(value, str):
+                value = datetime.strptime(value, '%I:%M %p').strftime('%H:%M:%S')
+        except ValueError:
+            raise serializers.ValidationError('Time has wrong format. Use hh:mm[:ss[.uuuuuu]] instead.')
+        return super().to_internal_value(value)
+
+
+class AvailabilityCreateSerializer(serializers.ModelSerializer):
+    start_time = CustomTimeField(required=True)
+    end_time = CustomTimeField(required=True)
+
+    class Meta:
+        model = Availability
+        fields = ['start_time', 'end_time']
+
+
+class AvailabilityUpdateSerializer(serializers.ModelSerializer):
+    start_time = CustomTimeField(required=False)
+    end_time = CustomTimeField(required=False)
+
+    class Meta:
+        model = Availability
+        fields = ['start_time', 'end_time']
