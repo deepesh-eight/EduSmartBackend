@@ -374,10 +374,10 @@ class MixedField(serializers.Field):
 
 
 class ScheduleUpdateSerializer(serializers.ModelSerializer):
-    start_date = serializers.DateField(required=True)
-    end_date = serializers.DateField(required=True)
-    teacher = serializers.CharField(required=True)
-    schedule_data = MixedField(required=True)
+    start_date = serializers.DateField(required=False)
+    end_date = serializers.DateField(required=False)
+    teacher = serializers.CharField(required=False)
+    schedule_data = MixedField(required=False)
 
     class Meta:
         model = TeachersSchedule

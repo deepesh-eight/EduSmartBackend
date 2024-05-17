@@ -122,6 +122,7 @@ class ScheduleMessage:
     SCHEDULE_DELETED_SUCCESSFULLY = "Schedule deleted successfully.",
     SCHEDULE_LIST_MESSAGE = "All schedule fetch successfully."
     SCHEDULE_UPDATED_SUCCESSFULLY = "Teacher schedule updated successfully"
+    SCHEDULE_renew_SUCCESSFULLY = "Teacher schedule renew successfully"
 
 
 class AttendenceMarkedMessage:

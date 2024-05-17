@@ -569,6 +569,51 @@ class TeacherScheduleUpdateView(APIView):
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
 
 
+class TeacherScheduleRenewView(APIView):
+    """
+    This class is used to renew the teacher schedule.
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+
+    def patch(self, request, pk):
+        try:
+            data = {
+                'start_date': request.data.get('start_date'),
+                'end_date': request.data.get('end_date'),
+            }
+            staff = TeachersSchedule.objects.get(id=pk, school_id=request.user.school_id)
+            serializer = ScheduleUpdateSerializer(staff, data=data, partial=True)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                response = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=ScheduleMessage.SCHEDULE_renew_SUCCESSFULLY,
+                    data={}
+                )
+                return Response(response, status=status.HTTP_200_OK)
+            else:
+                response = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=serializer.errors,
+                    data=serializer.errors
+                )
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        except TeachersSchedule.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=ScheduleMessage.SCHEDULE_NOT_FOUND,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+        except TeacherUser.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=ScheduleMessage.USER_DOES_NOT_EXISTS,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+
+
 class TeacherAttendanceCreateView(APIView):
     permission_classes = [IsAdminUser, IsInSameSchool]
     """
