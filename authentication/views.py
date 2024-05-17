@@ -1149,15 +1149,27 @@ class AnnouncementListView(APIView):
     This class is used to fetch the list of the Announcement.
     """
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = CustomPagination
 
     def get(self, request):
         data = Announcement.objects.all().order_by('-id')
-        serializer = AnnouncementListSerializer(data, many=True)
-        response_data = create_response_data(
-                status=status.HTTP_201_CREATED,
-                message=AnnouncementMessage.ANNOUNCEMENT_FETCHED_SUCCESSFULLE,
-                data=serializer.data,
-            )
+        # Paginate the queryset
+        paginator = self.pagination_class()
+        paginated_queryset = paginator.paginate_queryset(data, request)
+        serializer = AnnouncementListSerializer(paginated_queryset, many=True)
+        response_data = {
+            'status': status.HTTP_200_OK,
+            'count': len(serializer.data),
+            'message': AnnouncementMessage.ANNOUNCEMENT_FETCHED_SUCCESSFULLE,
+            'data': serializer.data,
+            'pagination': {
+                'page_size': paginator.page_size,
+                'next': paginator.get_next_link(),
+                'previous': paginator.get_previous_link(),
+                'total_pages': paginator.page.paginator.num_pages,
+                'current_page': paginator.page.number,
+            }
+        }
         return Response(response_data, status=status.HTTP_200_OK)
 
 
