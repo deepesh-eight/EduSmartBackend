@@ -13,7 +13,7 @@ from authentication.models import TeacherUser, Certificate, TeachersSchedule, Te
 from constants import USER_TYPE_CHOICES, GENDER_CHOICES, RELIGION_CHOICES, BLOOD_GROUP_CHOICES, CLASS_CHOICES, \
     SUBJECT_CHOICES, ROLE_CHOICES, ATTENDENCE_CHOICE, EXAME_TYPE_CHOICE
 from curriculum.models import Curriculum, Subjects
-from student.models import ExmaReportCard, ZoomLink, StudentMaterial
+from student.models import ExmaReportCard, ZoomLink, StudentMaterial, ConnectWithTeacher
 from superadmin.models import Announcement
 
 
@@ -1025,3 +1025,18 @@ class AvailabilityUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Availability
         fields = ['start_time', 'end_time']
+
+
+class ChatRequestMessageSerializer(serializers.ModelSerializer):
+    # student_image = serializers.SerializerMethodField()
+    student_name = serializers.SerializerMethodField()
+    class Meta:
+        model = ConnectWithTeacher
+        fields = ['id', 'student_name', 'start_time']
+
+    def get_student_name(self, obj):
+        student = StudentUser.objects.get(id=obj.student.id)
+        if student:
+            return student.name
+        else:
+            None

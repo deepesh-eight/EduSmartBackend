@@ -70,6 +70,7 @@ class ConnectWithTeacher(models.Model):
     subject = models.CharField(max_length=255)
     start_time = models.TimeField()
     end_time = models.TimeField()
+    status = models.CharField(max_length=255, default=0)
 
     def __str__(self):
         return f'{self.id}'

@@ -1306,15 +1306,29 @@ class ConnectWithTeacherView(APIView):
                 return Response(response, status=status.HTTP_404_NOT_FOUND)
             teacher = TeacherUser.objects.get(id=teacher_id)
             student = StudentUser.objects.get(user=user.id)
-            chat_data = ConnectWithTeacher.objects.create(school_id=user.school_id, teacher=teacher, curriculum=student_data.curriculum, class_name=student_data.class_enrolled, section=student_data.section,
-                                                          subject=subject, start_time=str(start_time), end_time=str(end_time), student=student)
+            chat_data_exist = ConnectWithTeacher.objects.filter(school_id=user.school_id, teacher=teacher,
+                                                                curriculum=student_data.curriculum,
+                                                                class_name=student_data.class_enrolled,
+                                                                section=student_data.section,
+                                                                subject=subject, start_time=str(start_time),
+                                                                end_time=str(end_time)).exists()
+            if chat_data_exist:
+                response = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=ChatMessage.CHAT_REQUEST_ALREADY_CREATED,
+                    data={}
+                )
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                chat_data = ConnectWithTeacher.objects.create(school_id=user.school_id, teacher=teacher, curriculum=student_data.curriculum, class_name=student_data.class_enrolled, section=student_data.section,
+                                                              subject=subject, start_time=str(start_time), end_time=str(end_time), student=student)
 
-            response = create_response_data(
-                status=status.HTTP_201_CREATED,
-                message=ChatMessage.CHAT_REQUEST_CREATED,
-                data={}
-            )
-            return Response(response, status=status.HTTP_201_CREATED)
+                response = create_response_data(
+                    status=status.HTTP_201_CREATED,
+                    message=ChatMessage.CHAT_REQUEST_CREATED,
+                    data={}
+                )
+                return Response(response, status=status.HTTP_201_CREATED)
         except Exception as e:
             response = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,

@@ -16,15 +16,17 @@ from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsTeacherU
 from authentication.serializers import UserLoginSerializer
 from authentication.views import NonTeachingStaffDetailView
 from constants import UserLoginMessage, UserResponseMessage, ScheduleMessage, AttendenceMarkedMessage, \
-    CurriculumMessage, TeacherAvailabilityMessage
+    CurriculumMessage, TeacherAvailabilityMessage, ChatMessage
 from curriculum.models import Curriculum, Subjects
 from pagination import CustomPagination
+from student.models import ConnectWithTeacher
 from student.views import FetchStudentDetailView
 from teacher.serializers import TeacherUserSignupSerializer, TeacherDetailSerializer, TeacherListSerializer, \
     TeacherProfileSerializer, ScheduleCreateSerializer, ScheduleDetailSerializer, ScheduleListSerializer, \
     ScheduleUpdateSerializer, TeacherAttendanceSerializer, TeacherAttendanceDetailSerializer, \
     TeacherAttendanceListSerializer, SectionListSerializer, SubjectListSerializer, \
-    TeacherAttendanceFilterListSerializer, AvailabilityCreateSerializer, AvailabilityUpdateSerializer
+    TeacherAttendanceFilterListSerializer, AvailabilityCreateSerializer, AvailabilityUpdateSerializer, \
+    ChatRequestMessageSerializer
 from utils import create_response_data, create_response_list_data, generate_random_password,get_teacher_total_attendance, \
     get_teacher_monthly_attendance, get_teacher_total_absent, get_teacher_monthly_absent
 
@@ -1071,3 +1073,77 @@ class AvailabilityUpdateView(APIView):
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
+
+class StudentChatRequestView(APIView):
+    """
+    This class is used to fetch the chat request which is sended by student
+    """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            chat_data = ConnectWithTeacher.objects.filter(school_id= request.user.school_id, status=0)
+            serializer = ChatRequestMessageSerializer(chat_data, many=True)
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=ChatMessage.CHAT_REQUEST_GET,
+                data=serializer.data
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class StudentChatRequestAcceptView(APIView):
+    """
+    This class is used to accept the chat request which is sended by student
+    """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+
+    def get(self, request, pk):
+        try:
+            chat_data = ConnectWithTeacher.objects.filter(school_id=request.user.school_id, status=0, id=pk)
+            chat_data.update(status=1)
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=ChatMessage.CHAT_REQUEST_ACCEPTED,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class StudentChatRequestJoinView(APIView):
+    """
+    This class is used to join the chat request which is sended by student
+    """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+
+    def get(self, request, pk):
+        try:
+            chat_data = ConnectWithTeacher.objects.filter(school_id=request.user.school_id, status=1, id=pk)
+            chat_data.update(status=2)
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=ChatMessage.CHAT_JOIN,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
