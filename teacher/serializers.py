@@ -1028,11 +1028,36 @@ class AvailabilityUpdateSerializer(serializers.ModelSerializer):
 
 
 class ChatRequestMessageSerializer(serializers.ModelSerializer):
-    # student_image = serializers.SerializerMethodField()
+    student_image = serializers.SerializerMethodField()
     student_name = serializers.SerializerMethodField()
     class Meta:
         model = ConnectWithTeacher
-        fields = ['id', 'student_name', 'start_time']
+        fields = ['id', 'student_image', 'student_name', 'start_time',]
+
+    def get_student_name(self, obj):
+        student = StudentUser.objects.get(id=obj.student.id)
+        if student:
+            return student.name
+        else:
+            None
+
+    def get_student_image(self, obj):
+        student = StudentUser.objects.get(id=obj.student.id)
+        if student:
+            if student.image.name.startswith(settings.base_url + settings.MEDIA_URL):
+                return str(student.image)
+            else:
+                return f'{settings.base_url}{settings.MEDIA_URL}{str(student.image)}'
+        else:
+            None
+
+
+class TeacherChatHistorySerializer(serializers.ModelSerializer):
+    student_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ConnectWithTeacher
+        fields = ['id', 'student_name', 'class_name', 'section']
 
     def get_student_name(self, obj):
         student = StudentUser.objects.get(id=obj.student.id)

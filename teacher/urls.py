@@ -37,4 +37,5 @@ urlpatterns = [
         path('chat/request/', StudentChatRequestView.as_view(), name='chat_request'),
         path('chat/request/accept/<int:pk>/', StudentChatRequestAcceptView.as_view(), name='chat_request_accept'),
         path('chat/join/<int:pk>/', StudentChatRequestJoinView.as_view(), name='chat_join'),
+        path('chat/history/', StudentChatHistoryView.as_view(), name='chat_history'),
 ]
