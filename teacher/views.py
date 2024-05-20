@@ -1119,6 +1119,34 @@ class AvailabilityUpdateView(APIView):
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
 
+class AvailabilityGetView(APIView):
+    """
+    This class is used to fetch the availability time of the teacher.
+    """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            user = request.user
+            teacher = TeacherUser.objects.get(user__school_id=user.school_id, user=user.id)
+            availability_data = Availability.objects.filter(school_id=user.school_id, teacher=teacher.id)
+            serializer = AvailabilityUpdateSerializer(availability_data, many=True)
+
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=TeacherAvailabilityMessage.TEACHER_AVAILABILITY_TIME,
+                data=serializer.data
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
 class StudentChatRequestView(APIView):
     """
     This class is used to fetch the chat request which is sended by student.

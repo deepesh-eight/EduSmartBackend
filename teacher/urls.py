@@ -35,6 +35,7 @@ urlpatterns = [
         # Mobile Chat API'S
         path('availability/create/', AvailabilityCreateView.as_view(), name='availability_create'),
         path('availability/update/<int:pk>/', AvailabilityUpdateView.as_view(), name='availability_update'),
+        path('availability/get/', AvailabilityGetView.as_view(), name='availability_get'),
         path('chat/request/', StudentChatRequestView.as_view(), name='chat_request'),
         path('chat/request/accept/<int:pk>/', StudentChatRequestAcceptView.as_view(), name='chat_request_accept'),
         path('chat/join/<int:pk>/', StudentChatRequestJoinView.as_view(), name='chat_join'),
