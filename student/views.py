@@ -1238,19 +1238,18 @@ class AvailabilityTimeListView(APIView):
                             and entry['class'] == student_data.class_enrolled \
                             and entry['section'] == student_data.section \
                             and entry['subject'] == subject:
-                        availability_time_data = Availability.objects.filter(school_id=user.school_id, teacher=schedule.teacher.id)
+                        availability_time_data = Availability.objects.get(school_id=user.school_id, teacher=schedule.teacher.id)
 
-                        for availability_time in availability_time_data:
-                            start_time = datetime.datetime.strptime(str(availability_time.start_time), '%H:%M:%S').strftime('%I:%M %p')
-                            end_time = datetime.datetime.strptime(str(availability_time.end_time), '%H:%M:%S').strftime('%I:%M %p')
-                            availability_times.append({"start_time": start_time, "end_time": end_time})
-            if availability_times:
-                response_data = create_response_data(
-                    status=status.HTTP_200_OK,
-                    message=TeacherAvailabilityMessage.TEACHER_AVAILABILITY_TIME,
-                    data=availability_times,
-                )
-                return Response(response_data, status=status.HTTP_200_OK)
+                        # for availability_time in availability_time_data:
+                        start_time = datetime.datetime.strptime(str(availability_time_data.start_time), '%H:%M:%S').strftime('%I:%M %p')
+                        end_time = datetime.datetime.strptime(str(availability_time_data.end_time), '%H:%M:%S').strftime('%I:%M %p')
+                        # availability_times.append({"start_time": start_time, "end_time": end_time})
+                        response_data = create_response_data(
+                            status=status.HTTP_200_OK,
+                            message=TeacherAvailabilityMessage.TEACHER_AVAILABILITY_TIME,
+                            data={"start_time": start_time, "end_time": end_time},
+                        )
+                        return Response(response_data, status=status.HTTP_200_OK)
             else:
                 response_data = create_response_data(
                     status=status.HTTP_404_NOT_FOUND,
