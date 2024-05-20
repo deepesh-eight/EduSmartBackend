@@ -1019,12 +1019,23 @@ class AvailabilityCreateSerializer(serializers.ModelSerializer):
 
 
 class AvailabilityUpdateSerializer(serializers.ModelSerializer):
-    start_time = CustomTimeField(required=False)
-    end_time = CustomTimeField(required=False)
+    start_time = serializers.SerializerMethodField(required=False)
+    end_time = serializers.SerializerMethodField(required=False)
 
     class Meta:
         model = Availability
         fields = ['start_time', 'end_time']
+
+    def get_start_time(self, obj):
+        start_time = str(obj.start_time)
+        if start_time:
+            return datetime.strptime(start_time, '%H:%M:%S').strftime('%I:%M %p')
+
+    def get_end_time(self, obj):
+        end_time = str(obj.start_time)
+        if end_time:
+            return datetime.strptime(end_time, '%H:%M:%S').strftime('%I:%M %p')
+
 
 
 class ChatRequestMessageSerializer(serializers.ModelSerializer):

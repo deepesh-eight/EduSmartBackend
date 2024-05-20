@@ -1081,10 +1081,11 @@ class AvailabilityUpdateView(APIView):
     """
     permission_classes = [IsTeacherUser, IsInSameSchool]
 
-    def patch(self, request, pk):
+    def patch(self, request):
         try:
             user = request.user
-            availability_data = Availability.objects.get(id=pk, school_id=user.school_id)
+            teacher = TeacherUser.objects.get(user__school_id=user.school_id, user=user.id)
+            availability_data = Availability.objects.get(school_id=user.school_id,teacher=teacher.id)
             serializer = AvailabilityUpdateSerializer(availability_data, data=request.data, partial=True)
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
@@ -1129,15 +1130,21 @@ class AvailabilityGetView(APIView):
         try:
             user = request.user
             teacher = TeacherUser.objects.get(user__school_id=user.school_id, user=user.id)
-            availability_data = Availability.objects.filter(school_id=user.school_id, teacher=teacher.id)
-            serializer = AvailabilityUpdateSerializer(availability_data, many=True)
-
+            availability_data = Availability.objects.get(school_id=user.school_id, teacher=teacher.id)
+            serializer = AvailabilityUpdateSerializer(availability_data)
             response_data = create_response_data(
                 status=status.HTTP_200_OK,
                 message=TeacherAvailabilityMessage.TEACHER_AVAILABILITY_TIME,
                 data=serializer.data
             )
             return Response(response_data, status=status.HTTP_200_OK)
+        except Availability.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=TeacherAvailabilityMessage.TEACHER_AVAILABILITY_NOT_EXIST,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             response_data = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
