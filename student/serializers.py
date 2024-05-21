@@ -490,8 +490,8 @@ class StudentSubjectListSerializer(serializers.ModelSerializer):
 
 class ConnectWithTeacherSerializer(serializers.Serializer):
     subject = serializers.CharField(required=True)
-    start_time = CustomTimeField(required=True)
-    end_time = CustomTimeField(required=True)
+    start_time = CustomTimeField(required=False)
+    end_time = CustomTimeField(required=False)
 
 
 class ChatHistorySerializer(serializers.ModelSerializer):

@@ -1280,8 +1280,8 @@ class ConnectWithTeacherView(APIView):
             serializer = ConnectWithTeacherSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             subject = serializer.validated_data['subject']
-            start_time = serializer.validated_data['start_time']
-            end_time = serializer.validated_data['end_time']
+            start_time = serializer.validated_data.get('start_time')
+            # end_time = serializer.validated_data.get('end_time')
 
             teacher_schedules = TeachersSchedule.objects.all()
 
@@ -1305,12 +1305,11 @@ class ConnectWithTeacherView(APIView):
                 return Response(response, status=status.HTTP_404_NOT_FOUND)
             teacher = TeacherUser.objects.get(id=teacher_id)
             student = StudentUser.objects.get(user=user.id)
-            chat_data_exist = ConnectWithTeacher.objects.filter(school_id=user.school_id, teacher=teacher,
+            chat_data_exist = ConnectWithTeacher.objects.filter(Q(start_time=str(start_time)) | Q(end_time=str(start_time)),school_id=user.school_id, teacher=teacher,
                                                                 curriculum=student_data.curriculum,
                                                                 class_name=student_data.class_enrolled,
                                                                 section=student_data.section,
-                                                                subject=subject, start_time=str(start_time),
-                                                                end_time=str(end_time)).exists()
+                                                                ).exists()
             if chat_data_exist:
                 response = create_response_data(
                     status=status.HTTP_400_BAD_REQUEST,
