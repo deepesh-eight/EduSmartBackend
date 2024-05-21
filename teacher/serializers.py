@@ -1043,7 +1043,7 @@ class ChatRequestMessageSerializer(serializers.ModelSerializer):
     student_name = serializers.SerializerMethodField()
     class Meta:
         model = ConnectWithTeacher
-        fields = ['id', 'student_image', 'student_name', 'start_time',]
+        fields = ['id', 'student_image', 'student_name', 'start_time', 'status']
 
     def get_student_name(self, obj):
         student = StudentUser.objects.get(id=obj.student.id)
