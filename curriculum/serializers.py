@@ -58,9 +58,9 @@ class CurriculumSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         curriculum_name = data.get('curriculum_name')
-        class_name = data.get('class_name')
+        class_name = data.get('select_class')
 
-        if CurricullumList.objects.filter(curriculum_name=curriculum_name, class_name=class_name).exists():
+        if Curriculum.objects.filter(curriculum_name=curriculum_name, select_class=class_name).exists():
             raise serializers.ValidationError(
                 f"A curriculum with name {curriculum_name} and class {class_name} already exists.")
 
