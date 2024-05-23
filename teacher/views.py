@@ -25,8 +25,8 @@ from teacher.serializers import TeacherUserSignupSerializer, TeacherDetailSerial
     TeacherProfileSerializer, ScheduleCreateSerializer, ScheduleDetailSerializer, ScheduleListSerializer, \
     ScheduleUpdateSerializer, TeacherAttendanceSerializer, TeacherAttendanceDetailSerializer, \
     TeacherAttendanceListSerializer, SectionListSerializer, SubjectListSerializer, \
-    TeacherAttendanceFilterListSerializer, AvailabilityCreateSerializer, AvailabilityUpdateSerializer, \
-    ChatRequestMessageSerializer, TeacherChatHistorySerializer
+    TeacherAttendanceFilterListSerializer, AvailabilityCreateSerializer, \
+    ChatRequestMessageSerializer, TeacherChatHistorySerializer, AvailabilityGetSerializer
 from utils import create_response_data, create_response_list_data, generate_random_password,get_teacher_total_attendance, \
     get_teacher_monthly_attendance, get_teacher_total_absent, get_teacher_monthly_absent
 
@@ -1050,6 +1050,14 @@ class AvailabilityCreateView(APIView):
         try:
             user = request.user
             teacher = TeacherUser.objects.get(user=request.user.id, user__school_id=user.school_id)
+            availability = Availability.objects.filter(teacher=teacher.id).exists()
+            if availability:
+                response_data = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=TeacherAvailabilityMessage.TEACHER_AVAILABILITY_ALREADY_CREATED,
+                    data={}
+                )
+                return Response(response_data, status=status.HTTP_201_CREATED)
             serializer = AvailabilityCreateSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
                 serializer.save(teacher=teacher, school_id=user.school_id)
@@ -1086,7 +1094,7 @@ class AvailabilityUpdateView(APIView):
             user = request.user
             teacher = TeacherUser.objects.get(user__school_id=user.school_id, user=user.id)
             availability_data = Availability.objects.get(school_id=user.school_id,teacher=teacher.id)
-            serializer = AvailabilityUpdateSerializer(availability_data, data=request.data, partial=True)
+            serializer = AvailabilityCreateSerializer(availability_data, data=request.data, partial=True)
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
                 if serializer.is_valid(raise_exception=True):
@@ -1131,7 +1139,7 @@ class AvailabilityGetView(APIView):
             user = request.user
             teacher = TeacherUser.objects.get(user__school_id=user.school_id, user=user.id)
             availability_data = Availability.objects.get(school_id=user.school_id, teacher=teacher.id)
-            serializer = AvailabilityUpdateSerializer(availability_data)
+            serializer = AvailabilityGetSerializer(availability_data)
             response_data = create_response_data(
                 status=status.HTTP_200_OK,
                 message=TeacherAvailabilityMessage.TEACHER_AVAILABILITY_TIME,
@@ -1189,9 +1197,9 @@ class StudentChatRequestAcceptView(APIView):
     def get(self, request, pk):
         try:
             chat_data = ConnectWithTeacher.objects.filter(school_id=request.user.school_id, id=pk)
-            accept = request.query_params.get('accept', None)
-            join = request.query_params.get('join', None)
-            cancel = request.query_params.get('cancel', None)
+            accept = request.query_params.get('1', None)
+            join = request.query_params.get('2', None)
+            cancel = request.query_params.get('3', None)
 
             if accept is not None:
                 chat_data.update(status=1)

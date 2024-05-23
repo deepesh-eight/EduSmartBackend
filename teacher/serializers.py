@@ -1011,14 +1011,14 @@ class CustomTimeField(serializers.TimeField):
 
 class AvailabilityCreateSerializer(serializers.ModelSerializer):
     start_time = CustomTimeField(required=True)
-    end_time = CustomTimeField(required=True)
+    end_time = CustomTimeField(required=False)
 
     class Meta:
         model = Availability
         fields = ['start_time', 'end_time']
 
 
-class AvailabilityUpdateSerializer(serializers.ModelSerializer):
+class AvailabilityGetSerializer(serializers.ModelSerializer):
     start_time = serializers.SerializerMethodField(required=False)
     end_time = serializers.SerializerMethodField(required=False)
 
