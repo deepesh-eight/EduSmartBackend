@@ -69,7 +69,7 @@ class ConnectWithTeacher(models.Model):
     section = models.CharField(max_length=255)
     subject = models.CharField(max_length=255)
     start_time = models.TimeField()
-    end_time = models.TimeField()
+    end_time = models.TimeField(blank=True, null=True)
     status = models.CharField(max_length=255, default=0)
 
     def __str__(self):

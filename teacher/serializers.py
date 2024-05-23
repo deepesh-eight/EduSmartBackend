@@ -1032,7 +1032,7 @@ class AvailabilityGetSerializer(serializers.ModelSerializer):
             return datetime.strptime(start_time, '%H:%M:%S').strftime('%I:%M %p')
 
     def get_end_time(self, obj):
-        end_time = str(obj.start_time)
+        end_time = str(obj.end_time)
         if end_time:
             return datetime.strptime(end_time, '%H:%M:%S').strftime('%I:%M %p')
 
