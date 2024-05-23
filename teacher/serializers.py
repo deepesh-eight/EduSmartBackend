@@ -1041,6 +1041,7 @@ class AvailabilityGetSerializer(serializers.ModelSerializer):
 class ChatRequestMessageSerializer(serializers.ModelSerializer):
     student_image = serializers.SerializerMethodField()
     student_name = serializers.SerializerMethodField()
+    start_time = serializers.SerializerMethodField()
     class Meta:
         model = ConnectWithTeacher
         fields = ['id', 'student_image', 'student_name', 'start_time', 'status']
@@ -1061,6 +1062,11 @@ class ChatRequestMessageSerializer(serializers.ModelSerializer):
                 return f'{settings.base_url}{settings.MEDIA_URL}{str(student.image)}'
         else:
             None
+
+    def get_start_time(self, obj):
+        start_time = str(obj.start_time)
+        if start_time:
+            return datetime.strptime(start_time, '%H:%M:%S').strftime('%I:%M %p')
 
 
 class TeacherChatHistorySerializer(serializers.ModelSerializer):
