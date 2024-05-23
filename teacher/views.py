@@ -1162,7 +1162,8 @@ class StudentChatRequestView(APIView):
 
     def get(self, request):
         try:
-            chat_data = ConnectWithTeacher.objects.filter(school_id= request.user.school_id, status=0)
+            teacher = TeacherUser.objects.get(user__school_id= request.user.school_id, user=request.user.id)
+            chat_data = ConnectWithTeacher.objects.filter(school_id= request.user.school_id, teacher=teacher.id, status__in=[0, 1]).order_by('-id')
             serializer = ChatRequestMessageSerializer(chat_data, many=True)
             response_data = create_response_data(
                 status=status.HTTP_200_OK,
@@ -1187,8 +1188,18 @@ class StudentChatRequestAcceptView(APIView):
 
     def get(self, request, pk):
         try:
-            chat_data = ConnectWithTeacher.objects.filter(school_id=request.user.school_id, status=0, id=pk)
-            chat_data.update(status=1)
+            chat_data = ConnectWithTeacher.objects.filter(school_id=request.user.school_id, id=pk)
+            accept = request.query_params.get('accept', None)
+            join = request.query_params.get('join', None)
+            cancel = request.query_params.get('cancel', None)
+
+            if accept is not None:
+                chat_data.update(status=1)
+            elif join is not None:
+                chat_data.update(status=2)
+            elif cancel is not None:
+                chat_data.update(status=3)
+
             response_data = create_response_data(
                 status=status.HTTP_200_OK,
                 message=ChatMessage.CHAT_REQUEST_ACCEPTED,
