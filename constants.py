@@ -71,6 +71,7 @@ EXAME_TYPE_CHOICE = [
     ('Half Yearly Exams', 'Half Yearly Exams'),
     ('Quarterly Exams', 'Quarterly Exams'),
     ('Pre-Board Exams', 'Pre-Board Exams'),
+    ('Monthly Test', 'Monthly Test')
 ]
 
 CONTENT_TYPES = [
@@ -204,6 +205,7 @@ class BusMessages:
     BUS_ADDED = "Bus Added Successfully."
     BUS_DATA_FETCHED = "Bus Data Fetched Successfully."
     BUS_DELETED = "Bus Deleted Successfully."
+    BUS_NOT_FOUND = "Bus Not Found."
 
 class ContentMessages:
     CONTENT_CREATED = "Content Created Successfully."

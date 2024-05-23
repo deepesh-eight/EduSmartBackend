@@ -1,6 +1,8 @@
 from django.shortcuts import render
+
+from authentication.models import StaffUser
 from .models import Route, Bus
-from .serializers import RouteSerializer, BusSerializer, BusListSerializer
+from .serializers import RouteSerializer, BusSerializer, BusListSerializer, BusDetailSerializer
 from rest_framework import status, permissions, generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -92,5 +94,37 @@ class BusDeleteView(generics.DestroyAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
                 message=str(e),
                 data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class BusDetailView(APIView):
+    """
+    This class is used to fetch the detail of the bus.
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+
+    def get(self, request,pk):
+        try:
+            bus_detail = Bus.objects.get(school_id=request.user.school_id, id=pk)
+            serializer = BusDetailSerializer(bus_detail)
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=BusMessages.BUS_DATA_FETCHED,
+                data=serializer.data,
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Bus.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=BusMessages.BUS_NOT_FOUND,
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={},
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
