@@ -184,3 +184,29 @@ class BusUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Bus
         fields = ['id', 'bus_image', 'bus_number', 'bus_capacity', 'driver_name', 'operator_name', 'bus_route', 'alternate_route', 'bus_capacity']
+
+
+class StopUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Stop
+        fields = ['id','name', 'time']
+
+
+class RouteUpdateSerializer(serializers.ModelSerializer):
+    stops = StopUpdateSerializer(many=True)
+
+    class Meta:
+        model = Route
+        fields = ['id','name', 'stops']
+
+    def update(self, instance, validated_data):
+        stops_data = validated_data.pop('stops')
+        instance.name = validated_data.get('name', instance.name)
+        instance.save()
+
+        instance.stops.all().delete()
+
+        for stop_data in stops_data:
+            Stop.objects.create(route=instance, **stop_data)
+
+        return instance

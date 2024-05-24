@@ -209,6 +209,8 @@ class BusMessages:
     BUS_UPDATED = "Bus detail updated successfully."
     BUS_ROUTE_NOT_FOUND = "Bus route Not Found."
     BUS_ROUTE_DELETED = "Bus route deleted Successfully."
+    BUS_ROUTE_UPDATED = "Bus route updated successfully."
+
 
 class ContentMessages:
     CONTENT_CREATED = "Content Created Successfully."
