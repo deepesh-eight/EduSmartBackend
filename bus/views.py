@@ -192,3 +192,35 @@ class BusRouteDetailView(APIView):
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
+
+class BusRouteDeleteView(APIView):
+    """
+    This class is used to delete the bus route detail.
+    """
+
+    permission_classes = [IsAdminUser, IsInSameSchool]
+
+    def delete(self, request, pk):
+        try:
+            bus_route = Route.objects.get(school_id=request.user.school_id, id=pk)
+            bus_route.delete()
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=BusMessages.BUS_ROUTE_DELETED,
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Route.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=BusMessages.BUS_ROUTE_NOT_FOUND,
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
