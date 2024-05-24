@@ -1,5 +1,6 @@
 from django.urls import path
-from .views import RouteListView, RouteCreateView, CreateBusView, BusListView, BusDeleteView, BusDetailView
+from .views import RouteListView, RouteCreateView, CreateBusView, BusListView, BusDeleteView, BusDetailView, \
+    BusRouteListView
 
 urlpatterns = [
     path('routes/', RouteListView.as_view(), name='route-list'),
@@ -8,4 +9,5 @@ urlpatterns = [
     path('bus-list/', BusListView.as_view(), name='bus-list'),
     path('bus/delete/<int:pk>/', BusDeleteView.as_view(), name='bus-delete'),
     path('bus/detail/<int:pk>/', BusDetailView.as_view(), name='bus-detail'),
+    path('bus/route/list/', BusRouteListView.as_view(), name='bus-route-list'),
 ]

@@ -1,8 +1,10 @@
+from django.db.models import Q
 from django.shortcuts import render
 
 from authentication.models import StaffUser
+from pagination import CustomPagination
 from .models import Route, Bus
-from .serializers import RouteSerializer, BusSerializer, BusListSerializer, BusDetailSerializer
+from .serializers import RouteSerializer, BusSerializer, BusListSerializer, BusDetailSerializer, RouteListSerializer
 from rest_framework import status, permissions, generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -128,3 +130,44 @@ class BusDetailView(APIView):
                 data={},
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class BusRouteListView(APIView):
+    """
+    This class is used to fetch list of the bus route.
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+    pagination_class = CustomPagination
+
+    def get(self, request):
+        try:
+            bus_route = Route.objects.filter(school_id=request.user.school_id)
+            search = self.request.query_params.get('search', None)
+            if search is not None:
+                bus_route = bus_route.filter(Q(id__icontains=search) | Q(name__icontains=search))
+            paginator = self.pagination_class()
+            paginated_queryset = paginator.paginate_queryset(bus_route, request)
+
+            serializers = RouteListSerializer(paginated_queryset, many=True)
+            response_data = {
+                'status': status.HTTP_200_OK,
+                'count': len(serializers.data),
+                'message': BusMessages.ROUTE_DATA_FETCHED,
+                'data': serializers.data,
+                'pagination': {
+                    'page_size': paginator.page_size,
+                    'next': paginator.get_next_link(),
+                    'previous': paginator.get_previous_link(),
+                    'total_pages': paginator.page.paginator.num_pages,
+                    'current_page': paginator.page.number,
+                }
+            }
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
