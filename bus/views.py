@@ -13,18 +13,6 @@ from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsManageme
 from utils import create_response_data, create_response_list_data
 from constants import BusMessages
 
-class RouteListView(APIView):
-    permission_classes = [IsAdminUser, IsInSameSchool]
-    def get(self, request):
-        queryset = Route.objects.filter(school_id=request.user.school_id)
-        serializer = RouteSerializer(queryset, many=True)
-        response_data = create_response_data(
-            status=status.HTTP_200_OK,
-            message=BusMessages.ROUTE_DATA_FETCHED,
-            data=serializer.data,
-        )
-        return Response(response_data, status=status.HTTP_200_OK)
-
 class RouteCreateView(APIView):
     permission_classes = [IsAdminUser, IsInSameSchool]
     def post(self, request):
@@ -141,7 +129,7 @@ class BusRouteListView(APIView):
 
     def get(self, request):
         try:
-            bus_route = Route.objects.filter(school_id=request.user.school_id)
+            bus_route = Route.objects.filter(school_id=request.user.school_id).order_by('-id')
             search = self.request.query_params.get('search', None)
             if search is not None:
                 bus_route = bus_route.filter(Q(id__icontains=search) | Q(name__icontains=search))
@@ -163,6 +151,39 @@ class BusRouteListView(APIView):
                 }
             }
             return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class BusRouteDetailView(APIView):
+    """
+    This class is used to fetch detail of the bus route.
+    """
+
+    permission_classes = [IsAdminUser, IsInSameSchool]
+
+    def get(self, request, pk):
+        try:
+            bus_route = Route.objects.get(school_id=request.user.school_id, id=pk)
+            serializer = RouteListSerializer(bus_route)
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=BusMessages.ROUTE_DATA_FETCHED,
+                data=serializer.data,
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Route.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=BusMessages.BUS_ROUTE_NOT_FOUND,
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             response_data = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
