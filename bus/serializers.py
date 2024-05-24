@@ -58,11 +58,11 @@ class BusDetailSerializer(serializers.ModelSerializer):
     operator_no = serializers.SerializerMethodField()
     operator_email = serializers.SerializerMethodField()
     bus_image = serializers.SerializerMethodField()
-    bus_route = serializers.SerializerMethodField()
-    alternate_route = serializers.SerializerMethodField()
+    bus_route_name = serializers.SerializerMethodField()
+    alternate_route_name = serializers.SerializerMethodField()
     class Meta:
         model = Bus
-        fields = ['id', 'driver_name', 'driver_id', 'driver_gender', 'driver_no', 'operator_id', 'operator_name', 'operator_gender', 'operator_no', 'operator_email', 'bus_image', 'bus_number', 'bus_capacity', 'bus_route', 'alternate_route']
+        fields = ['id', 'driver_name', 'driver_id', 'driver_gender', 'driver_no', 'operator_id', 'operator_name', 'operator_gender', 'operator_no', 'operator_email', 'bus_image', 'bus_number', 'bus_capacity', 'bus_route', 'bus_route_name', 'alternate_route', 'alternate_route_name']
 
     def get_driver_id(self, obj):
         driver_id = StaffUser.objects.get(id=obj.driver_name.id)
@@ -135,7 +135,7 @@ class BusDetailSerializer(serializers.ModelSerializer):
                 return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.bus_image)}'
         return None
 
-    def get_bus_route(self, obj):
+    def get_bus_route_name(self, obj):
         route = Route.objects.get(id=obj.bus_route.id)
         stops = Stop.objects.filter(route=route)
         stop_name = []
@@ -143,7 +143,7 @@ class BusDetailSerializer(serializers.ModelSerializer):
             stop_name.append(stop.name)
         return stop_name
 
-    def get_alternate_route(self, obj):
+    def get_alternate_route_name(self, obj):
         route = Route.objects.get(id=obj.alternate_route.id)
         stops = Stop.objects.filter(route=route)
         stop_name = []
@@ -180,3 +180,7 @@ class RouteListSerializer(serializers.ModelSerializer):
             None
 
 
+class BusUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Bus
+        fields = ['id', 'bus_image', 'bus_number', 'bus_capacity', 'driver_name', 'operator_name', 'bus_route', 'alternate_route', 'bus_capacity']

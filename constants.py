@@ -206,6 +206,7 @@ class BusMessages:
     BUS_DATA_FETCHED = "Bus Data Fetched Successfully."
     BUS_DELETED = "Bus Deleted Successfully."
     BUS_NOT_FOUND = "Bus Not Found."
+    BUS_UPDATED = "Bus detail updated successfully."
     BUS_ROUTE_NOT_FOUND = "Bus route Not Found."
     BUS_ROUTE_DELETED = "Bus route deleted Successfully."
 

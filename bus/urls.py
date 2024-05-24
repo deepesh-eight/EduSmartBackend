@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import RouteCreateView, CreateBusView, BusListView, BusDeleteView, BusDetailView, \
-    BusRouteListView, BusRouteDetailView, BusRouteDeleteView
+    BusRouteListView, BusRouteDetailView, BusRouteDeleteView, BusDetailUpdateView
 
 urlpatterns = [
     # Bus API
@@ -8,6 +8,7 @@ urlpatterns = [
     path('bus-list/', BusListView.as_view(), name='bus-list'),
     path('bus/delete/<int:pk>/', BusDeleteView.as_view(), name='bus-delete'),
     path('bus/detail/<int:pk>/', BusDetailView.as_view(), name='bus-detail'),
+    path('update/<int:pk>/', BusDetailUpdateView.as_view(), name='bus-update'),
 
     # Bus route API
     path('routes/create/', RouteCreateView.as_view(), name='route-create'),
