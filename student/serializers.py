@@ -6,6 +6,7 @@ from rest_framework import serializers
 from EduSmart import settings
 from authentication.models import StudentUser, User, TimeTable, TeacherUser, ClassEvent, DayReview
 from authentication.serializers import AddressDetailsSerializer, CustomTimeField
+from bus.models import Route, Bus
 from constants import USER_TYPE_CHOICES, GENDER_CHOICES, RELIGION_CHOICES, CLASS_CHOICES, BLOOD_GROUP_CHOICES, \
     ATTENDENCE_CHOICE
 from content.models import Content
@@ -150,7 +151,7 @@ class studentProfileSerializer(serializers.ModelSerializer):
     permanent_address = serializers.CharField(max_length=255, required=False)
     current_address = serializers.CharField(max_length=255, required=False)
     bus_number = serializers.CharField(required=False)
-    bus_route = serializers.IntegerField(required=False)
+    bus_route = serializers.CharField(required=False)
     guardian_no = serializers.CharField(default='')
     optional_subject = serializers.CharField(default='')
 
@@ -176,7 +177,30 @@ class studentProfileSerializer(serializers.ModelSerializer):
         #     instance.curriculum = curriculum
         #     instance.save()
 
-        return super().update(instance, validated_data)
+        # Update bus_number
+        bus_number = validated_data.pop('bus_number', None)
+        if bus_number:
+            try:
+                bus = Bus.objects.get(id=bus_number)
+                instance.bus_number = bus
+            except Bus.DoesNotExist:
+                raise serializers.ValidationError({"bus_number": "Bus with this number does not exist."})
+
+        # Update bus_route
+        bus_route_id = validated_data.pop('bus_route', None)
+        if bus_route_id:
+            try:
+                bus_route = Route.objects.get(id=bus_route_id)
+                instance.bus_route = bus_route
+            except Route.DoesNotExist:
+                raise serializers.ValidationError({"bus_route": "Route with this ID does not exist."})
+
+        # Update other fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        instance.save()
+        return instance
 
 class StudentListSerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField()
