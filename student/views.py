@@ -76,6 +76,7 @@ class StudentUserCreateView(APIView):
             roll_no = serializer.validated_data.get('roll_no', '')
             guardian_no = serializer.validated_data.get('guardian_no', '')
             optional_subject = serializer.validated_data.get('optional_subject', '')
+            current_address = serializer.validated_data.get('current_address', '')
 
             # try:
             #     curriculum = Curriculum.objects.get(id=curriculum_data)
@@ -98,7 +99,7 @@ class StudentUserCreateView(APIView):
                     total_fee=total_fee, blood_group=blood_group, class_enrolled=class_enrolled, father_phone_number=father_phone_number,
                     mother_occupation=mother_occupation, mother_phone_number=mother_phone_number, section=section, permanent_address=permanent_address,
                     bus_number=bus_number, bus_route=bus_route, due_fee=due_fee, curriculum=curriculum_data, enrollment_no=enrollment_no, roll_no=roll_no,
-                    guardian_no=guardian_no, optional_subject=optional_subject
+                    guardian_no=guardian_no, optional_subject=optional_subject, current_address=current_address
                 )
             else:
                 raise ValidationError("Invalid user_type. Expected 'student'.")

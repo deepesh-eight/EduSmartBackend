@@ -47,6 +47,7 @@ class StudentUserSignupSerializer(serializers.Serializer):
     roll_no = serializers.CharField(default='')
     guardian_no = serializers.CharField(default='')
     optional_subject = serializers.CharField(default='')
+    current_address = serializers.CharField(max_length=255, required=False, default='')
 
 
 class StudentDetailSerializer(serializers.ModelSerializer):
@@ -61,7 +62,7 @@ class StudentDetailSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'image', 'class_enrolled', 'section', 'admission_date', 'dob', 'gender', 'religion', 'blood_group',
                   'school_fee','bus_fee', 'canteen_fee', 'other_fee', 'due_fee', 'total_fee', 'father_name', 'father_phone_number',
                   'father_occupation', 'mother_name', 'mother_phone_number', 'mother_occupation', 'email', 'permanent_address', 'curriculum',
-                   'subjects', 'bus_number', 'bus_route', 'enrollment_no', 'roll_no', 'optional_subject', 'guardian_no']
+                   'subjects', 'bus_number', 'bus_route', 'enrollment_no', 'roll_no', 'optional_subject', 'guardian_no', 'current_address']
 
 
     def get_curriculum(self,obj):
@@ -147,6 +148,7 @@ class studentProfileSerializer(serializers.ModelSerializer):
     section = serializers.CharField(required=False)
     curriculum = serializers.CharField(required=False)
     permanent_address = serializers.CharField(max_length=255, required=False)
+    current_address = serializers.CharField(max_length=255, required=False)
     bus_number = serializers.CharField(required=False)
     bus_route = serializers.IntegerField(required=False)
     guardian_no = serializers.CharField(default='')
@@ -158,7 +160,7 @@ class studentProfileSerializer(serializers.ModelSerializer):
         fields = ['name', 'email', 'user_type', 'dob', 'image', 'father_name', 'father_phone_number', 'father_occupation', 'mother_name',
                   'mother_occupation', 'mother_phone_number', 'gender', 'admission_date', 'school_fee', 'bus_fee', 'canteen_fee', 'other_fee',
                   'due_fee', 'total_fee', 'religion', 'blood_group', 'class_enrolled', 'section', 'curriculum', 'permanent_address', 'bus_number',
-                  'bus_route', 'guardian_no', 'optional_subject']
+                  'bus_route', 'guardian_no', 'optional_subject', 'current_address']
 
     def update(self, instance, validated_data):
         user_data = validated_data.pop('user', {})
