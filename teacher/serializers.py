@@ -473,19 +473,19 @@ class TeacherAttendanceFilterListSerializer(serializers.ModelSerializer):
         fields = ['full_name', 'id', 'class_teacher', 'section', 'subject', 'mark_attendence']
 
     def get_class_teacher(self, obj):
-        return f"{obj.teacher.class_subject_section_details[0].get('class')} class" if obj.teacher.role == 'class_teacher' else None
+        return f"{obj.teacher.class_subject_section_details[0].get('class')} class"
 
     def get_subject(self, obj):
-        return obj.teacher.class_subject_section_details[0].get("subject") if obj.teacher.role == 'class_teacher' else None
+        return obj.teacher.class_subject_section_details[0].get("subject")
 
     def get_section(self, obj):
-        return obj.teacher.class_subject_section_details[0].get("section") if obj.teacher.role == 'class_teacher' else None
+        return obj.teacher.class_subject_section_details[0].get("section")
 
     def get_full_name(self, obj):
-        return obj.teacher.full_name if obj.teacher.role == 'class_teacher' else None
+        return obj.teacher.full_name
 
     def get_id(self, obj):
-        return obj.teacher.id if obj.teacher.role == 'class_teacher' else None
+        return obj.teacher.id
 
 
 class CertificateUserProfileSerializer(serializers.ModelSerializer):
