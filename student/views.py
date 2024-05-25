@@ -16,6 +16,7 @@ from authentication.models import User, Class, AddressDetails, StudentUser, Teac
     DayReview, TeachersSchedule, Availability
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsStudentUser, IsTeacherUser, IsInSameSchool
 from authentication.serializers import ClassEventDetailSerializer
+from bus.models import Bus, Route
 from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage, CurriculumMessage, \
     TimeTableMessage, ReportCardMesssage, StudyMaterialMessage, ZoomLinkMessage, ContentMessages, ClassEventMessage, \
     ScheduleMessage, ChatMessage, TeacherAvailabilityMessage
@@ -91,6 +92,8 @@ class StudentUserCreateView(APIView):
                 password = generate_random_password()
                 user.set_password(password)
                 user.save()
+                bus = Bus.objects.get(school_id=request.user.school_id, id=bus_number)
+                route = Route.objects.get(school_id=request.user.school_id, id=bus_route)
                 user_student = StudentUser.objects.create(
                     user=user, name=name, dob=dob, image=image, father_name=father_name, mother_name=mother_name,
                     gender=gender, father_occupation=father_occupation, religion=religion,
@@ -98,7 +101,7 @@ class StudentUserCreateView(APIView):
                     school_fee=school_fee, bus_fee=bus_fee, canteen_fee=canteen_fee, other_fee=other_fee,
                     total_fee=total_fee, blood_group=blood_group, class_enrolled=class_enrolled, father_phone_number=father_phone_number,
                     mother_occupation=mother_occupation, mother_phone_number=mother_phone_number, section=section, permanent_address=permanent_address,
-                    bus_number=bus_number, bus_route=bus_route, due_fee=due_fee, curriculum=curriculum_data, enrollment_no=enrollment_no, roll_no=roll_no,
+                    bus_number=bus, bus_route=route, due_fee=due_fee, curriculum=curriculum_data, enrollment_no=enrollment_no, roll_no=roll_no,
                     guardian_no=guardian_no, optional_subject=optional_subject, current_address=current_address
                 )
             else:
