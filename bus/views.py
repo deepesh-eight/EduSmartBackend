@@ -54,15 +54,37 @@ class CreateBusView(APIView):
     
 class BusListView(generics.ListAPIView):
     permission_classes = [IsAdminUser, IsInSameSchool]
+    pagination_class = CustomPagination
+
     def get(self, request):
-        queryset = Bus.objects.filter(school_id=request.user.school_id).select_related('driver_name', 'operator_name', 'bus_route', 'alternate_route')
-        serializer = BusListSerializer(queryset, many=True)
-        response_data = create_response_data(
-            status=status.HTTP_200_OK,
-            message=BusMessages.BUS_DATA_FETCHED,
-            data=serializer.data,
-        )
-        return Response(response_data, status=status.HTTP_200_OK)
+        try:
+            queryset = Bus.objects.filter(school_id=request.user.school_id).select_related('driver_name', 'operator_name', 'bus_route', 'alternate_route')
+
+            paginator = self.pagination_class()
+            paginated_queryset = paginator.paginate_queryset(queryset, request)
+
+            serializer = BusListSerializer(paginated_queryset, many=True)
+            response_data = {
+                'status': status.HTTP_200_OK,
+                'count': len(serializer.data),
+                'message': BusMessages.BUS_DATA_FETCHED,
+                'data': serializer.data,
+                'pagination': {
+                    'page_size': paginator.page_size,
+                    'next': paginator.get_next_link(),
+                    'previous': paginator.get_previous_link(),
+                    'total_pages': paginator.page.paginator.num_pages,
+                    'current_page': paginator.page.number,
+                }
+            }
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
     
 class BusDeleteView(generics.DestroyAPIView):
     permission_classes = [IsAdminUser, IsInSameSchool]
