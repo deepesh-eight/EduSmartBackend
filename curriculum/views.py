@@ -115,7 +115,7 @@ class CurriculumlistView(APIView):
     This class is created to fetch the list of the curriculum.
     """
     def get(self,request):
-        queryset = Curriculum.objects.filter(school_id=request.user.school_id)
+        queryset = Curriculum.objects.filter(school_id=request.user.school_id).order_by('-id')
         # for curriculum in queryset:
         #     if not curriculum.curriculum_name:
         #         querset1 = CurriculumPDF.objects.all()
