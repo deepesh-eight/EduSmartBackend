@@ -70,8 +70,8 @@ class StudentUserCreateView(APIView):
             class_enrolled = serializer.validated_data['class_enrolled']
             section = serializer.validated_data['section']
             permanent_address = serializer.validated_data.get('permanent_address', '')
-            bus_number = serializer.validated_data.get('bus_number', '')
-            bus_route = serializer.validated_data.get('bus_route', '')
+            bus_number = serializer.validated_data.get('bus_number', None)
+            bus_route = serializer.validated_data.get('bus_route', None)
             curriculum_data = serializer.validated_data['curriculum']
             enrollment_no = serializer.validated_data.get('enrollment_no', '')
             roll_no = serializer.validated_data.get('roll_no', '')
@@ -92,8 +92,11 @@ class StudentUserCreateView(APIView):
                 password = generate_random_password()
                 user.set_password(password)
                 user.save()
-                bus = Bus.objects.get(school_id=request.user.school_id, id=bus_number)
-                route = Route.objects.get(school_id=request.user.school_id, id=bus_route)
+                bus= None
+                route= None
+                if bus_number and bus_route is not None:
+                    bus = Bus.objects.get(school_id=request.user.school_id, id=bus_number)
+                    route = Route.objects.get(school_id=request.user.school_id, id=bus_route)
                 user_student = StudentUser.objects.create(
                     user=user, name=name, dob=dob, image=image, father_name=father_name, mother_name=mother_name,
                     gender=gender, father_occupation=father_occupation, religion=religion,
