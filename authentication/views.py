@@ -567,8 +567,8 @@ class FetchAttendanceDetailView(APIView):
 
     def get(self, request, pk):
         try:
-            staff = StaffUser.objects.get(id=pk)
-            data = StaffAttendence.objects.filter(staff_id=pk).order_by('-date')
+            staff = StaffUser.objects.get(id=pk, user__school_id=request.user.school_id)
+            data = StaffAttendence.objects.filter(staff_id=pk, staff__user__school_id=request.user.school_id).order_by('-date')
 
             filter_type = request.query_params.get('filter_type', None)
             if filter_type:
@@ -636,7 +636,7 @@ class FetchAttendanceListView(APIView):
     pagination_class = CustomPagination
 
     def get(self, request):
-        queryset = StaffUser.objects.filter(user__is_active=True)
+        queryset = StaffUser.objects.filter(user__is_active=True, user__school_id=request.user.school_id)
         if request.query_params:
             name = request.query_params.get('first_name', None)
             page = request.query_params.get('page_size', None)
