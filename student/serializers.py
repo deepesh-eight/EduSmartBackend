@@ -56,6 +56,8 @@ class StudentDetailSerializer(serializers.ModelSerializer):
     email = serializers.SerializerMethodField()
     curriculum = serializers.SerializerMethodField()
     subjects = serializers.SerializerMethodField()
+    bus_number = serializers.SerializerMethodField()
+    bus_route = serializers.SerializerMethodField()
     # optional_subjects = serializers.SerializerMethodField()
 
     class Meta:
@@ -90,6 +92,16 @@ class StudentDetailSerializer(serializers.ModelSerializer):
             return subjects or None
         except Curriculum.DoesNotExist as e:
             raise serializers.ValidationError(f"Error retrieving subjects: {str(e)}")
+
+    def get_bus_number(self, obj):
+        bus_data = Bus.objects.get(id=obj.bus_number.id)
+        if bus_data:
+            return bus_data.bus_number
+
+    def get_bus_route(self, obj):
+        route_data = Route.objects.get(id=obj.bus_route.id)
+        if route_data:
+            return route_data.name
 
     # def get_optional_subjects(self, obj):
     #     try:
@@ -285,6 +297,8 @@ class StudentUserProfileSerializer(serializers.ModelSerializer):
     subjects = serializers.SerializerMethodField()
     age = serializers.SerializerMethodField()
     total_attendance = serializers.SerializerMethodField()
+    bus_number = serializers.SerializerMethodField()
+    bus_route = serializers.SerializerMethodField()
 
     class Meta:
         model = StudentUser
@@ -334,6 +348,15 @@ class StudentUserProfileSerializer(serializers.ModelSerializer):
             student=obj.id, date__year=year, mark_attendence='P').count()
         return total_attendance
 
+    def get_bus_number(self, obj):
+        bus_data = Bus.objects.get(id=obj.bus_number.id)
+        if bus_data:
+            return bus_data.bus_number
+
+    def get_bus_route(self, obj):
+        route_data = Route.objects.get(id=obj.bus_route.id)
+        if route_data:
+            return route_data.name
 
 class AdminClassListSerializer(serializers.ModelSerializer):
     class Meta:
