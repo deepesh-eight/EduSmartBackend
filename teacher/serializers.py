@@ -862,10 +862,11 @@ class ExamReportCardViewSerializer(serializers.ModelSerializer):
     teacher_name = serializers.SerializerMethodField()
     student_name = serializers.SerializerMethodField()
     roll_no = serializers.SerializerMethodField()
+    student = serializers.SerializerMethodField()
 
     class Meta:
         model = ExmaReportCard
-        fields = ['id', 'class_name', 'curriculum', 'class_section', 'student_name', 'roll_no', 'exam_type', 'exam_month', 'marks_grades', 'total_marks', 'overall_grades', 'father_name', 'mother_name', 'teacher_name']
+        fields = ['id', 'class_name', 'curriculum', 'class_section', 'student_name', 'roll_no', 'student', 'exam_type', 'exam_month', 'marks_grades', 'total_marks', 'overall_grades', 'father_name', 'mother_name', 'teacher_name']
 
     def get_father_name(self, obj):
         student = obj.student_name
@@ -896,6 +897,10 @@ class ExamReportCardViewSerializer(serializers.ModelSerializer):
         student = obj.student_name
         roll_no = re.sub(r'\D', '', student)
         return roll_no
+
+    def get_student(self, obj):
+        student = obj.student_name
+        return student
 
 
 class ExamReportcardUpdateSerializer(serializers.ModelSerializer):
