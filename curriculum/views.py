@@ -1,6 +1,6 @@
 import json
 
-from rest_framework import status
+from rest_framework import status, permissions
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -260,7 +260,7 @@ class CurriculumListView(APIView):
     """
     This class is used to fetch the list of the curriculum which is added by superadmin.
     """
-    permission_classes = [IsAdminUser, IsInSameSchool]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         try:
@@ -288,7 +288,7 @@ class CurriculumClassListView(APIView):
     """
     This class is used to fetch the list of the classes which is added by superadmin.
     """
-    permission_classes = [IsAdminUser, IsInSameSchool]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         try:
@@ -315,7 +315,7 @@ class CurriculumsubjectListView(APIView):
     """
     This class is used to fetch the list of the subject which is added by superadmin according to curriculum.
     """
-    permission_classes = [IsAdminUser, IsInSameSchool]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         try:
@@ -344,7 +344,7 @@ class CurriculumOptionalsubjectListView(APIView):
     """
     This class is used to fetch the list of the optional subject which is added by superadmin according to curriculum.
     """
-    permission_classes = [IsAdminUser, IsInSameSchool]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         try:
