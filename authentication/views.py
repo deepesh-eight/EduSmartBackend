@@ -740,7 +740,7 @@ class TeacherUserScheduleView(APIView):
             if user.user_type == 'teacher':
                 today = datetime.date.today()
                 teacher = TeacherUser.objects.get(user=user.id, user__school_id=request.user.school_id)
-                data = TeachersSchedule.objects.filter(teacher=teacher.id, school_id=request.user.school_id,start_date__lte=today, end_date__gte=today)
+                data = TeachersSchedule.objects.filter(teacher=teacher.id, school_id=request.user.school_id, end_date__gte=today)
                 if data:
                     serializer = TeacherUserScheduleSerializer(data[0])
                     response_data = create_response_data(
