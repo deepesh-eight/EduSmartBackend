@@ -897,10 +897,12 @@ class TeachersClassListView(APIView):
     def get(self, request):
         try:
             teacher_name = request.query_params.get('teacher_name')
+            teacher_curriculum = request.query_params.get('curriculum')
             teacher_list = TeacherUser.objects.get(user__is_active=True, user__school_id=request.user.school_id, id=teacher_name)
             class_set = set()
             for teacher in teacher_list.class_subject_section_details:
-                class_set.add(teacher['class'])
+                if teacher['curriculum'] == teacher_curriculum:
+                    class_set.add(teacher['class'])
 
             distinct_class = list(class_set)
 
@@ -931,10 +933,13 @@ class TeachersSectionListView(APIView):
     def get(self, request):
         try:
             teacher_name = request.query_params.get('teacher_name')
+            teacher_curriculum = request.query_params.get('curriculum')
+            teacher_class = request.query_params.get('class')
             teacher_list = TeacherUser.objects.get(user__is_active=True, user__school_id=request.user.school_id, id=teacher_name)
             section_set = set()
             for teacher in teacher_list.class_subject_section_details:
-                section_set.add(teacher['section'])
+                if teacher['class'] == teacher_class and teacher['curriculum'] == teacher_curriculum:
+                    section_set.add(teacher['section'])
 
             distinct_sections = list(section_set)
 
@@ -965,10 +970,14 @@ class TeachersSubjectListView(APIView):
     def get(self, request):
         try:
             teacher_name = request.query_params.get('teacher_name')
+            teacher_curriculum = request.query_params.get('curriculum')
+            teacher_class = request.query_params.get('class')
+            teacher_section = request.query_params.get('section')
             teacher_list = TeacherUser.objects.get(user__is_active=True, user__school_id=request.user.school_id, id=teacher_name)
             subject_set = set()
             for teacher in teacher_list.class_subject_section_details:
-                subject_set.add(teacher['subject'])
+                if teacher['class'] == teacher_class and teacher['curriculum'] == teacher_curriculum and teacher['section'] == teacher_section:
+                    subject_set.add(teacher['subject'])
 
             distinct_subject = list(subject_set)
 
