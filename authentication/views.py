@@ -1247,7 +1247,11 @@ class UndeclaredTimetableView(APIView):
 
     def get(self, request):
         try:
-            data = TimeTable.objects.filter(status=0, school_id=request.user.school_id).order_by('-id')
+            # data = TimeTable.objects.filter(status=0, school_id=request.user.school_id).order_by('-id')
+            teacher = TeacherUser.objects.get(user__school_id=request.user.school_id, user=request.user.id)
+            data = TimeTable. objects.filter(status=0, school_id=request.user.school_id,class_name=teacher.class_subject_section_details[0].get("class"),
+                                            curriculum=teacher.class_subject_section_details[0].get("curriculum"),
+                                            class_section=teacher.class_subject_section_details[0].get("section")).order_by('-id')
             serializer = TimeTableListSerializer(data, many=True)
             response_data = create_response_data(
                     status=status.HTTP_200_OK,
@@ -1513,7 +1517,10 @@ class UndeclaredExamReportListView(APIView):
 
     def get(self, request):
         try:
-            data = ExmaReportCard.objects.filter(status=0, school_id=request.user.school_id).order_by('-id')
+            teacher = TeacherUser.objects.get(user__school_id=request.user.school_id, user=request.user.id)
+            data = ExmaReportCard.objects.filter(status=0, school_id=request.user.school_id, class_name=teacher.class_subject_section_details[0].get("class"),
+                                            curriculum=teacher.class_subject_section_details[0].get("curriculum"),
+                                            class_section=teacher.class_subject_section_details[0].get("section")).order_by('-id')
             serializer = ExamReportListSerializer(data, many=True)
             response_data = create_response_data(
                     status=status.HTTP_200_OK,
