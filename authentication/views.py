@@ -973,6 +973,9 @@ class TeacherDayReviewListView(APIView):
 
     def get(self, request):
         queryset = DayReview.objects.all()
+        paginator = self.pagination_class()
+        paginated_queryset = paginator.paginate_queryset(queryset, request)
+
         if request.query_params:
             updated_at = request.query_params.get('updated_at', None)
             if updated_at:
@@ -986,19 +989,26 @@ class TeacherDayReviewListView(APIView):
             response_data = {
                 'status': status.HTTP_200_OK,
                 'count': len(serializers.data),
-                'message': ScheduleMessage.SCHEDULE_LIST_MESSAGE,
+                'message': DayReviewMessage.DAY_REVIEW_LIST_FETCHED_SUCCESSFULLY,
                 'data': serializers.data,
             }
             return Response(response_data, status=status.HTTP_200_OK)
 
-        serializer = DayReviewDetailSerializer(queryset, many=True)
-        response = create_response_list_data(
-            status=status.HTTP_200_OK,
-            count=len(serializer.data),
-            message=ScheduleMessage.SCHEDULE_LIST_MESSAGE,
-            data=serializer.data,
-        )
-        return Response(response, status=status.HTTP_200_OK)
+        serializer = DayReviewDetailSerializer(paginated_queryset, many=True)
+        response_data = {
+            'status': status.HTTP_200_OK,
+            'count': len(serializer.data),
+            'message': DayReviewMessage.DAY_REVIEW_LIST_FETCHED_SUCCESSFULLY,
+            'data': serializer.data,
+            'pagination': {
+                'page_size': paginator.page_size,
+                'next': paginator.get_next_link(),
+                'previous': paginator.get_previous_link(),
+                'total_pages': paginator.page.paginator.num_pages,
+                'current_page': paginator.page.number,
+            }
+        }
+        return Response(response_data, status=status.HTTP_200_OK)
 
 
 class FetchTeacherAttendanceView(APIView):

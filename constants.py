@@ -145,6 +145,7 @@ class DayReviewMessage:
     DAY_REVIEW_CREATED_SUCCESSFULLY = "Day and reviw created successfully."
     DAY_REVIEW_FETCHED_SUCCESSFULLY = "Day and review detail fetch successfully."
     DAY_REVIEW_NOT_FOUND = "Day and review not found."
+    DAY_REVIEW_LIST_FETCHED_SUCCESSFULLY = "Day and review list fetch successfully."
 
 
 class NotificationMessage:
