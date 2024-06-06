@@ -778,7 +778,7 @@ class SectionListView(APIView):
             response_data = create_response_data(
                 status=status.HTTP_200_OK,
                 message=CurriculumMessage.SECTION_LIST_MESSAGE,
-                data=class_names
+                data=set(section.upper() for section in class_names)
             )
             return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
