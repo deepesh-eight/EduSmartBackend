@@ -807,8 +807,9 @@ class SubjectListView(APIView):
             optional_subject = [item['optional_subject'] for item in serializer.data]
             subject_list = primary_subject + optional_subject
             # flat_subjects = [subject for sublist in subject_list for subject in sublist]
+            subjects = [subjects.title() for subjects in subject_list]
             data = {
-                "subject": subject_list,
+                "subject": set(subjects)
             }
             response_data = create_response_data(
                 status=status.HTTP_200_OK,
