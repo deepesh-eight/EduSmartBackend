@@ -739,11 +739,11 @@ class AdminOptionalSubjectList(APIView):
             data = Curriculum.objects.get(curriculum_name=curriculum, select_class=classes, school_id=request.user.school_id)
             subject = Subjects.objects.filter(curriculum_id=data.id)
             serializer = AdminOptionalSubjectListSerializer(subject, many=True)
-            optional_subj = [item['optional_subject'] for item in serializer.data]
+            optional_subj = [item['optional_subject'].title() for item in serializer.data]
             response_data = create_response_data(
                 status=status.HTTP_200_OK,
                 message=CurriculumMessage.SUBJECT_LIST_MESSAGE,
-                data=optional_subj
+                data=set(optional_subj)
             )
             return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
