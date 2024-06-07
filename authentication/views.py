@@ -813,13 +813,13 @@ class TeacherCurriculumSectionListView(APIView):
             curriculum = request.query_params.get("curriculum")
             classes = request.query_params.get("class_name")
             section_list = StudentUser.objects.filter(user__school_id=request.user.school_id, curriculum=curriculum,
-                                                      class_enrolled=classes).values_list('section', flat=True).distinct()
+                                                      class_enrolled=classes).values_list('section', flat=True)
             # serializer = CurriculumSectionListSerializer(section_list, many=True)
             # class_names = [item['section'] for item in serializer.data]
             response_data = create_response_data(
                 status=status.HTTP_200_OK,
                 message=CurriculumMessage.SECTION_LIST_MESSAGE,
-                data=list(section_list)
+                data=set(list(section.upper() for section in section_list))
             )
             return Response(response_data, status=status.HTTP_200_OK)
 
@@ -877,9 +877,10 @@ class TeacherCurriculumSubjectListView(APIView):
             primary_subject = [item['primary_subject'] for item in serializer.data]
             optional_subject = [item['optional_subject'] for item in serializer.data]
             subject_list = primary_subject+optional_subject
+            subjects = [subjects.title() for subjects in subject_list]
             # flat_subjects = [subject for sublist in subject_list for subject in sublist]
             data = {
-                "subject": subject_list,
+                "subject": set(subjects),
             }
             response_data = create_response_data(
                 status=status.HTTP_200_OK,
