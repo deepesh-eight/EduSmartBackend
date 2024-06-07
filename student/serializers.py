@@ -58,6 +58,8 @@ class StudentDetailSerializer(serializers.ModelSerializer):
     subjects = serializers.SerializerMethodField()
     bus_number = serializers.SerializerMethodField()
     bus_route = serializers.SerializerMethodField()
+    bus_id = serializers.SerializerMethodField()
+    bus_route_id = serializers.SerializerMethodField()
     # optional_subjects = serializers.SerializerMethodField()
 
     class Meta:
@@ -65,7 +67,7 @@ class StudentDetailSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'image', 'class_enrolled', 'section', 'admission_date', 'dob', 'gender', 'religion', 'blood_group',
                   'school_fee','bus_fee', 'canteen_fee', 'other_fee', 'due_fee', 'total_fee', 'father_name', 'father_phone_number',
                   'father_occupation', 'mother_name', 'mother_phone_number', 'mother_occupation', 'email', 'permanent_address', 'curriculum',
-                   'subjects', 'bus_number', 'bus_route', 'enrollment_no', 'roll_no', 'optional_subject', 'guardian_no', 'current_address']
+                   'subjects', 'bus_number', 'bus_id', 'bus_route', 'bus_route_id', 'enrollment_no', 'roll_no', 'optional_subject', 'guardian_no', 'current_address']
 
 
     def get_curriculum(self,obj):
@@ -102,6 +104,20 @@ class StudentDetailSerializer(serializers.ModelSerializer):
         route_data = Route.objects.get(id=obj.bus_route.id)
         if route_data:
             return route_data.name
+
+    def get_bus_id(self, obj):
+        bus = Bus.objects.get(id=obj.bus_number.id)
+        if bus:
+            return bus.id
+        else:
+            None
+
+    def get_bus_route_id(self, obj):
+        route = Route.objects.get(id=obj.bus_route.id)
+        if route:
+            return route.id
+        else:
+            None
 
     # def get_optional_subjects(self, obj):
     #     try:
