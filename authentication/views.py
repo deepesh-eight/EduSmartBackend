@@ -992,6 +992,13 @@ class TeacherDayReviewListView(APIView):
                 'count': len(serializers.data),
                 'message': DayReviewMessage.DAY_REVIEW_LIST_FETCHED_SUCCESSFULLY,
                 'data': serializers.data,
+                'pagination': {
+                    'page_size': paginator.page_size,
+                    'next': paginator.get_next_link(),
+                    'previous': paginator.get_previous_link(),
+                    'total_pages': paginator.page.paginator.num_pages,
+                    'current_page': paginator.page.number,
+                }
             }
             return Response(response_data, status=status.HTTP_200_OK)
 
@@ -1255,6 +1262,7 @@ class UndeclaredTimetableView(APIView):
     This class is used to fetch the list of the undeclared timetable.
     """
     permission_classes = [IsTeacherUser, IsInSameSchool]
+    pagination_class = CustomPagination
 
     def get(self, request):
         try:
@@ -1263,12 +1271,24 @@ class UndeclaredTimetableView(APIView):
             data = TimeTable. objects.filter(status=0, school_id=request.user.school_id,class_name=teacher.class_subject_section_details[0].get("class"),
                                             curriculum=teacher.class_subject_section_details[0].get("curriculum"),
                                             class_section=teacher.class_subject_section_details[0].get("section")).order_by('-id')
-            serializer = TimeTableListSerializer(data, many=True)
-            response_data = create_response_data(
-                    status=status.HTTP_200_OK,
-                    message=TimeTableMessage.UNDECLARED_TIMETABLE_FETCHED_SUCCESSFULLY,
-                    data=serializer.data,
-                )
+
+            paginator = self.pagination_class()
+            paginated_queryset = paginator.paginate_queryset(data, request)
+
+            serializer = TimeTableListSerializer(paginated_queryset, many=True)
+            response_data = {
+                    "status": status.HTTP_200_OK,
+                    'count': len(serializer.data),
+                    "message": TimeTableMessage.UNDECLARED_TIMETABLE_FETCHED_SUCCESSFULLY,
+                    "data": serializer.data,
+                    'pagination': {
+                        'page_size': paginator.page_size,
+                        'next': paginator.get_next_link(),
+                        'previous': paginator.get_previous_link(),
+                        'total_pages': paginator.page.paginator.num_pages,
+                        'current_page': paginator.page.number,
+                    }
+            }
             return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
             response_data = create_response_data(
@@ -1284,16 +1304,29 @@ class DeclaredTimetableView(APIView):
     This class is used to fetch the list of the declared timetable.
     """
     permission_classes = [IsTeacherUser, IsInSameSchool]
+    pagination_class = CustomPagination
 
     def get(self, request):
         try:
             data = TimeTable.objects.filter(status=1, school_id=request.user.school_id).order_by('-id')
-            serializer = TimeTableListSerializer(data, many=True)
-            response_data = create_response_data(
-                    status=status.HTTP_200_OK,
-                    message=TimeTableMessage.DECLARED_TIMETABLE_FETCHED_SUCCESSFULLY,
-                    data=serializer.data,
-                )
+            # Paginate the queryset
+            paginator = self.pagination_class()
+            paginated_queryset = paginator.paginate_queryset(data, request)
+
+            serializer = TimeTableListSerializer(paginated_queryset, many=True)
+            response_data = {
+                'status': status.HTTP_200_OK,
+                'count': len(serializer.data),
+                'message': UserResponseMessage.USER_LIST_MESSAGE,
+                'data': serializer.data,
+                'pagination': {
+                    'page_size': paginator.page_size,
+                    'next': paginator.get_next_link(),
+                    'previous': paginator.get_previous_link(),
+                    'total_pages': paginator.page.paginator.num_pages,
+                    'current_page': paginator.page.number,
+                }
+            }
             return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
             response_data = create_response_data(
@@ -1755,16 +1788,29 @@ class StudyMaterialListView(APIView):
     This class is used to fetch list of study material.
     """
     permission_classes = [IsTeacherUser, IsInSameSchool]
+    pagination_class = CustomPagination
 
     def get(self, request):
         try:
             data = StudentMaterial.objects.filter(school_id=request.user.school_id)
-            serializer = StudyMaterialListSerializer(data, many=True)
-            response_data = create_response_data(
-                            status=status.HTTP_200_OK,
-                            message=StudyMaterialMessage.STUDY_MATERIAL_FETCHED_SUCCESSFULLY,
-                            data=serializer.data
-                            )
+            # Paginate the queryset
+            paginator = self.pagination_class()
+            paginated_queryset = paginator.paginate_queryset(data, request)
+
+            serializer = StudyMaterialListSerializer(paginated_queryset, many=True)
+            response_data = {
+                'status': status.HTTP_200_OK,
+                'count': len(serializer.data),
+                'message': UserResponseMessage.USER_LIST_MESSAGE,
+                'data': serializer.data,
+                'pagination': {
+                    'page_size': paginator.page_size,
+                    'next': paginator.get_next_link(),
+                    'previous': paginator.get_previous_link(),
+                    'total_pages': paginator.page.paginator.num_pages,
+                    'current_page': paginator.page.number,
+                }
+            }
             return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
             response_data = create_response_data(
