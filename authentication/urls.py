@@ -113,7 +113,7 @@ urlpatterns = [
     path('event/list/', EventListView.as_view(), name='event_list'),
     path('event/detail/<int:pk>/', EventDetailView.as_view(), name='event_detail'),
     path('event/delete/<int:pk>/', EventDeleteView.as_view(), name='event_delete'),
-
+    path('event/dashboard/list/', EventDashboardListView.as_view(), name='dashboard_event_list'),
     # TimeTable API for dashboard
     path('exam/schedule/list/', ExamScheduleListView.as_view(), name='exam_schedule_list'),
     path('exam/schedule/detail/', ExamScheduleDetailView.as_view(), name='exam_schedule_detail'),
