@@ -1,6 +1,7 @@
 import datetime
 import re
 
+from django.core.validators import RegexValidator
 from rest_framework import serializers
 
 from EduSmart import settings
@@ -23,10 +24,24 @@ class StudentUserSignupSerializer(serializers.Serializer):
     dob = serializers.DateField(required=True)
     image = serializers.ImageField(required=False, default='')
     father_name = serializers.CharField(required=False, default='')
-    father_phone_number = serializers.CharField(required=False, default='')
+    father_phone_number = serializers.CharField(
+        validators=[
+            RegexValidator(
+                regex=r'^\d{10}$',
+                message="Phone number must be exactly 10 digits."
+            )
+        ]
+    )
     mother_name = serializers.CharField(required=False, default='')
     mother_occupation = serializers.CharField(required=False, default='')
-    mother_phone_number = serializers.CharField(required=False, default='')
+    mother_phone_number = serializers.CharField(
+        validators=[
+            RegexValidator(
+                regex=r'^\d{10}$',
+                message="Phone number must be exactly 10 digits."
+            )
+        ]
+    )
     gender = serializers.CharField(required=True)
     father_occupation = serializers.CharField(required=False, default='')
     admission_date = serializers.DateField(required=True)

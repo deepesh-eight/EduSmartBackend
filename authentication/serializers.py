@@ -1,3 +1,4 @@
+from django.core.validators import RegexValidator
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
@@ -115,7 +116,14 @@ class StaffSignupSerializer(serializers.Serializer):
     name = serializers.CharField(required=True)
     email = serializers.EmailField(required=True)
     password = serializers.CharField(required=True)
-    phone = serializers.CharField(required=True)
+    phone = serializers.CharField(
+        validators=[
+            RegexValidator(
+                regex=r'^\d{10}$',
+                message="Phone number must be exactly 10 digits."
+            )
+        ]
+    )
     user_type = serializers.ChoiceField(
         choices=USER_TYPE_CHOICES
     )
@@ -131,7 +139,14 @@ class NonTeachingStaffSerializers(serializers.Serializer):
     blood_group = serializers.CharField(required=False)
     religion = serializers.CharField(required=True)
     email = serializers.EmailField(required=True)
-    phone = serializers.CharField(required=True)
+    phone = serializers.CharField(
+        validators=[
+            RegexValidator(
+                regex=r'^\d{10}$',
+                message="Phone number must be exactly 10 digits."
+            )
+        ]
+    )
     user_type = serializers.ChoiceField(
         choices=USER_TYPE_CHOICES
     )

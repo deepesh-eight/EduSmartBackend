@@ -4,6 +4,7 @@ import json
 
 import pytz
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.core.validators import RegexValidator
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
@@ -34,7 +35,14 @@ class CertificateSerializer(serializers.ModelSerializer):
 class TeacherUserSignupSerializer(serializers.Serializer):
     full_name = serializers.CharField(required=True)
     email = serializers.EmailField(required=True)
-    phone = serializers.CharField(required=True)
+    phone = serializers.CharField(
+        validators=[
+            RegexValidator(
+                regex=r'^\d{10}$',
+                message="Phone number must be exactly 10 digits."
+            )
+        ]
+    )
     user_type = serializers.ChoiceField(
         choices=USER_TYPE_CHOICES
     )
