@@ -973,7 +973,7 @@ class TeacherDayReviewListView(APIView):
     pagination_class = CustomPagination
 
     def get(self, request):
-        queryset = DayReview.objects.all()
+        queryset = DayReview.objects.filter(school_id=request.user.school_id).order_by('-id')
         paginator = self.pagination_class()
         paginated_queryset = paginator.paginate_queryset(queryset, request)
 
