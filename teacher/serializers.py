@@ -783,7 +783,7 @@ class TimeTableListSerializer(serializers.ModelSerializer):
     exam_end_date = serializers.SerializerMethodField()
     class Meta:
         model = TimeTable
-        fields = ['id', 'class_name', 'class_section', 'exam_type', 'exam_start_date', 'exam_end_date']
+        fields = ['id', 'class_name', 'curriculum', 'class_section', 'exam_type', 'exam_start_date', 'exam_end_date']
 
     def get_exam_start_date(self, obj):
         more_subjects = obj.more_subject

@@ -1309,6 +1309,17 @@ class DeclaredTimetableView(APIView):
     def get(self, request):
         try:
             data = TimeTable.objects.filter(status=1, school_id=request.user.school_id).order_by('-id')
+
+            if request.query_params:
+                class_name = request.query_params.get('class', None)
+                section = request.query_params.get("section", None)
+                curriculum = request.query_params.get('curriculum', None)
+                if curriculum:
+                    data = data.filter(curriculum__icontains=curriculum)
+                if curriculum and class_name:
+                    data = data.filter(curriculum__icontains=curriculum, class_name__icontains=class_name)
+                if curriculum and class_name and section:
+                    data = data.filter(curriculum__icontains=curriculum, class_name__icontains=class_name, class_section__icontains=section)
             # Paginate the queryset
             paginator = self.pagination_class()
             paginated_queryset = paginator.paginate_queryset(data, request)
