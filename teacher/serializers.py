@@ -20,15 +20,23 @@ from superadmin.models import Announcement
 
 class CertificateSerializer(serializers.ModelSerializer):
     certificate_file = serializers.SerializerMethodField()
+    certificate_name = serializers.SerializerMethodField()
+
     class Meta:
         model = Certificate
-        fields = ['certificate_file']
+        fields = ['certificate_file', 'certificate_name']
 
     def get_certificate_file(self, obj):
         # Assuming 'image' field stores the file path or URL
         if obj.certificate_file:
             # Assuming media URL is configured in settings
             return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.certificate_file)}'
+        return None
+
+    def get_certificate_name(self, obj):
+        if obj.certificate_file:
+            # Assuming media URL is configured in settings
+            return str(obj.certificate_file)
         return None
 
 
