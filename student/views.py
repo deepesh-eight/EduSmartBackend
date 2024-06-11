@@ -876,6 +876,7 @@ class StudentStudyMaterialListView(APIView):
     This class is used to fetch list of study material.
     """
     permission_classes = [IsStudentUser, IsInSameSchool]
+    pagination_class = CustomPagination
 
     def get(self, request):
         try:
@@ -884,12 +885,30 @@ class StudentStudyMaterialListView(APIView):
             data = StudentMaterial.objects.filter(school_id=user.school_id, curriculum=student_data.curriculum,
                                                   class_name=student_data.class_enrolled,
                                                   section=student_data.section)
-            serializer = StudentStudyMaterialListSerializer(data, many=True)
-            response_data = create_response_data(
-                            status=status.HTTP_200_OK,
-                            message=StudyMaterialMessage.STUDY_MATERIAL_FETCHED_SUCCESSFULLY,
-                            data=serializer.data
-                            )
+            if self.request.query_params:
+                search = self.request.query_params.get('search', None)
+                if search is not None:
+                    data = data.filter(Q(content_type__icontains=search) | Q(subject__icontains=search) | Q(curriculum__icontains=search) | Q
+                    (class_name__icontains=search) | Q(subject__icontains=search) | Q(section__icontains=search) | Q(title__icontains=search) | Q(discription__icontains=search))
+
+            # Paginate the queryset
+            paginator = self.pagination_class()
+            paginated_queryset = paginator.paginate_queryset(data, request)
+
+            serializer = StudentStudyMaterialListSerializer(paginated_queryset, many=True)
+            response_data = {
+                'status': status.HTTP_200_OK,
+                'count': len(serializer.data),
+                'message': UserResponseMessage.USER_LIST_MESSAGE,
+                'data': serializer.data,
+                'pagination': {
+                    'page_size': paginator.page_size,
+                    'next': paginator.get_next_link(),
+                    'previous': paginator.get_previous_link(),
+                    'total_pages': paginator.page.paginator.num_pages,
+                    'current_page': paginator.page.number,
+                }
+            }
             return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
             response_data = create_response_data(
