@@ -30,7 +30,8 @@ from student.serializers import StudentUserSignupSerializer, StudentDetailSerial
     AdminClassListSerializer, AdminOptionalSubjectListSerializer, StudentAttendanceSerializer, \
     StudentTimeTableListSerializer, StudentReportCardListSerializer, StudentStudyMaterialListSerializer, \
     StudentZoomLinkSerializer, StudentContentListSerializer, StudentClassEventListSerializer, \
-    StudentDayReviewDetailSerializer, ConnectWithTeacherSerializer, StudentSubjectListSerializer, ChatHistorySerializer
+    StudentDayReviewDetailSerializer, ConnectWithTeacherSerializer, StudentSubjectListSerializer, ChatHistorySerializer, \
+    StudentUserAttendanceListSerializer
 from utils import create_response_data, create_response_list_data, get_student_total_attendance, \
     get_student_total_absent, get_student_attendence_percentage, generate_random_password
 from pytz import timezone as pytz_timezone
@@ -1008,7 +1009,7 @@ class StudentEBookListView(APIView):
                 if content_type is not None:
                     content_data = content_data.filter(content_type=content_type)
                 if is_recommended is not None:
-                    content_data = content_data.filter(is_recommended=is_recommended)
+                    content_data = content_data.filter(is_recommended=is_recommended, school_id=self.request.user.school_id)
 
                 paginator = self.pagination_class()
                 paginated_queryset = paginator.paginate_queryset(content_data, request)
@@ -1386,3 +1387,70 @@ class ChatHistoryView(APIView):
                 data={}
             )
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+
+class FetchStudentAttendanceView(APIView):
+    """
+    This class is used to fetch attendance list of student according to provided month
+    """
+    permission_classes = [IsStudentUser, IsInSameSchool]
+    pagination_class = CustomPagination
+
+    def get(self, request):
+        try:
+            user = request.user
+            student = StudentUser.objects.get(user=user.id)
+            month = request.query_params.get('month', None)
+
+            if month:
+                month = int(month)
+                current_year = datetime.date.today().year
+
+                _, last_day = calendar.monthrange(current_year, month)
+                start_date = datetime.date(current_year, month, 1)
+                end_date = datetime.date(current_year, month, last_day)
+                all_days = [start_date + datetime.timedelta(days=day) for day in
+                            range((end_date - start_date).days + 1)]
+
+                attendance_records = StudentAttendence.objects.filter(student_id=student.id,
+                                                                      date__range=[start_date, end_date],
+                                                                      student__user__school_id=request.user.school_id)
+
+                attendance_dict = {record.date: record for record in attendance_records}
+
+                attendance_record = []
+                for day in all_days:
+                    if day in attendance_dict:
+                        attendance = attendance_dict[day]
+                        attendance_record.append({
+                            "date": day,
+                            "day": day.strftime("%A"),
+                            "mark_attendence": StudentUserAttendanceListSerializer(attendance).data.get('mark_attendence')
+                        })
+                    else:
+                        # Attendance not marked for this day
+                        attendance_record.append({
+                            "date": day,
+                            "day": day.strftime("%A"),
+                            "mark_attendence": None
+                        })
+                response_data = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=AttendenceMarkedMessage.ATTENDANCE_FETCHED_SUCCESSFULLY,
+                    data=attendance_record,
+                )
+                return Response(response_data, status=status.HTTP_200_OK)
+            else:
+                response_data = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message="Please provide month.",
+                    data={},
+                )
+                return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=str(e),
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)

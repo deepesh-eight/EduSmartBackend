@@ -586,3 +586,14 @@ class ChatHistorySerializer(serializers.ModelSerializer):
             return teacher_name.full_name
         else:
             None
+
+
+class StudentUserAttendanceListSerializer(serializers.ModelSerializer):
+    day = serializers.SerializerMethodField()
+
+    class Meta:
+        model = StudentAttendence
+        fields = ['date', 'mark_attendence', 'day']
+
+    def get_day(self, obj):
+        return obj.date.strftime('%A')

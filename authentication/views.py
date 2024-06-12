@@ -2107,7 +2107,7 @@ class AdminBookContentList(APIView):
                 if content_type is not None:
                     content_data = content_data.filter(content_type=content_type)
                 if is_recommended is not None:
-                    content_data = content_data.filter(is_recommended=is_recommended)
+                    content_data = content_data.filter(is_recommended=is_recommended, school_id=self.request.user.school_id)
 
                 paginator = self.pagination_class()
                 paginated_queryset = paginator.paginate_queryset(content_data, request)

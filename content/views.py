@@ -76,7 +76,7 @@ class ContentListView(generics.ListAPIView):
         if content_type is not None:
             queryset = queryset.filter(content_type=content_type)
         if is_recommended is not None:
-            queryset = queryset.filter(is_recommended=is_recommended)
+            queryset = queryset.filter(is_recommended=is_recommended, school_id=self.request.user.school_id)
         return queryset
 
     def list(self, request, *args, **kwargs):

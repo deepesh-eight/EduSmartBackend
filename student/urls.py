@@ -48,4 +48,7 @@ urlpatterns = [
         path('subject/list/', StudentSubjectListView.as_view(), name='student_subject_list'),
         path('availability/time/list/', AvailabilityTimeListView.as_view(), name='availability_time_list'),
         path('chat/history/', ChatHistoryView.as_view(), name='chat_history'),
+
+        # Student Mobile Attendance
+        path('attendance/', FetchStudentAttendanceView.as_view(), name='fetch_student_attendance'),
 ]
