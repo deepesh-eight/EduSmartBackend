@@ -1,4 +1,5 @@
 from django.contrib.auth.hashers import make_password
+from django.core.validators import RegexValidator
 from rest_framework import serializers
 
 from EduSmart import settings
@@ -20,7 +21,14 @@ class SchoolCreateSerializer(serializers.Serializer):
     established_year = serializers.IntegerField(default='')
     school_type = serializers.CharField(max_length=255, default='')
     principle_name = serializers.CharField(max_length=255, default='')
-    contact_no = serializers.CharField(max_length=255, default='')
+    contact_no = serializers.CharField(
+        validators=[
+            RegexValidator(
+                regex=r'^\d{10}$',
+                message="Contact number must be exactly 10 digits."
+            )
+        ]
+    )
     email = serializers.CharField(max_length=255, default='')
     school_website = serializers.URLField(default='')
     school_id = serializers.CharField(max_length=255, default='')
@@ -61,6 +69,14 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 
 
 class SchoolProfileUpdateSerializer(serializers.ModelSerializer):
+    contact_no = serializers.CharField(
+        validators=[
+            RegexValidator(
+                regex=r'^\d{10}$',
+                message="Contact number must be exactly 10 digits."
+            )
+        ]
+    )
     email = serializers.CharField(write_only=True)
     school_id = serializers.CharField(write_only=True)
     principle_name = serializers.CharField(max_length=255)
