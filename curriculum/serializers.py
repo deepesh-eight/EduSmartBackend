@@ -29,6 +29,8 @@ class CurriculumSubjectsSerializer(serializers.ModelSerializer):
 
 
 class CurriculumSerializer(serializers.ModelSerializer):
+    curriculum_name = serializers.CharField(required=True)
+    class_name = serializers.CharField(required=True)
     primary_subject = serializers.ListField(child=serializers.CharField(), required=False)
     optional_subject = serializers.ListField(child=serializers.CharField(), required=False)
 
@@ -60,7 +62,9 @@ class CurriculumSerializer(serializers.ModelSerializer):
         curriculum_name = data.get('curriculum_name')
         class_name = data.get('select_class')
 
-        if Curriculum.objects.filter(curriculum_name=curriculum_name, select_class=class_name).exists():
+        data['curriculum_name'] = data['curriculum_name'].upper()
+        data['class_name'] = data['class_name'].upper()
+        if Curriculum.objects.filter(curriculum_name=data['curriculum_name'], select_class=data['class_name']).exists():
             raise serializers.ValidationError(
                 f"A curriculum with name {curriculum_name} and class {class_name} already exists.")
 

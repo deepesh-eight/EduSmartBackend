@@ -325,10 +325,11 @@ class CurriculumsubjectListView(APIView):
             subject = Subjects.objects.filter(curriculum_id=curriculum_id.id)
             serializer = SuperAdminCurriculumSubjectList(subject, many=True)
             subjects = [item['primary_subject'] for item in serializer.data]
+            subject_list = [subjects.title() for subjects in subjects]
             response_data = create_response_data(
                 status=status.HTTP_200_OK,
                 message=CurriculumMessage.SUBJECT_LIST_MESSAGE,
-                data=subjects
+                data=set(subject_list)
             )
             return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
@@ -354,10 +355,11 @@ class CurriculumOptionalsubjectListView(APIView):
             subject = Subjects.objects.filter(curriculum_id=curriculum_id.id)
             serializer = SuperAdminCurriculumOptionalSubjectList(subject, many=True)
             optional_subj = [item['optional_subject'] for item in serializer.data]
+            subject_list = [subjects.title() for subjects in optional_subj]
             response_data = create_response_data(
                 status=status.HTTP_200_OK,
                 message=CurriculumMessage.SUBJECT_LIST_MESSAGE,
-                data=optional_subj
+                data=set(subject_list)
             )
             return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
