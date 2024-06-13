@@ -15,6 +15,7 @@ from rest_framework_simplejwt.exceptions import AuthenticationFailed, TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils.dateparse import parse_date
 
+from EduSmart import settings
 from authentication.models import User, AddressDetails, ErrorLogging, Certificate, StaffUser, StaffAttendence, \
     TeacherUser, StudentUser, TeachersSchedule, DayReview, TeacherAttendence, Notification, TimeTable, EventsCalender, \
     ClassEvent, ClassEventImage, EventImage
@@ -474,7 +475,8 @@ class NonTeachingStaffUpdateView(APIView):
         try:
             files_data = []
             certificate_files = request.data.getlist('certificate_files')
-
+            staff_data = StaffUser.objects.get(id=pk, user__school_id=request.user.school_id)
+            # image = staff_data.get('image')
             for file in certificate_files:
                 files_data.append(file)
             data = {
@@ -483,7 +485,7 @@ class NonTeachingStaffUpdateView(APIView):
                 'first_name': request.data.get('first_name'),
                 'last_name': request.data.get('last_name'),
                 'dob': request.data.get('dob'),
-                'image': request.data.get('image'),
+                'image': request.data.get('image') if 'image' in request.data and request.data.get('image') else str(staff_data.image),
                 'gender': request.data.get('gender'),
                 'joining_date': request.data.get('joining_date'),
                 'religion': request.data.get('religion'),
