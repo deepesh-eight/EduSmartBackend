@@ -648,7 +648,7 @@ class ExamScheduleDetailSerializer(serializers.ModelSerializer):
         fields = ['class_name', 'class_teacher', 'class_section', 'exam_type', 'more_subject']
 
     def get_class_teacher(self, obj):
-        teacher = TeacherUser.objects.get(role='class_teacher', class_subject_section_details__0__curriculum=obj.curriculum, class_subject_section_details__0__class=obj.class_name,
+        teacher = TeacherUser.objects.get(role='class teacher', class_subject_section_details__0__curriculum=obj.curriculum, class_subject_section_details__0__class=obj.class_name,
                                              class_subject_section_details__0__section=obj.class_section)
         if teacher:
             return teacher.full_name

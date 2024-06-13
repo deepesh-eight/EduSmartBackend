@@ -137,7 +137,7 @@ class TeacherDetailSerializer(serializers.ModelSerializer):
         return serializer.data
 
     def get_class_teacher(self, obj):
-        if obj.role == 'class_teacher':
+        if obj.role == 'class teacher':
             class_teacher = obj.class_subject_section_details[0]
             return class_teacher
         return None
@@ -468,13 +468,13 @@ class TeacherAttendanceListSerializer(serializers.ModelSerializer):
         fields = ['full_name', 'id', 'class_teacher', 'subject', 'section']
 
     def get_class_teacher(self, obj):
-        return f"{obj.class_subject_section_details[0].get('class')} class" if obj.role == 'class_teacher' else None
+        return f"{obj.class_subject_section_details[0].get('class')} class" if obj.role == 'class teacher' else None
 
     def get_subject(self, obj):
-        return obj.class_subject_section_details[0].get("subject") if obj.role == 'class_teacher' else None
+        return obj.class_subject_section_details[0].get("subject") if obj.role == 'class teacher' else None
 
     def get_section(self, obj):
-        return obj.class_subject_section_details[0].get("section") if obj.role == 'class_teacher' else None
+        return obj.class_subject_section_details[0].get("section") if obj.role == 'class teacher' else None
 
 
 class TeacherAttendanceFilterListSerializer(serializers.ModelSerializer):
@@ -566,7 +566,7 @@ class TeacherUserProfileSerializer(serializers.ModelSerializer):
         return serializer.data
 
     def get_class_teacher(self, obj):
-        if obj.role == 'class_teacher':
+        if obj.role == 'class teacher':
             class_teacher = obj.class_subject_section_details[0]
             return class_teacher
         return None

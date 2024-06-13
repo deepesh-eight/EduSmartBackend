@@ -690,9 +690,9 @@ class FetchAttendanceDetailView(APIView):
                     data={
                         "teacher_name": teacher.full_name,
                         "teacher_id": teacher.id,
-                        "class_teacher": f"{teacher.class_subject_section_details[0].get('class')} class" if teacher.role == 'class_teacher' else None,
-                        "class_section": teacher.class_subject_section_details[0].get('section') if teacher.role == 'class_teacher' else None,
-                        "subject": teacher.class_subject_section_details[0].get('subject') if teacher.role == 'class_teacher' else None,
+                        "class_teacher": f"{teacher.class_subject_section_details[0].get('class')} class" if teacher.role == 'class teacher' else None,
+                        "class_section": teacher.class_subject_section_details[0].get('section') if teacher.role == 'class teacher' else None,
+                        "subject": teacher.class_subject_section_details[0].get('subject') if teacher.role == 'class teacher' else None,
                         "total_attendance": get_teacher_total_attendance(data),
                         "monthly_attendance": get_teacher_monthly_attendance(data),
                         "total_absent": get_teacher_total_absent(data),

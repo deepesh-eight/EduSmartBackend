@@ -57,7 +57,7 @@ SUBJECT_CHOICES = [
 ]
 ROLE_CHOICES = [
     ("teacher", "teacher"),
-    ("class_teacher", "class_teacher")
+    ("class teacher", "class teacher")
 ]
 
 ATTENDENCE_CHOICE = [
