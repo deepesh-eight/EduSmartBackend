@@ -59,10 +59,11 @@ class BusDetailSerializer(serializers.ModelSerializer):
     operator_email = serializers.SerializerMethodField()
     bus_image = serializers.SerializerMethodField()
     bus_route_name = serializers.SerializerMethodField()
+    main_route = serializers.SerializerMethodField()
     alternate_route_name = serializers.SerializerMethodField()
     class Meta:
         model = Bus
-        fields = ['id', 'driver_name', 'driver_id', 'driver_gender', 'driver_no', 'operator_id', 'operator_name', 'operator_gender', 'operator_no', 'operator_email', 'bus_image', 'bus_number', 'bus_capacity', 'bus_route', 'bus_route_name', 'alternate_route', 'alternate_route_name']
+        fields = ['id', 'driver_name', 'driver_id', 'driver_gender', 'driver_no', 'operator_id', 'operator_name', 'operator_gender', 'operator_no', 'operator_email', 'bus_image', 'bus_number', 'bus_capacity', 'bus_route', 'bus_route_name', 'main_route', 'alternate_route', 'alternate_route_name']
 
     def get_driver_id(self, obj):
         driver_id = StaffUser.objects.get(id=obj.driver_name.id)
@@ -150,6 +151,10 @@ class BusDetailSerializer(serializers.ModelSerializer):
         for stop in stops:
             stop_name.append(stop.name)
         return stop_name
+
+    def get_main_route(self, obj):
+        route = Route.objects.get(id=obj.bus_route.id)
+        return route.name
 
 
 class RouteListSerializer(serializers.ModelSerializer):
