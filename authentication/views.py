@@ -1806,6 +1806,13 @@ class StudyMaterialListView(APIView):
     def get(self, request):
         try:
             data = StudentMaterial.objects.filter(school_id=request.user.school_id)
+            if self.request.query_params:
+                search = self.request.query_params.get('search', None)
+                if search is not None:
+                    data = data.filter(Q(content_type__icontains=search) | Q(subject__icontains=search) | Q(curriculum__icontains=search) | Q
+                    (class_name__icontains=search) | Q(section__icontains=search) | Q(title__icontains=search) | Q(discription__icontains=search))
+
+
             # Paginate the queryset
             paginator = self.pagination_class()
             paginated_queryset = paginator.paginate_queryset(data, request)
