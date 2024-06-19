@@ -312,7 +312,7 @@ class UserLoginView(APIView):
             password = serializer.validated_data['password']
 
             try:
-                user = User.objects.get(email=email)
+                user = User.objects.get(email=email, is_active=True)
             except User.DoesNotExist:
                 response = create_response_data(
                     status=status.HTTP_400_BAD_REQUEST,
