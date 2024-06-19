@@ -196,7 +196,7 @@ class StudentUser(models.Model):
     bus_number = models.ForeignKey('bus.Bus', on_delete=models.CASCADE, null=True, blank=True)
     bus_route = models.ForeignKey('bus.Route', on_delete=models.CASCADE, null=True, blank=True)
     enrollment_no = models.CharField(max_length=255, null=True, blank=True)
-    roll_no = models.CharField(max_length=255, null=True, blank=True)
+    roll_no = models.CharField(max_length=255, blank=True, null=True, unique=True)
     guardian_no = models.CharField(max_length=255, null=True, blank=True)
     optional_subject = models.CharField(max_length=255, null=True, blank=True)
     current_address = models.TextField(blank=True, null=True)
