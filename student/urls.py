@@ -51,4 +51,7 @@ urlpatterns = [
 
         # Student Mobile Attendance
         path('attendance/', FetchStudentAttendanceView.as_view(), name='fetch_student_attendance'),
+
+        # Student daily schedule
+        path('schedule/', StudentScheduleView.as_view(), name='student_schedule'),
 ]

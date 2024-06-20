@@ -1454,3 +1454,62 @@ class FetchStudentAttendanceView(APIView):
                 data={},
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class StudentScheduleView(APIView):
+    """
+    This class is used to fetch list of the student classes schedule.
+    """
+    permission_classes = [IsStudentUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            current_date_time_ist = timezone.localtime(timezone.now(), pytz_timezone('Asia/Kolkata'))
+            current_date = current_date_time_ist.date()
+
+            student = StudentUser.objects.get(user__school_id=request.user.school_id, user=request.user.id)
+            curriculum = Curriculum.objects.get(curriculum_name=student.curriculum, select_class=student.class_enrolled)
+            subject_data = Subjects.objects.filter(curriculum_id=curriculum.id)
+            subjects = []
+            for subject in subject_data:
+                subjects.append(subject.primary_subject)
+
+            schedule = TeachersSchedule.objects.filter(school_id=request.user.school_id, start_date__lte=current_date,
+                                                       end_date__gte=current_date,)
+            matching_schedules = []
+            for schedule in schedule:
+                for entry in schedule.schedule_data:
+                    if (
+                            entry.get('curriculum') == student.curriculum and
+                            entry.get('class') == student.class_enrolled and
+                            (entry.get('subject') in subjects or
+                            entry.get('subject') in student.optional_subject) and
+                            current_date.strftime("%a") in entry.get('select_days', [])
+                    ):
+                        matching_schedules.append({
+                            "teacher": schedule.teacher.full_name,
+                            "schedule_id": schedule.id,
+                            "class": entry.get('class'),
+                            "section": entry.get('section'),
+                            "subject": entry.get('subject'),
+                            "curriculum": entry.get('curriculum'),
+                            "day": current_date.strftime("%a"),
+                            "class_timing": entry.get('class_timing'),
+                            "lecture_type": entry.get('lecture_type'),
+                            "class_duration": entry.get('class_duration')
+                        })
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=ScheduleMessage.SCHEDULE_FETCHED_SUCCESSFULLY,
+                data=matching_schedules,
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=str(e),
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
