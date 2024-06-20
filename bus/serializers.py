@@ -160,9 +160,10 @@ class BusDetailSerializer(serializers.ModelSerializer):
 class RouteListSerializer(serializers.ModelSerializer):
     stop_name = serializers.SerializerMethodField()
     stop_time = serializers.SerializerMethodField()
+    stop = serializers.SerializerMethodField()
     class Meta:
         model = Route
-        fields = ['id','name', 'stop_name', 'stop_time']
+        fields = ['id','name', 'stop_name', 'stop_time', 'stop']
 
     def get_stop_name(self, obj):
         stop = Stop.objects.filter(route=obj)
@@ -183,6 +184,17 @@ class RouteListSerializer(serializers.ModelSerializer):
             return stops_time
         else:
             None
+
+    def get_stop(self, obj):
+        stops = Stop.objects.filter(route=obj)
+        stop_list = []
+        for stop in stops:
+            stop_data = {
+                "stop_name": stop.name,
+                "stop_time": stop.time.strftime("%I:%M %p")
+            }
+            stop_list.append(stop_data)
+        return stop_list
 
 
 class BusUpdateSerializer(serializers.ModelSerializer):
