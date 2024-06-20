@@ -180,7 +180,7 @@ class RouteListSerializer(serializers.ModelSerializer):
         stops_time = []
         if stop:
             for stop_name in stop:
-                stops_time.append(stop_name.time)
+                stops_time.append(stop_name.time.strftime("%I:%M %p"))
             return stops_time
         else:
             None
