@@ -172,47 +172,35 @@ class CurriculumUpdateSerializer(serializers.ModelSerializer):
         instance.class_name = validated_data.get('class_name', instance.class_name)
         instance.save()
 
-        # Handle update logic for associated subjects
         subjects_data = validated_data.pop('subjects', [])
-        existing_subjects = Subjects.objects.filter(curriculum_id=instance.id)
 
-        for subject_data, subject_instance in zip(subjects_data, existing_subjects):
-            subject_instance.primary_subject = subject_data.get('primary_subject', subject_instance.primary_subject)
-            subject_instance.optional_subject = subject_data.get('optional_subject', subject_instance.optional_subject)
-            subject_instance.save()
+        Subjects.objects.filter(curriculum_id=instance.id).delete()
+
+        for subject_data in subjects_data:
+            primary_subject = subject_data.get('primary_subject', None)
+            optional_subject = subject_data.get('optional_subject', None)
+
+            Subjects.objects.create(
+                curriculum_id=instance,
+                primary_subject=primary_subject.strip() if primary_subject else None,
+                optional_subject=optional_subject.strip() if optional_subject else None
+            )
 
         return instance
-    # def validate_class_subject(self, value):
-    #     updated_subjects = self.process_subjects(value)
-    #     return updated_subjects
-    #
-    # def validate_optional_subject(self, value):
-    #     updated_subjects = self.process_subjects(value)
-    #     return updated_subjects
-    #
-    # def process_subjects(self, subjects):
-    #     updated_subjects = []
-    #     for subject in subjects:
-    #         # Format subject code
-    #         subject_code = self.generate_subject_code(subject)
-    #         # Format subject name
-    #         formatted_subject = self.format_subject_name(subject)
-    #         updated_subjects.append(subject_code)
-    #     return updated_subjects
-    #
-    # def generate_subject_code(self, subject_code):
-    #     parts = subject_code.split('-')
-    #     if len(parts) == 2:
-    #         code = parts[0]
-    #         subject_name = parts[1]
-    #         if code.isdigit() and len(code) < 3:
-    #             code = code.zfill(3)  # Pad with leading zeros if necessary
-    #             return f"{code}-{self.format_subject_name(subject_name)}"
-    #     return subject_code
-    #
-    # def format_subject_name(self, subject_name):
-    #     # Capitalize first letter of each word in subject name
-    #     return ' '.join(word.capitalize() for word in subject_name.split())
+
+    def validate(self, data):
+        curriculum_name = data.get('curriculum_name')
+        class_name = data.get('class_name')
+
+        data['curriculum_name'] = data['curriculum_name'].upper()
+        data['class_name'] = data['class_name'].upper()
+
+        if CurricullumList.objects.filter(curriculum_name=data['curriculum_name'],
+                                     class_name=data['class_name']).exclude(id=self.instance.id).exists():
+            raise serializers.ValidationError(
+                f"A curriculum with name {curriculum_name} and class {class_name} already exists.")
+
+        return data
 
 
 class CurriculumListSerializer(serializers.ModelSerializer):

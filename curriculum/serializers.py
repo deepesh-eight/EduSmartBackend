@@ -30,7 +30,7 @@ class CurriculumSubjectsSerializer(serializers.ModelSerializer):
 
 class CurriculumSerializer(serializers.ModelSerializer):
     curriculum_name = serializers.CharField(required=True)
-    class_name = serializers.CharField(required=True)
+    # class_name = serializers.CharField(required=True)
     primary_subject = serializers.ListField(child=serializers.CharField(), required=False)
     optional_subject = serializers.ListField(child=serializers.CharField(), required=False)
 
@@ -63,8 +63,8 @@ class CurriculumSerializer(serializers.ModelSerializer):
         class_name = data.get('select_class')
 
         data['curriculum_name'] = data['curriculum_name'].upper()
-        data['class_name'] = data['class_name'].upper()
-        if Curriculum.objects.filter(curriculum_name=data['curriculum_name'], select_class=data['class_name']).exists():
+        data['select_class'] = data['select_class'].upper()
+        if Curriculum.objects.filter(curriculum_name=data['curriculum_name'], select_class=data['select_class']).exists():
             raise serializers.ValidationError(
                 f"A curriculum with name {curriculum_name} and class {class_name} already exists.")
 
@@ -138,7 +138,6 @@ class CurriculumDetailSerializer(serializers.ModelSerializer):
             None
 
 
-
 class CurriculumDetailUpdateSerializer(serializers.ModelSerializer):
     syllabus = ImageFieldStringAndFile(required=False)
     subjects = CurriculumSubjectsSerializer(many=True, required=False)
@@ -148,39 +147,39 @@ class CurriculumDetailUpdateSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         instance.curriculum_name = validated_data.get('curriculum_name', instance.curriculum_name)
-        instance.class_name = validated_data.get('select_class', instance.select_class)
+        instance.select_class = validated_data.get('select_class', instance.select_class)
+        instance.syllabus = validated_data.get('syllabus', instance.syllabus)
+        instance.discription = validated_data.get('discription', instance.discription)
         instance.save()
 
-        # Handle update logic for associated subjects
         subjects_data = validated_data.pop('subjects', [])
-        existing_subjects = Subjects.objects.filter(curriculum_id=instance.id)
 
-        for subject_data, subject_instance in zip(subjects_data, existing_subjects):
-            subject_instance.primary_subject = subject_data.get('primary_subject', subject_instance.primary_subject)
-            subject_instance.optional_subject = subject_data.get('optional_subject', subject_instance.optional_subject)
-            subject_instance.save()
+        Subjects.objects.filter(curriculum_id=instance.id).delete()
+
+        for subject_data in subjects_data:
+            primary_subject = subject_data.get('primary_subject', None)
+            optional_subject = subject_data.get('optional_subject', None)
+
+            Subjects.objects.create(
+                curriculum_id=instance,
+                primary_subject=primary_subject.strip() if primary_subject else None,
+                optional_subject=optional_subject.strip() if optional_subject else None
+            )
 
         return instance
 
-    # def validate_primary_subject(self, value):
-    #     updated_subjects = []
-    #     for subject in value:
-    #         # Convert the first character to uppercase
-    #         subject = subject.capitalize()
-    #         # Convert characters after space to uppercase
-    #         subject = ' '.join(word.capitalize() for word in subject.split(' '))
-    #         updated_subjects.append(subject)
-    #     return updated_subjects
-    #
-    # def validate_optional_subject(self, value):
-    #     updated_subjects = []
-    #     for subject in value:
-    #         # Convert the first character to uppercase
-    #         subject = subject.capitalize()
-    #         # Convert characters after space to uppercase
-    #         subject = ' '.join(word.capitalize() for word in subject.split(' '))
-    #         updated_subjects.append(subject)
-    #     return updated_subjects
+    def validate(self, data):
+        curriculum_name = data.get('curriculum_name')
+        class_name = data.get('select_class')
+
+        data['curriculum_name'] = data['curriculum_name'].upper()
+        data['select_class'] = data['select_class'].upper()
+
+        if Curriculum.objects.filter(curriculum_name=data['curriculum_name'], select_class=data['select_class']).exclude(id=self.instance.id).exists():
+            raise serializers.ValidationError(
+                f"A curriculum with name {curriculum_name} and class {class_name} already exists.")
+
+        return data
 
 class SuperAdminCurriculumClassList(serializers.ModelSerializer):
     class Meta:
