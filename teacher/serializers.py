@@ -645,17 +645,16 @@ class TeacherUserScheduleSerializer(serializers.ModelSerializer):
             else:
                 item['class_time_range'] = None
 
-            # Modify lecture_type field as before
-            alter_nate_day = item.get('alternate_day_lecture', '0')
-            select_day = item.get('select_day_lectures', '0')
-            select_days = item.get('select_days', [])
-            if select_day == '1':
-                lecture_type = f'Selected Day({select_days})'
-            elif alter_nate_day == '1':
-                lecture_type = f'Alternate Day({select_days})'
-            else:
-                lecture_type = "Daily"
-            item['lecture_type'] = lecture_type
+            # alter_nate_day = item.get('alternate_day_lecture', '0')
+            # select_day = item.get('select_day_lectures', '0')
+            # select_days = item.get('select_days', [])
+            # if select_day == '1':
+            #     lecture_type = f'Selected Day({select_days})'
+            # elif alter_nate_day == '1':
+            #     lecture_type = f'Alternate Day({select_days})'
+            # else:
+            #     lecture_type = "Daily"
+            item['lecture_type'] = item.get('lecture_type')
 
             # Remove unnecessary fields
             item.pop('select_day_lecture', None)
