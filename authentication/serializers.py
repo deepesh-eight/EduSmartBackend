@@ -158,6 +158,8 @@ class NonTeachingStaffSerializers(serializers.Serializer):
         child=serializers.FileField(),
         required=False
     )
+    experience = serializers.IntegerField(required=False)
+    highest_qualification = serializers.CharField(max_length=255, required=False)
 
     def validate_certificate_files(self, value):
         if len(value) > 5:
@@ -216,7 +218,7 @@ class NonTeachingStaffDetailSerializers(serializers.ModelSerializer):
     class Meta:
         model = StaffUser
         fields = ['id', 'first_name', 'last_name', 'role', 'phone', 'email', 'image', 'dob', 'gender', 'religion', 'blood_group', 'address', 'joining_date',
-                  'ctc', 'certificates']
+                  'ctc', 'certificates', 'experience', 'highest_qualification']
 
     def get_phone(self, obj):
         phone_number = obj.user.phone
@@ -263,12 +265,14 @@ class NonTeachingStaffProfileSerializers(serializers.ModelSerializer):
         child=serializers.FileField(),
         required=False
     )
+    experience = serializers.IntegerField(required=False)
+    highest_qualification = serializers.CharField(max_length=255, required=False)
 
 
     class Meta:
         model = StaffUser
         fields = ['image', 'first_name', 'last_name', 'gender', 'dob', 'blood_group', 'religion', 'email', 'phone', 'user_type',
-                  'role', 'address', 'address', 'joining_date', 'ctc','certificate_files']
+                  'role', 'address', 'address', 'joining_date', 'ctc','certificate_files', 'experience', 'highest_qualification']
 
     def update(self, instance, validated_data):
         user_data = validated_data.pop('user', {})

@@ -158,6 +158,8 @@ class StaffUser(models.Model):
     address = models.TextField(blank=True, null=True)
     joining_date = models.DateField(auto_now_add=True, null=True, blank=True)
     ctc = models.DecimalField(max_digits=16, decimal_places=2, default=0.0)
+    experience = models.IntegerField(null=True, blank=True)
+    highest_qualification = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self) -> str:
         return f'{self.id}'

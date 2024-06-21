@@ -49,7 +49,7 @@ from teacher.serializers import TeacherDetailSerializer, TeacherProfileSerialize
     StudyMaterialUploadSerializer, StudyMaterialListSerializer, StudyMaterialDetailSerializer, \
     CurriculumSectionListSerializer, CurriculumClassListSerializer, CurriculumSubjectsListerializer
 from utils import create_response_data, create_response_list_data, get_staff_total_attendance, \
-    get_staff_monthly_attendance, get_staff_total_absent, get_staff_monthly_absent
+    get_staff_monthly_attendance, get_staff_total_absent, get_staff_monthly_absent, generate_random_password
 
 
 class UserCreateView(APIView):
@@ -295,17 +295,21 @@ class NonTeachingStaffCreateView(APIView):
             joining_date = serializer.validated_data['joining_date']
             ctc = serializer.validated_data['ctc']
             certificates = serializer.validated_data.get('certificate_files', [])
+            experience = serializer.validated_data.get('experience')
+            highest_qualification = serializer.validated_data.get('highest_qualification')
 
             if serializer.is_valid() == True:
                 if user_type == 'non-teaching' or user_type == 'management' or user_type == 'payrollmanagement' or user_type == 'boarding':
                     user = User.objects.create_user(
                         name=first_name, email=email, phone=phone, user_type=user_type, school_id=request.user.school_id
                     )
+                    password = generate_random_password()
+                    user.set_password(password)
                     user.save()
                     user_staff = StaffUser.objects.create(
                         user=user, first_name=first_name, last_name=last_name, gender=gender, image=image, dob=dob, blood_group=blood_group,
                         religion=religion, role=role, address=address,
-                        joining_date=joining_date, ctc=ctc,
+                        joining_date=joining_date, ctc=ctc, experience=experience, highest_qualification=highest_qualification
                     )
                     for cert_file in certificates:
                         Certificate.objects.create(user=user, certificate_file=cert_file)
@@ -320,10 +324,11 @@ class NonTeachingStaffCreateView(APIView):
                 return Response(response, status=status.HTTP_201_CREATED)
             response_data = {
                 'user_id': user_staff.id,
-                'name': user.first_name,
+                'name': user_staff.first_name,
                 'email': user.email,
                 'phone': str(user.phone),
                 'user_type': user.user_type,
+                'password': password
             }
             response = create_response_data(
                 status=status.HTTP_201_CREATED,
@@ -2069,7 +2074,7 @@ class StudentSubjectListView(APIView):
     def get(self, request):
         try:
             student_name = request.query_params.get('student_name')
-            student_roll = re.sub(r'\D', '', student_name)
+            student_roll = student_name.split('-')[1]
             data = StudentUser.objects.get(user__school_id=request.user.school_id, roll_no=student_roll)
             curriculum = Curriculum.objects.get(curriculum_name=data.curriculum, select_class=data.class_enrolled)
             primary_subject = Subjects.objects.filter(curriculum_id=curriculum.id).values_list('primary_subject', flat=True)

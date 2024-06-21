@@ -51,7 +51,8 @@ INSTALLED_APPS = [
     'e_book',
     'superadmin',
     'bus',
-    'content'
+    'content',
+    'management'
 
 ]
 

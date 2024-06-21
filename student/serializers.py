@@ -111,26 +111,34 @@ class StudentDetailSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(f"Error retrieving subjects: {str(e)}")
 
     def get_bus_number(self, obj):
-        bus_data = Bus.objects.get(id=obj.bus_number.id)
-        if bus_data:
-            return bus_data.bus_number
+        if obj.bus_route:
+            bus_data = Bus.objects.get(id=obj.bus_number.id)
+            if bus_data:
+                return bus_data.bus_number
+        else:
+            None
 
     def get_bus_route(self, obj):
-        route_data = Route.objects.get(id=obj.bus_route.id)
-        if route_data:
-            return route_data.name
+        if obj.bus_route:
+            route_data = Route.objects.get(id=obj.bus_route.id)
+            if route_data:
+                return route_data.name
+        else:
+            None
 
     def get_bus_id(self, obj):
-        bus = Bus.objects.get(id=obj.bus_number.id)
-        if bus:
-            return bus.id
+        if obj.bus_number:
+            bus = Bus.objects.get(id=obj.bus_number.id)
+            if bus:
+                return bus.id
         else:
             None
 
     def get_bus_route_id(self, obj):
-        route = Route.objects.get(id=obj.bus_route.id)
-        if route:
-            return route.id
+        if obj.bus_route:
+            route = Route.objects.get(id=obj.bus_route.id)
+            if route:
+                return route.id
         else:
             None
 
@@ -410,7 +418,7 @@ class StudentAttendanceSerializer(serializers.ModelSerializer):
 class StudentTimeTableListSerializer(serializers.ModelSerializer):
     class Meta:
         model = TimeTable
-        fields = ['exam_type', 'more_subject']
+        fields = ['exam_type', 'more_subject', 'exam_month']
 
 
 class StudentReportCardListSerializer(serializers.ModelSerializer):
