@@ -42,9 +42,9 @@ class ManagementProfileView(APIView):
         return Response(response_data, status=status.HTTP_201_CREATED)
 
 
-class CurrentExamTimeTableView(APIView):
+class ExamTimeTableView(APIView):
     """
-    This class is used to fetch current exam timetable.
+    This class is used to fetch exam timetable.
     """
     permission_classes = [IsStaffUser, IsInSameSchool]
     pagination_class = CustomPagination
@@ -55,7 +55,12 @@ class CurrentExamTimeTableView(APIView):
             current_date = timezone.now().date()
             teacher_user = StaffUser.objects.get(user=user, user__school_id=request.user.school_id,
                                                  role="Payroll Management")
-            exam_timetable = TimeTable.objects.filter(status=1, school_id=user.school_id, exam_month__gte=str(current_date)).order_by('-id')
+            exam_timetable = TimeTable.objects.filter(status=1, school_id=user.school_id).order_by('-id')
+            if request.query_params.get('exam') == 'current_exam':
+                exam_timetable = exam_timetable.filter(exam_month__gte=current_date.replace(day=1)).order_by('-id')
+
+            if request.query_params.get('exam') == 'post_exam':
+                exam_timetable = exam_timetable.filter(exam_month__lt=current_date.replace(day=1)).order_by('-id')
 
             # Paginate the queryset
             paginator = self.pagination_class()
@@ -63,7 +68,7 @@ class CurrentExamTimeTableView(APIView):
 
             serializers = TimeTableSerializer(paginated_queryset, many=True)
             response = {
-                'status': status.HTTP_201_CREATED,
+                'status': status.HTTP_200_OK,
                 'count': len(serializers.data),
                 'message': TimeTableMessage.DECLARED_TIMETABLE_FETCHED_SUCCESSFULLY,
                 'data': serializers.data,
