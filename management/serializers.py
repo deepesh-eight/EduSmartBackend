@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from EduSmart import settings
 from authentication.models import StaffUser, Certificate
+from curriculum.models import Curriculum
 from superadmin.models import SchoolProfile
 from teacher.serializers import CertificateSerializer
 
@@ -11,13 +12,20 @@ class ManagementProfileSerializer(serializers.ModelSerializer):
     phone = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
     certificates = serializers.SerializerMethodField()
+    school_id = serializers.SerializerMethodField()
+    school_name = serializers.SerializerMethodField()
+    curriculum = serializers.SerializerMethodField()
+    school_website = serializers.SerializerMethodField()
+    school_address = serializers.SerializerMethodField()
+    school_about = serializers.SerializerMethodField()
     super_admin_mail = serializers.SerializerMethodField()
 
     class Meta:
         model = StaffUser
         fields = ['id', 'first_name', 'last_name', 'role', 'phone', 'email', 'image', 'dob', 'gender', 'religion',
                   'blood_group', 'address', 'joining_date',
-                  'ctc', 'certificates', 'experience', 'highest_qualification', 'super_admin_mail']
+                  'ctc', 'certificates', 'experience', 'highest_qualification', 'school_id', 'school_name', 'school_website',
+                  'school_address', 'school_about', 'curriculum', 'super_admin_mail']
 
     def get_phone(self, obj):
         phone_number = obj.user.phone
@@ -43,4 +51,45 @@ class ManagementProfileSerializer(serializers.ModelSerializer):
         return serializer.data
 
     def get_super_admin_mail(self, obj):
-        return "monikasarojparihar98@gmail.com"
+        return "support@edusmartai.com"
+
+    def get_school_id(self, obj):
+        return obj.user.school_id
+
+    def get_school_name(self, obj):
+        school = SchoolProfile.objects.get(school_id=obj.user.school_id)
+        if school:
+            return school.school_name
+        else:
+            None
+
+    def get_school_website(self, obj):
+        school = SchoolProfile.objects.get(school_id=obj.user.school_id)
+        if school:
+            return school.school_website
+        else:
+            None
+
+    def get_school_address(self, obj):
+        school = SchoolProfile.objects.get(school_id=obj.user.school_id)
+        if school:
+            return school.address
+        else:
+            None
+
+    def get_school_about(self, obj):
+        school = SchoolProfile.objects.get(school_id=obj.user.school_id)
+        if school:
+            return school.description
+        else:
+            None
+
+    def get_curriculum(self, obj):
+        curriculum = Curriculum.objects.filter(school_id=obj.user.school_id)
+        data = []
+        if curriculum:
+            for curriculum_data in curriculum:
+                data.append(curriculum_data.curriculum_name)
+            return set(data)
+        else:
+            None
