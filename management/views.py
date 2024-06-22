@@ -149,6 +149,49 @@ class ExamTimeTableDetailView(APIView):
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
 
+class ExamTimeTableDeleteView(APIView):
+    """
+    This class is used to delete declared timetable which is added by teacher.
+    """
+    permission_classes = [IsStaffUser, IsInSameSchool]
+
+    def delete(self,request,pk):
+        try:
+            user = request.user
+            teacher_user = StaffUser.objects.get(user=user, user__school_id=request.user.school_id,
+                                                 role="Payroll Management")
+            exam_timetable = TimeTable.objects.get(id=pk, status=1, school_id=user.school_id)
+            exam_timetable.delete()
+            response = create_response_data(
+                status=status.HTTP_200_OK,
+                message=TimeTableMessage.TIMETABLE_DELETED_SUCCESSFULLY,
+                data={}
+            )
+            return Response(response, status=status.HTTP_200_OK)
+
+        except TimeTable.DoesNotExist:
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=TimeTableMessage.TIMETABLE_NOT_EXIST,
+                data={}
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        except StaffUser.DoesNotExist:
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=UserLoginMessage.USER_DOES_NOT_EXISTS,
+                data={}
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
 class ExamReportCardListView(APIView):
     """
     This class is used to fetch report card.
