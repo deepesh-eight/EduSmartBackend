@@ -1,3 +1,5 @@
+import re
+
 from rest_framework import serializers
 
 from EduSmart import settings
@@ -132,9 +134,11 @@ class TimeTableDetailViewSerializer(serializers.ModelSerializer):
 class ExamReportCardSerializer(serializers.ModelSerializer):
     upload_date = serializers.SerializerMethodField()
     exam_month = serializers.SerializerMethodField()
+    student_name = serializers.SerializerMethodField()
+    roll_no = serializers.SerializerMethodField()
     class Meta:
         model = ExmaReportCard
-        fields = ['id', 'class_name', 'curriculum', 'class_section', 'exam_type', 'exam_month', 'upload_date']
+        fields = ['id', 'class_name', 'curriculum', 'class_section', 'exam_type', 'exam_month', 'upload_date', 'student_name', 'roll_no']
 
     def get_upload_date(self, obj):
         return obj.updated_at.date()
@@ -142,3 +146,20 @@ class ExamReportCardSerializer(serializers.ModelSerializer):
     def get_exam_month(self, obj):
         return obj.exam_month.strftime("%B")
 
+    def get_student_name(self, obj):
+        name, _ = self.split_student_data(obj.student_name)
+        return name
+
+    def get_roll_no(self, obj):
+        _, roll_no = self.split_student_data(obj.student_name)
+        return roll_no
+
+    def split_student_data(self, student_data):
+        pattern = r'^(.*?)-(.*?)$'
+        match = re.match(pattern, student_data)
+        if match:
+            student_name = match.group(1).strip()
+            roll_no = match.group(2).strip()
+            return student_name, roll_no
+        else:
+            raise serializers.ValidationError("Input format is incorrect. Expected format: 'name-roll_no'.")

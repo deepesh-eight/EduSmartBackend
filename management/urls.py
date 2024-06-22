@@ -11,5 +11,5 @@ urlpatterns = [
 
         # Exam report card
         path('exam/report/card/', ExamReportCardListView.as_view(), name='exam_report_card_list'),
-        path('exam/report/card/filter/', ExamReportCardFilterListView.as_view(), name='exam_report_card__filter_list'),
+        path('exam/report/card/filter/', ExamReportCardFilterListView.as_view(), name='exam_report_card_filter_list'),
         ]
