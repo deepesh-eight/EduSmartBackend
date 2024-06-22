@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from EduSmart import settings
-from authentication.models import StaffUser, Certificate
+from authentication.models import StaffUser, Certificate, TimeTable
 from curriculum.models import Curriculum
 from superadmin.models import SchoolProfile
 from teacher.serializers import CertificateSerializer
@@ -93,3 +93,22 @@ class ManagementProfileSerializer(serializers.ModelSerializer):
             return set(data)
         else:
             None
+
+
+class TimeTableSerializer(serializers.ModelSerializer):
+    start_date = serializers.SerializerMethodField()
+    exam_month = serializers.SerializerMethodField()
+
+    class Meta:
+        model = TimeTable
+        fields = ['id', 'class_name', 'curriculum', 'class_section', 'exam_type', 'start_date', 'exam_month']
+
+    def get_start_date(self, obj):
+        more_subjects = obj.more_subject
+        if more_subjects:
+            exam_dates = [subject['date'] for subject in more_subjects]
+            return min(exam_dates)
+        return None
+
+    def get_exam_month(self, obj):
+        return obj.exam_month.strftime("%B")
