@@ -10,5 +10,6 @@ urlpatterns = [
         path('exam/timetable/delete/<int:pk>/', ExamTimeTableDeleteView.as_view(), name='exam_timetable_delete'),
 
         # Exam report card
-        path('exam/report/card/', ExamReportCardListView.as_view(), name='exam_report_card_list')
+        path('exam/report/card/', ExamReportCardListView.as_view(), name='exam_report_card_list'),
+        path('exam/report/card/filter/', ExamReportCardFilterListView.as_view(), name='exam_report_card__filter_list'),
         ]
