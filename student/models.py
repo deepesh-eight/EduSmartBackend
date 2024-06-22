@@ -14,6 +14,7 @@ class StudentAttendence(models.Model):
 
 
 class ExmaReportCard(models.Model):
+    teacher = models.ForeignKey(TeacherUser, on_delete=models.SET_NULL, null=True, blank=True)
     school_id = models.CharField(max_length=255)
     curriculum = models.CharField(max_length=255, blank=True, null=True)
     class_name = models.CharField(max_length=200)
@@ -25,6 +26,8 @@ class ExmaReportCard(models.Model):
     total_marks = models.CharField(max_length=200)
     overall_grades = models.CharField(max_length=200)
     status = models.CharField(max_length=200, default=0)
+    created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, blank=True, null=True)
 
 
 class ZoomLink(models.Model):

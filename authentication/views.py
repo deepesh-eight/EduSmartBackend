@@ -1490,9 +1490,10 @@ class CreateExamReportView(APIView):
     def post(self, request):
         try:
             if request.user.user_type == 'teacher':
+                teacher = TeacherUser.objects.get(user=request.user, user__school_id=request.user.school_id)
                 serializer = ExamReportCreateSerializer(data=request.data)
                 if serializer.is_valid(raise_exception=True):
-                    serializer.save(school_id=request.user.school_id)
+                    serializer.save(school_id=request.user.school_id, teacher=teacher)
                     response_data = create_response_data(
                         status=status.HTTP_201_CREATED,
                         message=ReportCardMesssage.REPORT_CARD_CREATED_SUCCESSFULLY,
@@ -1812,7 +1813,7 @@ class StudyMaterialListView(APIView):
 
     def get(self, request):
         try:
-            data = StudentMaterial.objects.filter(school_id=request.user.school_id)
+            data = StudentMaterial.objects.filter(school_id=request.user.school_id).order_by('-id')
             if self.request.query_params:
                 search = self.request.query_params.get('search', None)
                 if search is not None:

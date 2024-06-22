@@ -1,3 +1,4 @@
+from django.db.models.functions import ExtractMonth
 from django.shortcuts import render
 from django.utils import timezone
 from rest_framework import status
@@ -6,9 +7,11 @@ from rest_framework.views import APIView
 
 from authentication.models import StaffUser, TimeTable
 from authentication.permissions import IsInSameSchool, IsStaffUser
-from constants import UserLoginMessage, UserResponseMessage, TimeTableMessage
-from management.serializers import ManagementProfileSerializer, TimeTableSerializer, TimeTableDetailViewSerializer
+from constants import UserLoginMessage, UserResponseMessage, TimeTableMessage, ReportCardMesssage, month_mapping
+from management.serializers import ManagementProfileSerializer, TimeTableSerializer, TimeTableDetailViewSerializer, \
+    ExamReportCardSerializer
 from pagination import CustomPagination
+from student.models import ExmaReportCard
 from superadmin.models import SchoolProfile
 from utils import create_response_data
 
@@ -142,5 +145,88 @@ class ExamTimeTableDetailView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
                 message=e.args[0],
                 data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ExamReportCardListView(APIView):
+    """
+    This class is used to fetch report card.
+    """
+    permission_classes = [IsStaffUser, IsInSameSchool]
+    pagination_class = CustomPagination
+
+    def get(self, request):
+        try:
+            user = request.user
+            teacher_user = StaffUser.objects.get(user=user, user__school_id=request.user.school_id,
+                                                 role="Payroll Management")
+            curriculum = request.query_params.get('curriculum', None)
+            class_name = request.query_params.get('class', None)
+            section = request.query_params.get('section', None)
+            exam_type = request.query_params.get('exam_type', None)
+            exam_month = request.query_params.get('exam_month', None)
+            exam_year = request.query_params.get('exam_year', None)
+
+            report_card = ExmaReportCard.objects.filter(status=1, school_id=request.user.school_id).order_by('-id')
+
+            if curriculum:
+                report_card = report_card.filter(curriculum=curriculum)
+            if class_name:
+                report_card = report_card.filter(class_name=class_name)
+            if section:
+                report_card = report_card.filter(class_section=section)
+            if exam_type:
+                report_card = report_card.filter(exam_type=exam_type)
+            if exam_month:
+                month_number = month_mapping.get(exam_month)
+                report_card = report_card.annotate(month=ExtractMonth('exam_month')).filter(month=month_number)
+            if exam_year:
+                report_card = report_card.filter(updated_at__year=exam_year)
+            if exam_month and exam_year:
+                month_number = month_mapping.get(exam_month)
+                report_card = report_card.annotate(month=ExtractMonth('exam_month')).filter(month=month_number, updated_at__year=exam_year)
+            if curriculum and class_name:
+                report_card = report_card.filter(curriculum=curriculum, class_name=class_name)
+            if curriculum and class_name and section:
+                report_card = report_card.filter(curriculum=curriculum, class_name=class_name, class_section=section)
+            if curriculum and class_name and section:
+                report_card = report_card.filter(curriculum=curriculum, class_name=class_name, class_section=section)
+            if curriculum and class_name and section and exam_type:
+                report_card = report_card.filter(curriculum=curriculum, class_name=class_name, class_section=section, exam_type=exam_type)
+            if curriculum and class_name and section and exam_type and exam_month:
+                month_number = month_mapping.get(exam_month)
+                report_card = report_card.annotate(month=ExtractMonth('exam_month')).filter(curriculum=curriculum, class_name=class_name, class_section=section, exam_type=exam_type, month=month_number)
+            # Paginate the queryset
+            paginator = self.pagination_class()
+            paginated_queryset = paginator.paginate_queryset(report_card, request)
+
+            serializer = ExamReportCardSerializer(paginated_queryset, many=True)
+            response = {
+                'status': status.HTTP_200_OK,
+                'count': len(serializer.data),
+                'message': ReportCardMesssage.REPORT_CARD_FETCHED_SUCCESSFULLY,
+                'data': serializer.data,
+                'pagination': {
+                    'page_size': paginator.page_size,
+                    'next': paginator.get_next_link(),
+                    'previous': paginator.get_previous_link(),
+                    'total_pages': paginator.page.paginator.num_pages,
+                    'current_page': paginator.page.number,
+                }
+            }
+            return Response(response, status=status.HTTP_200_OK)
+        except StaffUser.DoesNotExist:
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=UserLoginMessage.USER_DOES_NOT_EXISTS,
+                data={}
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={},
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)

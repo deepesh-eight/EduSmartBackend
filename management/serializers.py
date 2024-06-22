@@ -3,6 +3,7 @@ from rest_framework import serializers
 from EduSmart import settings
 from authentication.models import StaffUser, Certificate, TimeTable, TeacherUser
 from curriculum.models import Curriculum
+from student.models import ExmaReportCard
 from superadmin.models import SchoolProfile
 from teacher.serializers import CertificateSerializer
 
@@ -127,4 +128,17 @@ class TimeTableDetailViewSerializer(serializers.ModelSerializer):
         else:
             return None
 
+
+class ExamReportCardSerializer(serializers.ModelSerializer):
+    upload_date = serializers.SerializerMethodField()
+    exam_month = serializers.SerializerMethodField()
+    class Meta:
+        model = ExmaReportCard
+        fields = ['id', 'class_name', 'curriculum', 'class_section', 'exam_type', 'exam_month', 'upload_date']
+
+    def get_upload_date(self, obj):
+        return obj.updated_at.date()
+
+    def get_exam_month(self, obj):
+        return obj.exam_month.strftime("%B")
 
