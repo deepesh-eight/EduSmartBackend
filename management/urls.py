@@ -6,4 +6,5 @@ urlpatterns = [
 
         # Exam timetable
         path('exam/timetable/', ExamTimeTableView.as_view(), name='exam_timetable'),
+        path('exam/timetable/detail/<int:pk>/', ExamTimeTableDetailView.as_view(), name='exam_timetable_detail'),
         ]

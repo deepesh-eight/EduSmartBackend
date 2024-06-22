@@ -1769,9 +1769,10 @@ class UploadStudyMaterialView(APIView):
 
     def post(self, request):
         try:
+            teacher = TeacherUser.objects.get(user=request.user)
             serializer = StudyMaterialUploadSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
-                serializer.save(school_id=request.user.school_id)
+                serializer.save(school_id=request.user.school_id, teacher=teacher)
                 response_data = create_response_data(
                         status=status.HTTP_201_CREATED,
                         message=StudyMaterialMessage.STUDY_MATERIAL_UPLOADED_SUCCESSFULLY,

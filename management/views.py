@@ -7,7 +7,7 @@ from rest_framework.views import APIView
 from authentication.models import StaffUser, TimeTable
 from authentication.permissions import IsInSameSchool, IsStaffUser
 from constants import UserLoginMessage, UserResponseMessage, TimeTableMessage
-from management.serializers import ManagementProfileSerializer, TimeTableSerializer
+from management.serializers import ManagementProfileSerializer, TimeTableSerializer, TimeTableDetailViewSerializer
 from pagination import CustomPagination
 from superadmin.models import SchoolProfile
 from utils import create_response_data
@@ -81,6 +81,34 @@ class ExamTimeTableView(APIView):
                 }
             }
             return Response(response, status=status.HTTP_200_OK)
+        except StaffUser.DoesNotExist:
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=UserLoginMessage.USER_DOES_NOT_EXISTS,
+                data={}
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ExamTimeTableDetailView(APIView):
+    """
+    This class is used to fetch detail of the timetable according to the class.
+    """
+    permission_classes = [IsStaffUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            user = request.user
+            teacher_user = StaffUser.objects.get(user=user, user__school_id=request.user.school_id,
+                                                 role="Payroll Management")
+            exam_timetable = TimeTable.objects.filter(status=1, school_id=user.school_id).order_by('-id')
+            serializer = TimeTableDetailViewSerializer(exam_timetable)
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=UserLoginMessage.USER_DOES_NOT_EXISTS,
+                data={}
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
         except StaffUser.DoesNotExist:
             response = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,

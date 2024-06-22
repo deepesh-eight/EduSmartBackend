@@ -3,6 +3,7 @@ import datetime
 import json
 
 from django.db import IntegrityError
+from django.db.models import Q
 from rest_framework import status, permissions
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
@@ -16,17 +17,18 @@ from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsTeacherU
 from authentication.serializers import UserLoginSerializer
 from authentication.views import NonTeachingStaffDetailView
 from constants import UserLoginMessage, UserResponseMessage, ScheduleMessage, AttendenceMarkedMessage, \
-    CurriculumMessage, TeacherAvailabilityMessage, ChatMessage
+    CurriculumMessage, TeacherAvailabilityMessage, ChatMessage, StudyMaterialMessage
 from curriculum.models import Curriculum, Subjects
 from pagination import CustomPagination
-from student.models import ConnectWithTeacher
+from student.models import ConnectWithTeacher, StudentMaterial
 from student.views import FetchStudentDetailView
 from teacher.serializers import TeacherUserSignupSerializer, TeacherDetailSerializer, TeacherListSerializer, \
     TeacherProfileSerializer, ScheduleCreateSerializer, ScheduleDetailSerializer, ScheduleListSerializer, \
     ScheduleUpdateSerializer, TeacherAttendanceSerializer, TeacherAttendanceDetailSerializer, \
     TeacherAttendanceListSerializer, SectionListSerializer, SubjectListSerializer, \
     TeacherAttendanceFilterListSerializer, AvailabilityCreateSerializer, \
-    ChatRequestMessageSerializer, TeacherChatHistorySerializer, AvailabilityGetSerializer
+    ChatRequestMessageSerializer, TeacherChatHistorySerializer, AvailabilityGetSerializer, StudyMaterialListSerializer, \
+    StudyMaterialDetailSerializer
 from utils import create_response_data, create_response_list_data, generate_random_password,get_teacher_total_attendance, \
     get_teacher_monthly_attendance, get_teacher_total_absent, get_teacher_monthly_absent
 
@@ -1281,3 +1283,94 @@ class StudentChatHistoryView(APIView):
                 data={}
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class StudyMaterialView(APIView):
+    """
+    This class is used to fetch list of study material.
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+    pagination_class = CustomPagination
+
+    def get(self, request):
+        try:
+            data = StudentMaterial.objects.filter(school_id=request.user.school_id).order_by('id')
+            if self.request.query_params:
+                search = self.request.query_params.get('search', None)
+                if search is not None:
+                    data = data.filter(Q(content_type__icontains=search) | Q(subject__icontains=search) | Q(curriculum__icontains=search) | Q
+                    (class_name__icontains=search) | Q(section__icontains=search) | Q(title__icontains=search) | Q(discription__icontains=search))
+
+
+            # Paginate the queryset
+            paginator = self.pagination_class()
+            paginated_queryset = paginator.paginate_queryset(data, request)
+
+            serializer = StudyMaterialListSerializer(paginated_queryset, many=True)
+            response_data = {
+                'status': status.HTTP_200_OK,
+                'count': len(serializer.data),
+                'message': StudyMaterialMessage.STUDY_MATERIAL_FETCHED_SUCCESSFULLY,
+                'data': serializer.data,
+                'pagination': {
+                    'page_size': paginator.page_size,
+                    'next': paginator.get_next_link(),
+                    'previous': paginator.get_previous_link(),
+                    'total_pages': paginator.page.paginator.num_pages,
+                    'current_page': paginator.page.number,
+                }
+            }
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        except TokenError:
+            response = create_response_data(
+                status=status.HTTP_401_UNAUTHORIZED,
+                message=UserResponseMessage.TOKEN_HAS_EXPIRED,
+                data={}
+            )
+            return Response(response, status=status.HTTP_401_UNAUTHORIZED)
+
+
+class StudyMaterialInfoView(APIView):
+    """
+    This class is used to fetch detail of the study material.
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+
+    def get(self, request, pk):
+        try:
+            data = StudentMaterial.objects.get(id=pk, school_id=request.user.school_id)
+            serializer = StudyMaterialDetailSerializer(data)
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=StudyMaterialMessage.STUDY_MATERIAL_FETCHED_SUCCESSFULLY,
+                data=serializer.data,
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except StudentMaterial.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=StudyMaterialMessage.STUDY_MATERIAL_Not_Exist,
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        except TokenError:
+            response = create_response_data(
+                status=status.HTTP_401_UNAUTHORIZED,
+                message=UserResponseMessage.TOKEN_HAS_EXPIRED,
+                data={}
+            )
+            return Response(response, status=status.HTTP_401_UNAUTHORIZED)

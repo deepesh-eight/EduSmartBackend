@@ -112,3 +112,7 @@ class TimeTableSerializer(serializers.ModelSerializer):
 
     def get_exam_month(self, obj):
         return obj.exam_month.strftime("%B")
+
+class TimeTableDetailViewSerializer(serializers.ModelSerializer):
+    None
+

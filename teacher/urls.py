@@ -40,4 +40,8 @@ urlpatterns = [
         path('chat/request/accept/<int:pk>/', StudentChatRequestAcceptView.as_view(), name='chat_request_accept'),
         path('chat/join/<int:pk>/', StudentChatRequestJoinView.as_view(), name='chat_join'),
         path('chat/history/', StudentChatHistoryView.as_view(), name='chat_history'),
+
+        # Study Material API for admin
+        path('study/material/', StudyMaterialView.as_view(), name='study_material_list'),
+        path('study/material/detail/<int:pk>/', StudyMaterialInfoView.as_view(), name='study_material_detail'),
 ]

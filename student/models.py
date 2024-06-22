@@ -43,6 +43,7 @@ class ZoomLink(models.Model):
 
 
 class StudentMaterial(models.Model):
+    teacher = models.ForeignKey(TeacherUser, on_delete=models.SET_NULL, null=True, blank=True)
     school_id = models.CharField(max_length=255, blank=True, null=True)
     subject = models.CharField(max_length=255, blank=True, null=True)
     class_name = models.CharField(max_length=255)
