@@ -1294,7 +1294,7 @@ class StudyMaterialView(APIView):
 
     def get(self, request):
         try:
-            data = StudentMaterial.objects.filter(school_id=request.user.school_id).order_by('id')
+            data = StudentMaterial.objects.filter(school_id=request.user.school_id).order_by('-id')
             if self.request.query_params:
                 search = self.request.query_params.get('search', None)
                 if search is not None:

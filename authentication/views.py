@@ -1207,6 +1207,7 @@ class CreateTimetableView(APIView):
     def post(self, request):
         try:
             if request.user.user_type == 'teacher':
+                teacher = TeacherUser.objects.get(user=request.user, user__school_id=request.user.school_id)
                 more_subject = request.data.get('more_subject')
                 # more_subject_str = json.loads(more_subject)
                 # data = {
@@ -1234,7 +1235,7 @@ class CreateTimetableView(APIView):
                     return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
                 serializer = CreateTimeTableSerializer(data=request.data)
                 if serializer.is_valid(raise_exception=True):
-                    serializer.save(school_id=request.user.school_id)
+                    serializer.save(school_id=request.user.school_id, teacher=teacher)
                     response_data = create_response_data(
                         status=status.HTTP_201_CREATED,
                         message=TimeTableMessage.TIMETABLE_CREATED_SUCCESSFULLY,

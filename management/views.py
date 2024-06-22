@@ -34,6 +34,13 @@ class ManagementProfileView(APIView):
                 data={}
             )
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
         response_data = create_response_data(
             status=status.HTTP_201_CREATED,
             message=UserResponseMessage.USER_DETAIL_MESSAGE,
@@ -70,7 +77,7 @@ class ExamTimeTableView(APIView):
             response = {
                 'status': status.HTTP_200_OK,
                 'count': len(serializers.data),
-                'message': TimeTableMessage.DECLARED_TIMETABLE_FETCHED_SUCCESSFULLY,
+                'message': TimeTableMessage.TIMETABLE_FETCHED_SUCCESSFULLY,
                 'data': serializers.data,
                 'pagination': {
                     'page_size': paginator.page_size,
@@ -88,6 +95,13 @@ class ExamTimeTableView(APIView):
                 data={}
             )
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ExamTimeTableDetailView(APIView):
@@ -96,16 +110,23 @@ class ExamTimeTableDetailView(APIView):
     """
     permission_classes = [IsStaffUser, IsInSameSchool]
 
-    def get(self, request):
+    def get(self, request, pk):
         try:
             user = request.user
             teacher_user = StaffUser.objects.get(user=user, user__school_id=request.user.school_id,
                                                  role="Payroll Management")
-            exam_timetable = TimeTable.objects.filter(status=1, school_id=user.school_id).order_by('-id')
+            exam_timetable = TimeTable.objects.get(id=pk, status=1, school_id=user.school_id)
             serializer = TimeTableDetailViewSerializer(exam_timetable)
             response = create_response_data(
+                status=status.HTTP_200_OK,
+                message=TimeTableMessage.TIMETABLE_FETCHED_SUCCESSFULLY,
+                data=serializer.data
+            )
+            return Response(response, status=status.HTTP_200_OK)
+        except TimeTable.DoesNotExist:
+            response = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
-                message=UserLoginMessage.USER_DOES_NOT_EXISTS,
+                message=TimeTableMessage.TIMETABLE_NOT_EXIST,
                 data={}
             )
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
@@ -116,3 +137,10 @@ class ExamTimeTableDetailView(APIView):
                 data={}
             )
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
