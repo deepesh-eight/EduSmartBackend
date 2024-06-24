@@ -9,7 +9,7 @@ from authentication.models import StaffUser, TimeTable
 from authentication.permissions import IsInSameSchool, IsStaffUser
 from constants import UserLoginMessage, UserResponseMessage, TimeTableMessage, ReportCardMesssage, month_mapping
 from management.serializers import ManagementProfileSerializer, TimeTableSerializer, TimeTableDetailViewSerializer, \
-    ExamReportCardSerializer
+    ExamReportCardSerializer, StudentReportCardSerializer
 from pagination import CustomPagination
 from student.models import ExmaReportCard
 from superadmin.models import SchoolProfile
@@ -327,6 +327,50 @@ class ExamReportCardFilterListView(APIView):
                     data={}
                 )
                 return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        except StaffUser.DoesNotExist:
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=UserLoginMessage.USER_DOES_NOT_EXISTS,
+                data={}
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class StudentReportCardView(APIView):
+    """
+    This class is used to fetch report card according ot provided student roll_no.
+    """
+    permission_classes = [IsStaffUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            user = request.user
+            teacher_user = StaffUser.objects.get(user=user, user__school_id=request.user.school_id,
+                                                 role="Payroll Management")
+            student_name = request.query_params.get('student_name')
+            curriculum = request.query_params.get('curriculum', None)
+            class_name = request.query_params.get('class', None)
+            section = request.query_params.get('section', None)
+            exam_type = request.query_params.get('exam_type', None)
+            exam_month = request.query_params.get('exam_month', None)
+            exam_year = request.query_params.get('exam_year', None)
+            report_card = ExmaReportCard.objects.filter(status=1, school_id=request.user.school_id,
+                                                        student_name=student_name)
+            serializer = StudentReportCardSerializer(report_card, many=True)
+            response = create_response_data(
+                status=status.HTTP_200_OK,
+                message=ReportCardMesssage.REPORT_CARD_FETCHED_SUCCESSFULLY,
+                data=serializer.data
+            )
+            return Response(response, status=status.HTTP_200_OK)
+
         except StaffUser.DoesNotExist:
             response = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,

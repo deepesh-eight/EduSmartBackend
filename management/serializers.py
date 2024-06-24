@@ -3,7 +3,7 @@ import re
 from rest_framework import serializers
 
 from EduSmart import settings
-from authentication.models import StaffUser, Certificate, TimeTable, TeacherUser
+from authentication.models import StaffUser, Certificate, TimeTable, TeacherUser, StudentUser
 from curriculum.models import Curriculum
 from student.models import ExmaReportCard
 from superadmin.models import SchoolProfile
@@ -163,3 +163,65 @@ class ExamReportCardSerializer(serializers.ModelSerializer):
             return student_name, roll_no
         else:
             raise serializers.ValidationError("Input format is incorrect. Expected format: 'name-roll_no'.")
+
+
+class StudentReportCardSerializer(serializers.ModelSerializer):
+    # father_name = serializers.SerializerMethodField()
+    # mother_name = serializers.SerializerMethodField()
+    # teacher_name = serializers.SerializerMethodField()
+    # student_id = serializers.SerializerMethodField()
+    student_name = serializers.SerializerMethodField()
+    roll_no = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ExmaReportCard
+        fields = ['id', 'class_name', 'curriculum', 'class_section', 'roll_no', 'student_name', 'exam_type',
+                 'marks_grades', 'total_marks', 'overall_grades']
+
+    # def get_student_id(self, obj):
+    #     student = obj.student_name
+    #     roll_no = re.sub(r'\D', '', student)
+    #     student_id = StudentUser.objects.get(roll_no=roll_no)
+    #     return student_id.id
+
+    def get_upload_date(self, obj):
+        return obj.updated_at.date()
+
+    def get_exam_month(self, obj):
+        return obj.exam_month.strftime("%B")
+
+    def get_student_name(self, obj):
+        name, _ = self.split_student_data(obj.student_name)
+        return name
+
+    def get_roll_no(self, obj):
+        _, roll_no = self.split_student_data(obj.student_name)
+        return roll_no
+
+    def split_student_data(self, student_data):
+        pattern = r'^(.*?)-(.*?)$'
+        match = re.match(pattern, student_data)
+        if match:
+            student_name = match.group(1).strip()
+            roll_no = match.group(2).strip()
+            return student_name, roll_no
+        else:
+            raise serializers.ValidationError("Input format is incorrect. Expected format: 'name-roll_no'.")
+
+    # def get_father_name(self, obj):
+    #     roll_no = self.get_roll_no(obj)
+    #     father_name = StudentUser.objects.get(roll_no=roll_no)
+    #     return father_name.father_name
+    #
+    # def get_mother_name(self, obj):
+    #     roll_no = self.get_roll_no(obj)
+    #     mother_name = StudentUser.objects.get(roll_no=roll_no)
+    #     return mother_name.mother_name
+    #
+    # def get_teacher_name(self, obj):
+    #     class_name = obj.class_name
+    #     if class_name:
+    #         teacher = TeacherUser.objects.filter(class_subject_section_details__0__class=class_name).first()
+    #         if teacher:
+    #             return teacher.full_name
+    #     return None
