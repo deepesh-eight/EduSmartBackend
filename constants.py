@@ -207,6 +207,7 @@ class StudyMaterialMessage:
     STUDY_MATERIAL_FETCHED_SUCCESSFULLY = "Study materail fetched successfully."
     STUDY_MATERIAL_Not_Exist = "Study materail does not exist."
     STUDY_MATERIAL_DELETED_SUCCESSFULLY = "Study material deleted successfully."
+    STUDY_MATERIAL_UPDATED_SUCCESSFULLY = "Study material updated successfully."
 
 class EventsMessages:
     EVENT_CREATED_SUCCESSFULLY = "Event Created Successfully."

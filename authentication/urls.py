@@ -93,6 +93,8 @@ urlpatterns = [
     path('study/material/upload/', UploadStudyMaterialView.as_view(), name='upload_study_material'),
     path('study/material/list/', StudyMaterialListView.as_view(), name='study_material_list'),
     path('study/material/detail/<int:pk>/', StudyMaterialDetailView.as_view(), name='study_material_detail'),
+    path('study/material/update/<int:pk>/', StudyMaterialUpdateView.as_view(), name='study_material_update'),
+    path('study/material/delete/<int:pk>/', StudyMaterialDeleteView.as_view(), name='study_material_delete'),
 
     # Mobile E-book
     path('book/content/list/', AdminBookContentList.as_view(), name='book_content_list'),

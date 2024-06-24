@@ -1394,11 +1394,11 @@ class StudyMaterialInfoDeleteView(APIView):
             return Response(response_data, status=status.HTTP_200_OK)
         except StudentMaterial.DoesNotExist:
             response_data = create_response_data(
-                status=status.HTTP_400_BAD_REQUEST,
+                status=status.HTTP_404_NOT_FOUND,
                 message=StudyMaterialMessage.STUDY_MATERIAL_Not_Exist,
                 data={},
             )
-            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             response_data = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,

@@ -47,7 +47,8 @@ from teacher.serializers import TeacherDetailSerializer, TeacherProfileSerialize
     TimeTableDetailSerializer, TimeTableUpdateSerializer, ExamReportCreateSerializer, ExamReportListSerializer, \
     ExamReportCardViewSerializer, ExamReportcardUpdateSerializer, ZoomLinkCreateSerializer, ZoomLinkListSerializer, \
     StudyMaterialUploadSerializer, StudyMaterialListSerializer, StudyMaterialDetailSerializer, \
-    CurriculumSectionListSerializer, CurriculumClassListSerializer, CurriculumSubjectsListerializer
+    CurriculumSectionListSerializer, CurriculumClassListSerializer, CurriculumSubjectsListerializer, \
+    StudyMaterialUpdateSerializer
 from utils import create_response_data, create_response_list_data, get_staff_total_attendance, \
     get_staff_monthly_attendance, get_staff_total_absent, get_staff_monthly_absent, generate_random_password
 
@@ -1813,7 +1814,9 @@ class StudyMaterialListView(APIView):
 
     def get(self, request):
         try:
-            data = StudentMaterial.objects.filter(school_id=request.user.school_id).order_by('-id')
+            teacher = TeacherUser.objects.get(user__school_id=request.user.school_id, user=request.user)
+            data = StudentMaterial.objects.filter(school_id=request.user.school_id, curriculum=teacher.class_subject_section_details[0]['curriculum'],
+                                                  class_name=teacher.class_subject_section_details[0]['class'], section=teacher.class_subject_section_details[0]['section']).order_by('-id')
             if self.request.query_params:
                 search = self.request.query_params.get('search', None)
                 if search is not None:
@@ -1874,11 +1877,91 @@ class StudyMaterialDetailView(APIView):
             return Response(response_data, status=status.HTTP_200_OK)
         except StudentMaterial.DoesNotExist:
             response_data = create_response_data(
-                status=status.HTTP_400_BAD_REQUEST,
+                status=status.HTTP_404_NOT_FOUND,
                 message=StudyMaterialMessage.STUDY_MATERIAL_Not_Exist,
                 data={},
             )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={},
+            )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        except TokenError:
+            response = create_response_data(
+                status=status.HTTP_401_UNAUTHORIZED,
+                message=UserResponseMessage.TOKEN_HAS_EXPIRED,
+                data={}
+            )
+            return Response(response, status=status.HTTP_401_UNAUTHORIZED)
+
+
+class StudyMaterialUpdateView(APIView):
+    """
+    This class is used to update detail of the study material.
+    """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+
+    def patch(self, request, pk):
+        try:
+            data = StudentMaterial.objects.get(id=pk, school_id=request.user.school_id)
+            serializer = StudyMaterialUpdateSerializer(data, data=request.data, partial=True)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                response = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=StudyMaterialMessage.STUDY_MATERIAL_UPDATED_SUCCESSFULLY,
+                    data=serializer.data
+                )
+                return Response(response, status=status.HTTP_200_OK)
+            else:
+                response = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=serializer.errors,
+                    data=serializer.errors
+                )
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        except StudentMaterial.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=StudyMaterialMessage.STUDY_MATERIAL_Not_Exist,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class StudyMaterialDeleteView(APIView):
+    """
+    This class is used to delete study material detail.
+    """
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+
+    def delete(self, request, pk):
+        try:
+            data = StudentMaterial.objects.get(id=pk, school_id=request.user.school_id)
+            data.delete()
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=StudyMaterialMessage.STUDY_MATERIAL_DELETED_SUCCESSFULLY,
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except StudentMaterial.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=StudyMaterialMessage.STUDY_MATERIAL_Not_Exist,
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             response_data = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,

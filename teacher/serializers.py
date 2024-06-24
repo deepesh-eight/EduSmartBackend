@@ -1017,6 +1017,15 @@ class StudyMaterialDetailSerializer(serializers.ModelSerializer):
         return None
 
 
+class StudyMaterialUpdateSerializer(serializers.ModelSerializer):
+    upload_content = ImageFieldStringAndFile()
+
+    class Meta:
+        model = StudentMaterial
+        fields = ['id', 'class_name', 'section', 'subject', 'curriculum', 'upload_link', 'title', 'discription', 'upload_content', 'content_type']
+
+
+
 class SectionListSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentUser
