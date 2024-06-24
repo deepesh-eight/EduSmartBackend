@@ -44,4 +44,5 @@ urlpatterns = [
         # Study Material API for admin
         path('study/material/', StudyMaterialView.as_view(), name='study_material_list'),
         path('study/material/detail/<int:pk>/', StudyMaterialInfoView.as_view(), name='study_material_detail'),
+        path('study/material/delete/<int:pk>/', StudyMaterialInfoDeleteView.as_view(), name='study_material_delete'),
 ]

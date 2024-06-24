@@ -1374,3 +1374,42 @@ class StudyMaterialInfoView(APIView):
                 data={}
             )
             return Response(response, status=status.HTTP_401_UNAUTHORIZED)
+
+
+class StudyMaterialInfoDeleteView(APIView):
+    """
+    This class is used to delete detail of the study material.
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+
+    def delete(self, request, pk):
+        try:
+            data = StudentMaterial.objects.get(id=pk, school_id=request.user.school_id)
+            data.delete()
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=StudyMaterialMessage.STUDY_MATERIAL_DELETED_SUCCESSFULLY,
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except StudentMaterial.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=StudyMaterialMessage.STUDY_MATERIAL_Not_Exist,
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        except TokenError:
+            response = create_response_data(
+                status=status.HTTP_401_UNAUTHORIZED,
+                message=UserResponseMessage.TOKEN_HAS_EXPIRED,
+                data={}
+            )
+            return Response(response, status=status.HTTP_401_UNAUTHORIZED)
