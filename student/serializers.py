@@ -433,7 +433,7 @@ class StudentReportCardListSerializer(serializers.ModelSerializer):
         model = ExmaReportCard
         fields = ['id', 'class_name', 'curriculum', 'class_section', 'roll_no', 'student_id', 'student_name', 'exam_type',
                  'marks_grades', 'total_marks', 'overall_grades', 'father_name', 'mother_name',
-                  'teacher_name']
+                  'teacher_name', 'updated_at']
 
     def get_father_name(self, obj):
         student = obj.student_name

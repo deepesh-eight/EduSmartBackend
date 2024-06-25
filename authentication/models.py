@@ -312,6 +312,8 @@ class TimeTable(models.Model):
     exam_month = models.DateField()
     more_subject = models.JSONField()
     status = models.CharField(max_length=100,default=0)
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
 
 
 class ClassEvent(models.Model):
