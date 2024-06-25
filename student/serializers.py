@@ -418,7 +418,7 @@ class StudentAttendanceSerializer(serializers.ModelSerializer):
 class StudentTimeTableListSerializer(serializers.ModelSerializer):
     class Meta:
         model = TimeTable
-        fields = ['exam_type', 'more_subject', 'exam_month']
+        fields = ['id', 'exam_type', 'more_subject', 'exam_month', 'updated_at']
 
 
 class StudentReportCardListSerializer(serializers.ModelSerializer):
