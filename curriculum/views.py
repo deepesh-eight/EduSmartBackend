@@ -16,7 +16,8 @@ from superadmin.models import CurricullumList, Subjects
 from superadmin.serializers import SuperAdminCurriculumSubjectList, SuperAdminCurriculumOptionalSubjectList
 from utils import create_response_data, create_response_list_data
 
-
+from curriculum.models import Subjects as adminSubject
+from superadmin.models import Subjects as superAdminSubject
 # Create your views here.
 
 
@@ -362,6 +363,215 @@ class CurriculumOptionalsubjectListView(APIView):
                 data=set(subject_list)
             )
             return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CombinationCurriculumListView(APIView):
+    """
+    This class is used to fetch list of all the curriculum which is added by admin and super admin.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        try:
+            super_admin = CurricullumList.objects.values_list('curriculum_name', flat=True).distinct()
+            admin = Curriculum.objects.filter(school_id=request.user.school_id).values_list('curriculum_name',
+                                                                                           flat=True).distinct()
+
+            curriculum_data_list = set()
+            for curriculum in super_admin:
+                curriculum_data_list.add(curriculum)
+            for curriculum in admin:
+                curriculum_data_list.add(curriculum)
+            curriculum_list = {
+                "curriculum_name": curriculum_data_list
+            }
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=CurriculumMessage.CURRICULUM_LIST_MESSAGE,
+                data=curriculum_list
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CombinationClassListView(APIView):
+    """
+    This class is used to fetch list of all the class which is added by admin and super admin.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        try:
+            if request.query_params:
+                curriculum= request.query_params.get("curriculum_name")
+                super_admin = CurricullumList.objects.filter(curriculum_name=curriculum).values_list('class_name', flat=True).distinct()
+                admin = Curriculum.objects.filter(school_id=request.user.school_id, curriculum_name=curriculum).values_list('select_class',
+                                                                                               flat=True).distinct()
+
+                class_data_list = set()
+                for curriculum in super_admin:
+                    class_data_list.add(curriculum)
+                for curriculum in admin:
+                    class_data_list.add(curriculum)
+                curriculum_list = {
+                    "class_name": class_data_list
+                }
+                response_data = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=CurriculumMessage.CLASSES_LIST_MESSAGE,
+                    data=curriculum_list
+                )
+                return Response(response_data, status=status.HTTP_200_OK)
+            else:
+                response_data = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message='Please send curriculum_name.',
+                    data={}
+                )
+                return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CombinationPrimarySubjectListView(APIView):
+    """
+    This class is used to fetch list of all the primary subjects which is added by admin and super admin.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        try:
+            if request.query_params:
+                curriculum = request.query_params.get("curriculum_name")
+                class_name = request.query_params.get("class_name")
+
+                super_admin = None
+                admin = None
+
+                if curriculum and class_name:
+                    try:
+                        super_admin = CurricullumList.objects.get(curriculum_name=curriculum, class_name=class_name)
+                    except CurricullumList.DoesNotExist:
+                        pass
+
+                    try:
+                        admin = Curriculum.objects.get(school_id=request.user.school_id, curriculum_name=curriculum,
+                                                       select_class=class_name)
+                    except Curriculum.DoesNotExist:
+                        pass
+
+                    super_admin_subject = superAdminSubject.objects.filter(curriculum_id=super_admin.id).values_list(
+                        'primary_subject', flat=True).distinct() if super_admin else []
+                    admin_subject = adminSubject.objects.filter(curriculum_id=admin.id).values_list('primary_subject',
+                                                                                                    flat=True).distinct() if admin else []
+
+                    subject_data_list = set()
+                    for subject in super_admin_subject:
+                        subject_data_list.add(subject)
+                    for subject in admin_subject:
+                        subject_data_list.add(subject)
+
+                    curriculum_list = {
+                        "primary_subject": list(subject_data_list)
+                    }
+                response_data = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=CurriculumMessage.CLASSES_LIST_MESSAGE,
+                    data=curriculum_list
+                )
+                return Response(response_data, status=status.HTTP_200_OK)
+            else:
+                response_data = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message='Please send curriculum_name and class_name.',
+                    data={}
+                )
+                return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CombinationOptionalSubjectListView(APIView):
+    """
+    This class is used to fetch list of all the optional subjects which is added by admin and super admin.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        try:
+            if request.query_params:
+                curriculum = request.query_params.get("curriculum_name")
+                class_name = request.query_params.get("class_name")
+
+                super_admin = None
+                admin = None
+
+                if curriculum and class_name:
+                    try:
+                        super_admin = CurricullumList.objects.get(curriculum_name=curriculum, class_name=class_name)
+                    except CurricullumList.DoesNotExist:
+                        pass
+
+                    try:
+                        admin = Curriculum.objects.get(school_id=request.user.school_id, curriculum_name=curriculum,
+                                                       select_class=class_name)
+                    except Curriculum.DoesNotExist:
+                        pass
+
+                    super_admin_subject = superAdminSubject.objects.filter(curriculum_id=super_admin.id).values_list(
+                        'optional_subject', flat=True).distinct() if super_admin else []
+                    admin_subject = adminSubject.objects.filter(curriculum_id=admin.id).values_list('optional_subject',
+                                                                                                    flat=True).distinct() if admin else []
+
+                    subject_data_list = set()
+                    for subject in super_admin_subject:
+                        subject_data_list.add(subject)
+                    for subject in admin_subject:
+                        subject_data_list.add(subject)
+
+                    curriculum_list = {
+                        "optional_subject": list(subject_data_list)
+                    }
+                response_data = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=CurriculumMessage.CLASSES_LIST_MESSAGE,
+                    data=curriculum_list
+                )
+                return Response(response_data, status=status.HTTP_200_OK)
+            else:
+                response_data = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message='Please send curriculum_name and class_name.',
+                    data={}
+                )
+                return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
         except Exception as e:
             response_data = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
