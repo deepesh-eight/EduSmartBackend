@@ -101,7 +101,7 @@ class ContentListView(generics.ListAPIView):
     
 class ContentDeleteView(generics.DestroyAPIView):
     serializer_class = ContentSerializer
-    permission_classes = [IsAdminUser, IsInSameSchool]
+    permission_classes = [permissions.IsAuthenticated, IsInSameSchool]
 
     def get_queryset(self):
         return Content.objects.filter(school_id=self.request.user.school_id, is_recommended=True)
@@ -152,7 +152,7 @@ class ContentUpdateView(APIView):
     """
     This class is used to update the book content.
     """
-    permission_classes = [IsAdminUser, IsInSameSchool]
+    permission_classes = [permissions.IsAuthenticated, IsInSameSchool]
 
     def patch(self, request, pk):
         try:
