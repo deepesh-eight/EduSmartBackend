@@ -224,7 +224,7 @@ class CurriculumUpdateView(APIView):
     def patch(self, request, pk):
         try:
             data = Curriculum.objects.get(id=pk)
-            serializer = CurriculumDetailUpdateSerializer(data, data=request.data, partial=True)
+            serializer = CurriculumDetailUpdateSerializer(data, data=request.data, partial=True, context={'request': request})
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
                 response_data = create_response_data(

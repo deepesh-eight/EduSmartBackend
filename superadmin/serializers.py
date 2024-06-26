@@ -158,28 +158,39 @@ class CurriculumCreateSerializer(serializers.ModelSerializer):
 
 
 class CurriculumUpdateSerializer(serializers.ModelSerializer):
-    subjects = SubjectsSerializer(required=False, many=True)
+    # subjects = SubjectsSerializer(required=False, many=True)
     class Meta:
         model = CurricullumList
-        fields = ['curriculum_name', 'class_name', 'subjects',]
+        fields = ['curriculum_name', 'class_name',]
 
-    def validate_class_subject(self, value):
-        updated_subjects = self.process_subjects(value)
-        return updated_subjects
+    # def validate_class_subject(self, value):
+    #     updated_subjects = self.process_subjects(value)
+    #     return updated_subjects
 
     def update(self, instance, validated_data):
         instance.curriculum_name = validated_data.get('curriculum_name', instance.curriculum_name)
         instance.class_name = validated_data.get('class_name', instance.class_name)
         instance.save()
 
-        subjects_data = validated_data.pop('subjects', [])
+        request = self.context.get('request')
+        if not request:
+            raise ValueError("Request is not in context")
+
+        primary_subjects = []
+        optional_subjects = []
+
+        for key in request.data.keys():
+            if key.startswith('primary_subject'):
+                primary_subjects.append(request.data[key])
+            if key.startswith('optional_subject'):
+                optional_subjects.append(request.data[key])
+
+        if not primary_subjects or not optional_subjects:
+            raise ValueError("Primary or Optional subjects are missing")
 
         Subjects.objects.filter(curriculum_id=instance.id).delete()
 
-        for subject_data in subjects_data:
-            primary_subject = subject_data.get('primary_subject', None)
-            optional_subject = subject_data.get('optional_subject', None)
-
+        for primary_subject, optional_subject in zip(primary_subjects, optional_subjects):
             Subjects.objects.create(
                 curriculum_id=instance,
                 primary_subject=primary_subject.strip() if primary_subject else None,
