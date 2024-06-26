@@ -17,7 +17,7 @@ from pagination import CustomPagination
 from superadmin.models import SchoolProfile, CurricullumList
 from superadmin.serializers import SchoolCreateSerializer, SchoolProfileSerializer, SchoolProfileUpdateSerializer, \
     CurriculumCreateSerializer, CurriculumListSerializer, CurriculumUpdateSerializer
-from utils import create_response_data
+from utils import create_response_data, generate_random_password
 
 
 # Create your views here.
@@ -51,6 +51,9 @@ class SchoolCreateView(APIView):
                 user = User.objects.create_admin_user(
                     name=name, email=email, user_type=user_type, school_id=school_id, phone=phone, password=password
                 )
+                password = generate_random_password()
+                user.set_password(password)
+                user.save()
                 school_detail = SchoolProfile.objects.create(
                     user=user, logo=logo, school_name=school_name, address=address, city=city, state=state,
                     established_year=established_year, school_type=school_type, school_website=school_website,
@@ -67,7 +70,7 @@ class SchoolCreateView(APIView):
                     'school_id': user.school_id,
                     'principle_name': user.name,
                     'school_name': school_detail.school_name,
-                    'password': school_detail.password
+                    'password': password
                 }
             )
             return Response(response, status=status.HTTP_200_OK)
@@ -375,7 +378,7 @@ class CurriculumUpdateView(APIView):
     def patch(self, request, pk):
         try:
             data = CurricullumList.objects.get(id=pk)
-            serializer = CurriculumUpdateSerializer(data, data=request.data, partial=True)
+            serializer = CurriculumUpdateSerializer(data, data=request.data, partial=True, context={'request': request})
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
                 response_data = create_response_data(
