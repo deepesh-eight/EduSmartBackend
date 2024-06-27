@@ -36,7 +36,7 @@ class SchoolCreateView(APIView):
             user_type = serializer.validated_data.get('user_type', '')
             phone = serializer.validated_data.get('contact_no', '')
             school_id = serializer.validated_data.get('school_id', '')
-            password = serializer.validated_data.get('password', '')
+            contract = serializer.validated_data.get('contract', '')
 
             logo = serializer.validated_data['logo']
             school_name = serializer.validated_data.get('school_name', '')
@@ -49,7 +49,7 @@ class SchoolCreateView(APIView):
             description = serializer.validated_data.get('description', '')
             if user_type == 'admin' and serializer.is_valid() == True:
                 user = User.objects.create_admin_user(
-                    name=name, email=email, user_type=user_type, school_id=school_id, phone=phone, password=password
+                    name=name, email=email, user_type=user_type, school_id=school_id, phone=phone
                 )
                 password = generate_random_password()
                 user.set_password(password)
@@ -57,7 +57,7 @@ class SchoolCreateView(APIView):
                 school_detail = SchoolProfile.objects.create(
                     user=user, logo=logo, school_name=school_name, address=address, city=city, state=state,
                     established_year=established_year, school_type=school_type, school_website=school_website,
-                    description=description, principle_name=name, password=password, contact_no=phone, email=email,
+                    description=description, principle_name=name, contract=contract, contact_no=phone, email=email,
                     school_id=school_id
                 )
             else:
