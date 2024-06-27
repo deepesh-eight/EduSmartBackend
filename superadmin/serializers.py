@@ -33,7 +33,7 @@ class SchoolCreateSerializer(serializers.Serializer):
     school_website = serializers.URLField(default='')
     school_id = serializers.CharField(max_length=255, default='')
     contract = serializers.FileField(required=False)
-    description = serializers.FileField(max_length=255, default='')
+    description = serializers.CharField(max_length=255, default='')
 
 
 class SchoolProfileSerializer(serializers.ModelSerializer):
@@ -61,7 +61,7 @@ class SchoolProfileSerializer(serializers.ModelSerializer):
         return obj.user.email
 
     def get_contract(self, obj):
-        if obj.upload_content:
+        if obj.contract:
             if obj.contract.name.startswith(settings.base_url + settings.MEDIA_URL):
                 return str(obj.contract)
             else:
@@ -86,18 +86,18 @@ class SchoolProfileUpdateSerializer(serializers.ModelSerializer):
         ]
     )
     email = serializers.CharField(write_only=True)
-    school_id = serializers.CharField(write_only=True)
+    school_id = serializers.CharField(max_length=255)
     principle_name = serializers.CharField(max_length=255)
+    contract = ImageFieldStringAndFile(required=False)
     class Meta:
         model = SchoolProfile
         fields = ['logo', 'school_name', 'address', 'city', 'state', 'established_year', 'school_type',
-                  'principle_name', 'contact_no', 'email', 'school_website', 'school_id', 'password', 'description']
+                  'principle_name', 'contact_no', 'email', 'school_website', 'school_id', 'contract', 'description']
 
     def update(self, instance, validated_data):
         # Extract data for User model
         user_data = {
             'email': validated_data.pop('email', None),
-            'school_id': validated_data.pop('school_id', None),
             'name': validated_data.pop('principle_name', None),
         }
 
