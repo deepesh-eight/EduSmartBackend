@@ -147,9 +147,9 @@ class CurriculumDetailUpdateSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         instance.curriculum_name = validated_data.get('curriculum_name', instance.curriculum_name)
-        instance.select_class = validated_data.get('class_name', instance.select_class)
-        instance.discription = validated_data.get('class_name', instance.discription)
-        instance.syllabus = validated_data.get('class_name', instance.syllabus)
+        instance.select_class = validated_data.get('select_class', instance.select_class)
+        instance.discription = validated_data.get('discription', instance.discription)
+        instance.syllabus = validated_data.get('syllabus', instance.syllabus)
         instance.save()
 
         request = self.context.get('request')
