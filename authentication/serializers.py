@@ -647,9 +647,11 @@ class ExamScheduleListSerializer(serializers.ModelSerializer):
 
 class ExamScheduleDetailSerializer(serializers.ModelSerializer):
     class_teacher = serializers.SerializerMethodField()
+    exam_month = serializers.SerializerMethodField()
+
     class Meta:
         model = TimeTable
-        fields = ['class_name', 'class_teacher', 'class_section', 'exam_type', 'more_subject']
+        fields = ['class_name', 'class_teacher', 'class_section', 'exam_type', 'exam_month', 'more_subject']
 
     def get_class_teacher(self, obj):
         teacher = TeacherUser.objects.get(role='class teacher', class_subject_section_details__0__curriculum=obj.curriculum, class_subject_section_details__0__class=obj.class_name,
@@ -658,6 +660,13 @@ class ExamScheduleDetailSerializer(serializers.ModelSerializer):
             return teacher.full_name
         else:
             None
+
+    def get_exam_month(self, obj):
+        exam_month_str = obj.exam_month  # Assuming 'exm_month' is a date string
+        exam_date = datetime.strptime(str(exam_month_str), "%Y-%m-%d")
+        month_name = exam_date.strftime("%B")
+        return f"{month_name}"
+
 
 
 class StudentInfoListSerializer(serializers.ModelSerializer):
