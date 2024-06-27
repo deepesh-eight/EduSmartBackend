@@ -32,20 +32,19 @@ class SchoolCreateSerializer(serializers.Serializer):
     email = serializers.CharField(max_length=255, default='')
     school_website = serializers.URLField(default='')
     school_id = serializers.CharField(max_length=255, default='')
-    password = serializers.CharField(max_length=255, default='')
-    description = serializers.CharField(max_length=255, default='')
+    contract = serializers.FileField(required=False)
+    description = serializers.FileField(max_length=255, default='')
 
 
 class SchoolProfileSerializer(serializers.ModelSerializer):
     logo = serializers.SerializerMethodField()
     email = serializers.SerializerMethodField()
     principle_name = serializers.SerializerMethodField()
-    password = serializers.CharField()
-    decrypted_password = serializers.CharField(read_only=True, source='get_decrypted_password')
+    contract = serializers.SerializerMethodField()
     class Meta:
         model = SchoolProfile
         fields = ['id', 'school_id', 'logo', 'school_name', 'address', 'city', 'state', 'established_year', 'school_type',
-                  'principle_name', 'contact_no', 'email', 'school_website', 'description', 'password', 'decrypted_password']
+                  'principle_name', 'contact_no', 'email', 'school_website', 'description', 'contract']
 
     def get_logo(self, obj):
         if obj.logo:
@@ -60,6 +59,15 @@ class SchoolProfileSerializer(serializers.ModelSerializer):
 
     def get_email(self, obj):
         return obj.user.email
+
+    def get_contract(self, obj):
+        if obj.upload_content:
+            if obj.contract.name.startswith(settings.base_url + settings.MEDIA_URL):
+                return str(obj.contract)
+            else:
+                return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.contract)}'
+        return None
+
 
 class UserUpdateSerializer(serializers.ModelSerializer):
 
