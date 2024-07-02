@@ -261,3 +261,7 @@ class ChatMessage:
     CHAT_REQUEST_ALREADY_CREATED = "Chat request already created for this time."
     CHAT_REQUEST_ACCEPTED = "Chat request accepted successfully."
     CHAT_JOIN = "Chat join successfully."
+
+
+class InquiryMessage:
+    INQUIRY_SUBMITTED_SUCCESSFULLY = "Inquiry submitted successfully"

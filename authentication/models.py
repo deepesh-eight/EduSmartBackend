@@ -342,3 +342,12 @@ class Availability(models.Model):
     teacher = models.ForeignKey(TeacherUser, on_delete=models.CASCADE, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+
+class InquiryForm(models.Model):
+    name = models.CharField(max_length=255)
+    phone_number = PhoneNumberField(blank=True, null=True)
+    e_mail = models.EmailField()
+    description = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)

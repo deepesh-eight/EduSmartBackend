@@ -29,10 +29,10 @@ from authentication.serializers import UserSignupSerializer, UsersListSerializer
     ClassEventCreateSerializer, ClassEventListSerializer, ClassEventDetailSerializer, ClassEventUpdateSerializer, \
     AcademicCalendarSerializer, EventListSerializer, EventDetailSerializer, TeacherEventListSerializer, \
     TeacherEventDetailSerializer, TeacherCalendarDetailSerializer, ExamScheduleListSerializer, \
-    ExamScheduleDetailSerializer, StudentInfoListSerializer, StudentInfoDetailSerializer
+    ExamScheduleDetailSerializer, StudentInfoListSerializer, StudentInfoDetailSerializer, InquirySerializer
 from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage, ScheduleMessage, \
     CurriculumMessage, DayReviewMessage, NotificationMessage, AnnouncementMessage, TimeTableMessage, ReportCardMesssage, \
-    ZoomLinkMessage, StudyMaterialMessage, EventsMessages, ContentMessages, ClassEventMessage
+    ZoomLinkMessage, StudyMaterialMessage, EventsMessages, ContentMessages, ClassEventMessage, InquiryMessage
 from content.models import Content
 from content.serializers import ContentListSerializer
 from curriculum.models import Curriculum, Subjects
@@ -3067,3 +3067,35 @@ class EventDashboardListView(APIView):
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
+
+class InquiryCreateView(APIView):
+    """
+    This class is used to create inquiry
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        try:
+            serializer = InquirySerializer(data=request.data)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                response = create_response_data(
+                        status=status.HTTP_201_CREATED,
+                        message=InquiryMessage.INQUIRY_SUBMITTED_SUCCESSFULLY,
+                        data=serializer.data,
+                    )
+                return Response(response, status=status.HTTP_201_CREATED)
+            else:
+                response = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=serializer.errors,
+                    data={},
+                )
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)

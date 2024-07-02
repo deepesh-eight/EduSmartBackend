@@ -133,4 +133,7 @@ urlpatterns = [
 
     # Mobile send notification
     path('student/remark/', StudentRemorkView.as_view(), name='student_remark'),
+
+    # Inquiry Related API'S
+    path('inquiry/', InquiryCreateView.as_view(), name='inquiry_create')
 ]

@@ -13,7 +13,7 @@ from superadmin.models import SchoolProfile
 from teacher.serializers import CertificateSerializer, ImageFieldStringAndFile
 from utils import get_student_total_attendance
 from .models import User, AddressDetails, StaffUser, Certificate, StaffAttendence, EventsCalender, ClassEvent, \
-    ClassEventImage, EventImage, TimeTable, TeacherUser, StudentUser
+    ClassEventImage, EventImage, TimeTable, TeacherUser, StudentUser, InquiryForm
 from django.core.exceptions import ValidationError as DjangoValidationError
 from datetime import datetime, date
 
@@ -734,3 +734,19 @@ class StudentInfoDetailSerializer(serializers.ModelSerializer):
         else:
             None
 
+
+class InquirySerializer(serializers.ModelSerializer):
+    name = serializers.CharField(required=False)
+    phone_number= serializers.CharField(
+        validators=[
+            RegexValidator(
+                regex=r'^\d{10}$',
+                message="Phone number must be exactly 10 digits."
+            )
+        ]
+    )
+    e_mail = serializers.EmailField(required=True)
+
+    class Meta:
+        model = InquiryForm
+        fields = ['name', 'phone_number', 'e_mail', 'description']
