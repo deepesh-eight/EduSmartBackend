@@ -534,12 +534,12 @@ class StudentClassEventListSerializer(serializers.ModelSerializer):
         fields = ['id', 'date', 'title', 'discription', 'start_time', 'end_time']
 
     def get_start_time(self, obj):
-        if obj.start_date:
+        if obj.start_time:
             return obj.start_time.strftime("%I:%M %p")
 
     def get_end_time(self, obj):
-        if obj.end_date:
-            return obj.start_time.strftime("%I:%M %p")
+        if obj.end_time:
+            return obj.end_time.strftime("%I:%M %p")
 
 
 class StudentDayReviewDetailSerializer(serializers.ModelSerializer):
