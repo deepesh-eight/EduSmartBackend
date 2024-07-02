@@ -166,23 +166,17 @@ class ExamReportCardSerializer(serializers.ModelSerializer):
 
 
 class StudentReportCardSerializer(serializers.ModelSerializer):
-    # father_name = serializers.SerializerMethodField()
-    # mother_name = serializers.SerializerMethodField()
-    # teacher_name = serializers.SerializerMethodField()
-    # student_id = serializers.SerializerMethodField()
     student_name = serializers.SerializerMethodField()
     roll_no = serializers.SerializerMethodField()
+    student_id = serializers.SerializerMethodField()
+    teacher_name = serializers.SerializerMethodField()
+    father_name = serializers.SerializerMethodField()
+    mother_name = serializers.SerializerMethodField()
 
     class Meta:
         model = ExmaReportCard
-        fields = ['id', 'class_name', 'curriculum', 'class_section', 'roll_no', 'student_name', 'exam_type',
-                 'marks_grades', 'total_marks', 'overall_grades']
-
-    # def get_student_id(self, obj):
-    #     student = obj.student_name
-    #     roll_no = re.sub(r'\D', '', student)
-    #     student_id = StudentUser.objects.get(roll_no=roll_no)
-    #     return student_id.id
+        fields = ['id', 'class_name', 'curriculum', 'class_section', 'roll_no', 'student_id', 'student_name', 'father_name', 'mother_name', 'exam_type',
+                 'marks_grades', 'total_marks', 'overall_grades', 'teacher_name']
 
     def get_upload_date(self, obj):
         return obj.updated_at.date()
@@ -197,6 +191,40 @@ class StudentReportCardSerializer(serializers.ModelSerializer):
     def get_roll_no(self, obj):
         _, roll_no = self.split_student_data(obj.student_name)
         return roll_no
+
+    def get_student_id(self, obj):
+        if obj.student_name:
+            _, roll_no = self.split_student_data(obj.student_name)
+            student = StudentUser.objects.get(roll_no=roll_no)
+            return student.id
+        else:
+            None
+
+    def get_teacher_name(self, obj):
+        if obj.student_name:
+            _, roll_no = self.split_student_data(obj.student_name)
+            student = StudentUser.objects.get(roll_no=roll_no)
+            teacher = TeacherUser.objects.filter(class_subject_section_details__0__curriculum=student.curriculum,class_subject_section_details__0__class=student.class_enrolled).first()
+            if teacher:
+                return teacher.full_name
+        else:
+            return None
+
+    def get_father_name(self, obj):
+        if obj.student_name:
+            _, roll_no = self.split_student_data(obj.student_name)
+            student = StudentUser.objects.get(roll_no=roll_no)
+            return student.father_name
+        else:
+            None
+
+    def get_mother_name(self, obj):
+        if obj.student_name:
+            _, roll_no = self.split_student_data(obj.student_name)
+            student = StudentUser.objects.get(roll_no=roll_no)
+            return student.mother_name
+        else:
+            None
 
     def split_student_data(self, student_data):
         pattern = r'^(.*?)-(.*?)$'

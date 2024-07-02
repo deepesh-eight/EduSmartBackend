@@ -644,7 +644,7 @@ class InquiryListView(APIView):
 
     def get(self, request):
         try:
-            data = InquiryForm.objects.all()
+            data = InquiryForm.objects.all().order_by('-id')
 
             # Paginate the queryset
             paginator = self.pagination_class()
