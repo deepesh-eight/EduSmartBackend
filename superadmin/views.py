@@ -16,7 +16,7 @@ from content.serializers import ContentListSerializer, ContentUpdateSerializer
 from pagination import CustomPagination
 from superadmin.models import SchoolProfile, CurricullumList
 from superadmin.serializers import SchoolCreateSerializer, SchoolProfileSerializer, SchoolProfileUpdateSerializer, \
-    CurriculumCreateSerializer, CurriculumListSerializer, CurriculumUpdateSerializer
+    CurriculumCreateSerializer, CurriculumListSerializer, CurriculumUpdateSerializer, SuperAdminProfileSerializer
 from utils import create_response_data, generate_random_password
 
 
@@ -593,6 +593,38 @@ class BookContentDeleteView(APIView):
             )
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
         except ValidationError as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SuperAdminProfile(APIView):
+    """
+    This class is used to fetch profile of the super admin user.
+    """
+    permission_classes = [IsSuperAdminUser]
+
+    def get(self, request):
+        try:
+            user = User.objects.get(user_type=request.user.user_type)
+            serializer = SuperAdminProfileSerializer(user)
+            response = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=UserResponseMessage.USER_DETAIL_MESSAGE,
+                    data=serializer.data
+                )
+            return Response(response, status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=UserResponseMessage.USER_DOES_NOT_EXISTS,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
             response_data = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
                 message=e.args[0],

@@ -8,6 +8,7 @@ urlpatterns = [
         path('school/profile/', SchoolAdminProfileView.as_view(), name='schedule_profile'),
         path('school/list/', SchoolAdminListView.as_view(), name='school_list'),
         path('school/delete/<int:pk>/', SchoolAdminDeleteView.as_view(), name='school_delete'),
+        path('profile/', SuperAdminProfile.as_view(), name='super_admin_profile'),
 
         # Curriculum API
         path('curriculum/create/', CurriculumCreateView.as_view(), name='curriculum_create'),

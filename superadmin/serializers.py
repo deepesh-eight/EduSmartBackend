@@ -262,3 +262,9 @@ class SuperAdminCurriculumOptionalSubjectList(serializers.ModelSerializer):
     class Meta:
         model = Subjects
         fields = ['optional_subject']
+
+
+class SuperAdminProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'user_type', 'name', 'email']
