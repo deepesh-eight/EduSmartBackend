@@ -22,4 +22,7 @@ urlpatterns = [
         path('book/update/<int:pk>/', BookContentUpdateView.as_view(), name='content_update'),
         path('book/detail/<int:pk>/', BookContentDetailView.as_view(), name='content_detail'),
         path('book/delete/<int:pk>/', BookContentDeleteView.as_view(), name='content_delete'),
+
+        # Inquiry Related API'S
+        path('inquiry/list/', InquiryListView.as_view(), name='inquiry_list')
 ]

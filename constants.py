@@ -264,4 +264,5 @@ class ChatMessage:
 
 
 class InquiryMessage:
-    INQUIRY_SUBMITTED_SUCCESSFULLY = "Inquiry submitted successfully"
+    INQUIRY_SUBMITTED_SUCCESSFULLY = "Inquiry submitted successfully."
+    INQUIRY_LIST_FETCH_SUCCESSFULLY = "Inquiry list fetched successfully."

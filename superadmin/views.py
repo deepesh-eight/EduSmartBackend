@@ -8,15 +8,17 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
 
-from authentication.models import User
+from authentication.models import User, InquiryForm
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsInSameSchool
-from constants import SchoolMessage, UserLoginMessage, UserResponseMessage, CurriculumMessage, ContentMessages
+from constants import SchoolMessage, UserLoginMessage, UserResponseMessage, CurriculumMessage, ContentMessages, \
+    InquiryMessage
 from content.models import Content
 from content.serializers import ContentListSerializer, ContentUpdateSerializer
 from pagination import CustomPagination
 from superadmin.models import SchoolProfile, CurricullumList
 from superadmin.serializers import SchoolCreateSerializer, SchoolProfileSerializer, SchoolProfileUpdateSerializer, \
-    CurriculumCreateSerializer, CurriculumListSerializer, CurriculumUpdateSerializer, SuperAdminProfileSerializer
+    CurriculumCreateSerializer, CurriculumListSerializer, CurriculumUpdateSerializer, SuperAdminProfileSerializer, \
+    InquiryListSerializer
 from utils import create_response_data, generate_random_password
 
 
@@ -631,3 +633,42 @@ class SuperAdminProfile(APIView):
                 data={}
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class InquiryListView(APIView):
+    """
+    This class is used to fetch list of inquiry.
+    """
+    permission_classes = [IsSuperAdminUser]
+    pagination_class = CustomPagination
+
+    def get(self, request):
+        try:
+            data = InquiryForm.objects.all()
+
+            # Paginate the queryset
+            paginator = self.pagination_class()
+            paginated_queryset = paginator.paginate_queryset(data, request)
+
+            serializer = InquiryListSerializer(paginated_queryset, many=True)
+            response = {
+                'status': status.HTTP_200_OK,
+                'count': len(serializer.data),
+                'message': InquiryMessage.INQUIRY_LIST_FETCH_SUCCESSFULLY,
+                'data': serializer.data,
+                'pagination': {
+                    'page_size': paginator.page_size,
+                    'next': paginator.get_next_link(),
+                    'previous': paginator.get_previous_link(),
+                    'total_pages': paginator.page.paginator.num_pages,
+                    'current_page': paginator.page.number,
+                }
+            }
+            return Response(response, status=status.HTTP_200_OK)
+        except Exception as e:
+            response= create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)

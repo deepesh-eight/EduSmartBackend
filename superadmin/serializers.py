@@ -1,9 +1,10 @@
+import pytz
 from django.contrib.auth.hashers import make_password
 from django.core.validators import RegexValidator
 from rest_framework import serializers
 
 from EduSmart import settings
-from authentication.models import User
+from authentication.models import User, InquiryForm
 from constants import USER_TYPE_CHOICES
 from student.serializers import ImageFieldStringAndFile
 from superadmin.models import SchoolProfile, SchoolProfilePassword, CurricullumList, Subjects
@@ -268,3 +269,25 @@ class SuperAdminProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'user_type', 'name', 'email']
+
+
+class InquiryListSerializer(serializers.ModelSerializer):
+    date = serializers.SerializerMethodField()
+    time = serializers.SerializerMethodField()
+
+    class Meta:
+        model = InquiryForm
+        fields = ['id', 'name', 'phone_number', 'e_mail', 'description', 'date', 'time']
+
+    def get_date(self, obj):
+        return obj.updated_at.date()
+
+    def get_time(self, obj):
+        utc_time = obj.updated_at.replace(tzinfo=pytz.utc)  # Make sure to set timezone info to UTC
+        ist_timezone = pytz.timezone('Asia/Kolkata')
+        ist_time = utc_time.astimezone(ist_timezone)
+
+        # Format time in AM/PM format
+        ist_time_am_pm = ist_time.strftime("%I:%M %p")
+
+        return ist_time_am_pm
