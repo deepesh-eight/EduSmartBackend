@@ -24,5 +24,6 @@ urlpatterns = [
         path('book/delete/<int:pk>/', BookContentDeleteView.as_view(), name='content_delete'),
 
         # Inquiry Related API'S
-        path('inquiry/list/', InquiryListView.as_view(), name='inquiry_list')
+        path('inquiry/list/', InquiryListView.as_view(), name='inquiry_list'),
+        path('inquiry/detail/<int:pk>/', InquiryDetailView.as_view(), name='inquiry_detail'),
 ]

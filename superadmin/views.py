@@ -672,3 +672,36 @@ class InquiryListView(APIView):
                 data={}
             )
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+
+class InquiryDetailView(APIView):
+    """
+    This class is used to fetch detail of the inquiry.
+    """
+    permission_classes = [IsSuperAdminUser]
+
+    def get(self, request, pk):
+        try:
+            data = InquiryForm.objects.get(id=pk)
+            serializer = InquiryListSerializer(data)
+            response = create_response_data(
+                status=status.HTTP_200_OK,
+                message=InquiryMessage.INQUIRY_DETAIL_FETCH_SUCCESSFULLY,
+                data=serializer.data
+            )
+            return Response(response, status=status.HTTP_200_OK)
+        except InquiryForm.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=InquiryMessage.INQUIRY_DATA_FETCH_SUCCESSFULLY,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
