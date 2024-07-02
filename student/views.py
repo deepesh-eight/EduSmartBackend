@@ -201,8 +201,11 @@ class StudentListView(APIView):
         if request.query_params:
             name = request.query_params.get('name', None)
             page = request.query_params.get('page_size', None)
+            search = self.request.query_params.get('search', None)
             if name:
                 queryset = queryset.filter(user__name__icontains=name)
+            if search is not None:
+                queryset = queryset.filter(Q(curriculum__icontains=search) | Q(class_enrolled__icontains=search) | Q(section__icontains=search))
 
             # Paginate the queryset
             paginator = self.pagination_class()
