@@ -352,6 +352,7 @@ class StudentReportCardView(APIView):
     def get(self, request):
         try:
             user = request.user
+            current_date = timezone.now().date()
             teacher_user = StaffUser.objects.get(user=user, user__school_id=request.user.school_id,
                                                  role="Payroll Management")
             student_name = request.query_params.get('student_name')
@@ -361,8 +362,15 @@ class StudentReportCardView(APIView):
             exam_type = request.query_params.get('exam_type', None)
             exam_month = request.query_params.get('exam_month', None)
             exam_year = request.query_params.get('exam_year', None)
-            report_card = ExmaReportCard.objects.filter(status=1, school_id=request.user.school_id,
-                                                        student_name=student_name)
+            report_card = ExmaReportCard.objects.filter(status=1, school_id=request.user.school_id)
+            if student_name:
+                report_card = report_card.filter(student_name=student_name, updated_at__year=current_date.year)
+
+            if student_name and curriculum and class_name and section and exam_type and exam_year:
+                month_number = month_mapping.get(exam_month)
+                report_card = report_card.annotate(month=ExtractMonth('exam_month')).filter(student_name=student_name, curriculum=curriculum, class_name=class_name, class_section=section,
+                                                            updated_at__year=exam_year, exam_type=exam_type, month=month_number)
+
             serializer = StudentReportCardSerializer(report_card, many=True)
             response = create_response_data(
                 status=status.HTTP_200_OK,
