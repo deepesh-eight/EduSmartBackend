@@ -527,9 +527,19 @@ class StudentContentListSerializer(serializers.ModelSerializer):
 
 
 class StudentClassEventListSerializer(serializers.ModelSerializer):
+    start_time = serializers.SerializerMethodField()
+    end_time = serializers.SerializerMethodField()
     class Meta:
         model = ClassEvent
-        fields = ['id', 'date', 'title', 'discription']
+        fields = ['id', 'date', 'title', 'discription', 'start_time', 'end_time']
+
+    def get_start_time(self, obj):
+        if obj.start_date:
+            return obj.start_time.strftime("%I:%M %p")
+
+    def get_end_time(self, obj):
+        if obj.end_date:
+            return obj.start_time.strftime("%I:%M %p")
 
 
 class StudentDayReviewDetailSerializer(serializers.ModelSerializer):

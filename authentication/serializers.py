@@ -546,6 +546,8 @@ class AcademicCalendarSerializer(serializers.ModelSerializer):
 class EventListSerializer(serializers.ModelSerializer):
     event_name = serializers.SerializerMethodField()
     event_image = serializers.SerializerMethodField()
+    start_time = serializers.SerializerMethodField()
+    end_time = serializers.SerializerMethodField()
     class Meta:
         model = EventsCalender
         fields = ['id', 'event_name', 'event_image', 'is_event_calendar', 'start_date', 'start_time', 'end_time', 'end_date', 'title', 'description']
@@ -566,6 +568,13 @@ class EventListSerializer(serializers.ModelSerializer):
                 return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.event_image)}'
         return None
 
+    def get_start_time(self, obj):
+        if obj.start_date:
+            return obj.start_time.strftime("%I:%M %p")
+
+    def get_end_time(self, obj):
+        if obj.end_date:
+            return obj.start_time.strftime("%I:%M %p")
 
 class EventDetailSerializer(serializers.ModelSerializer):
     event_image = serializers.SerializerMethodField()
@@ -583,9 +592,20 @@ class EventDetailSerializer(serializers.ModelSerializer):
 
 
 class TeacherEventListSerializer(serializers.ModelSerializer):
+    start_time = serializers.SerializerMethodField()
+    end_time = serializers.SerializerMethodField()
     class Meta:
         model = EventsCalender
-        fields = ['id', 'start_date', 'end_date', 'title', 'description']
+        fields = ['id', 'start_date', 'end_date', 'title', 'description', 'start_time', 'end_time']
+
+    def get_start_time(self, obj):
+        if obj.start_date:
+            return obj.start_time.strftime("%I:%M %p")
+
+    def get_end_time(self, obj):
+        if obj.end_date:
+            return obj.start_time.strftime("%I:%M %p")
+
 
 
 class TeacherEventDetailSerializer(serializers.ModelSerializer):
