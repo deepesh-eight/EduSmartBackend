@@ -13,4 +13,9 @@ urlpatterns = [
         path('exam/report/card/', ExamReportCardListView.as_view(), name='exam_report_card_list'),
         path('exam/report/card/filter/', ExamReportCardFilterListView.as_view(), name='exam_report_card_filter_list'),
         path('exam/report/card/detail/', StudentReportCardView.as_view(), name='report_card_detail'),
+
+        # Salary related API'S
+        path('add/salary/', AddSalaryView.as_view(), name='add_salary'),
+        path('salary/detail/<int:pk>/', SalaryDetailView.as_view(), name='salary_detail'),
+        path('salary/update/<int:pk>/', SalaryUpdateView.as_view(), name='salary_update'),
         ]

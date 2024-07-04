@@ -7,9 +7,12 @@ from rest_framework.views import APIView
 
 from authentication.models import StaffUser, TimeTable
 from authentication.permissions import IsInSameSchool, IsStaffUser
-from constants import UserLoginMessage, UserResponseMessage, TimeTableMessage, ReportCardMesssage, month_mapping
+from constants import UserLoginMessage, UserResponseMessage, TimeTableMessage, ReportCardMesssage, month_mapping, \
+    SalaryMessage
+from management.models import Salary
 from management.serializers import ManagementProfileSerializer, TimeTableSerializer, TimeTableDetailViewSerializer, \
-    ExamReportCardSerializer, StudentReportCardSerializer
+    ExamReportCardSerializer, StudentReportCardSerializer, AddSalarySerializer, SalaryDetailSerializer, \
+    SalaryUpdateSerializer
 from pagination import CustomPagination
 from student.models import ExmaReportCard
 from superadmin.models import SchoolProfile
@@ -391,5 +394,114 @@ class StudentReportCardView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
                 message=e.args[0],
                 data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AddSalaryView(APIView):
+    """
+    This class is used to add salary details of the staff it can be non-teaching or teaching.
+    """
+    permission_classes = [IsStaffUser, IsInSameSchool]
+
+    def post(self, request):
+        try:
+            serializer = AddSalarySerializer(data=request.data)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                response = create_response_data(
+                    status=status.HTTP_201_CREATED,
+                    message=SalaryMessage.SALARY_ADDED_SUCCESSFULLY,
+                    data=serializer.data
+                )
+                return Response(response, status=status.HTTP_201_CREATED)
+            else:
+                response = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=serializer.errors,
+                    data={}
+                )
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SalaryDetailView(APIView):
+    """
+    This class is used to fetch detail of the salary detail.
+    """
+    permission_classes = [IsStaffUser, IsInSameSchool]
+
+    def get(self, request, pk):
+        try:
+            data = Salary.objects.get(id=pk)
+            serilizer = SalaryDetailSerializer(data)
+            response = create_response_data(
+                        status=status.HTTP_201_CREATED,
+                        message=SalaryMessage.SALARY_DETAIL_FETCH_SUCCESSFULLY,
+                        data=serilizer.data
+                    )
+            return Response(response, status=status.HTTP_201_CREATED)
+        except Salary.DoesNotExist:
+            response = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=SalaryMessage.SALARY_DETAIL_NOT_EXIST,
+                data={}
+            )
+            return Response(response, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SalaryUpdateView(APIView):
+    """
+    This class is used to update the salary related data.
+    """
+    permission_classes = [IsStaffUser, IsInSameSchool]
+
+    def patch(self, request, pk):
+        try:
+            data = Salary.objects.get(id=pk)
+            serializer = SalaryUpdateSerializer(data, data=request.data, partial=True,
+                                                          context={'request': request})
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                response_data = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=SalaryMessage.SALARY_UPDATED_SUCCESSFULLY,
+                    data=serializer.data
+                )
+                return Response(response_data, status=status.HTTP_200_OK)
+            else:
+                response_data = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=serializer.errors,
+                    data={}
+                )
+                return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+        except Salary.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=SalaryMessage.SALARY_DETAIL_NOT_EXIST,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)

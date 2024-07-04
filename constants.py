@@ -142,7 +142,7 @@ class ScheduleMessage:
 
 
 class AttendenceMarkedMessage:
-    ATTENDENCE_MARKED_SUCCESSFULLY = "Attendence marked successfully."
+    ATTENDENCE_MARKED_SUCCESSFULLY = "Attendance marked successfully."
     ATTENDANCE_FETCHED_SUCCESSFULLY = 'Attendance fetched successfully.'
     STUDENT_ATTENDANCE_FETCHED_SUCCESSFULLY = 'Student attendance fetched successfully.'
 
@@ -157,7 +157,7 @@ class SchoolMessage:
 
 
 class DayReviewMessage:
-    DAY_REVIEW_CREATED_SUCCESSFULLY = "Day and reviw created successfully."
+    DAY_REVIEW_CREATED_SUCCESSFULLY = "Day and review created successfully."
     DAY_REVIEW_FETCHED_SUCCESSFULLY = "Day and review detail fetch successfully."
     DAY_REVIEW_NOT_FOUND = "Day and review not found."
     DAY_REVIEW_LIST_FETCHED_SUCCESSFULLY = "Day and review list fetch successfully."
@@ -203,9 +203,9 @@ class ZoomLinkMessage:
 
 
 class StudyMaterialMessage:
-    STUDY_MATERIAL_UPLOADED_SUCCESSFULLY = "Study materail uploaded successfully."
-    STUDY_MATERIAL_FETCHED_SUCCESSFULLY = "Study materail fetched successfully."
-    STUDY_MATERIAL_Not_Exist = "Study materail does not exist."
+    STUDY_MATERIAL_UPLOADED_SUCCESSFULLY = "Study material uploaded successfully."
+    STUDY_MATERIAL_FETCHED_SUCCESSFULLY = "Study material fetched successfully."
+    STUDY_MATERIAL_Not_Exist = "Study material does not exist."
     STUDY_MATERIAL_DELETED_SUCCESSFULLY = "Study material deleted successfully."
     STUDY_MATERIAL_UPDATED_SUCCESSFULLY = "Study material updated successfully."
 
@@ -249,7 +249,7 @@ class ClassEventMessage:
 class TeacherAvailabilityMessage:
     TEACHER_AVAILABILITY_CREATED = "Teacher availability created successfully."
     TEACHER_AVAILABILITY_UPDATED = "Teacher availability updated successfully."
-    TEACHER_AVAILABILITY_NOT_EXIST = "Teacher availability is not  availabile."
+    TEACHER_AVAILABILITY_NOT_EXIST = "Teacher availability is not  available."
     TEACHER_AVAILABILITY_TIME = "Teacher availability time fetch successfully."
     TEACHER_AVAILABILITY_ALREADY_CREATED = "Teacher availability already created for this teacher."
 
@@ -266,5 +266,12 @@ class ChatMessage:
 class InquiryMessage:
     INQUIRY_SUBMITTED_SUCCESSFULLY = "Inquiry submitted successfully."
     INQUIRY_LIST_FETCH_SUCCESSFULLY = "Inquiry list fetched successfully."
-    INQUIRY_DETAIL_FETCH_SUCCESSFULLY = "Inquiry detal fetched successfully."
+    INQUIRY_DETAIL_FETCH_SUCCESSFULLY = "Inquiry detail fetched successfully."
     INQUIRY_DATA_FETCH_SUCCESSFULLY = "Inquiry data not exist."
+
+
+class SalaryMessage:
+    SALARY_ADDED_SUCCESSFULLY = "Salary added successfully."
+    SALARY_DETAIL_FETCH_SUCCESSFULLY = "Salary detail fetched successfully."
+    SALARY_DETAIL_NOT_EXIST = "Salary detail does not exist."
+    SALARY_UPDATED_SUCCESSFULLY = "Salary detail updated successfully."
