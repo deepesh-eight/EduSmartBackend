@@ -48,6 +48,8 @@ urlpatterns = [
         path('subject/list/', StudentSubjectListView.as_view(), name='student_subject_list'),
         path('availability/time/list/', AvailabilityTimeListView.as_view(), name='availability_time_list'),
         path('chat/history/', ChatHistoryView.as_view(), name='chat_history'),
+        path('chat/request/', ChatRequestView.as_view(), name='chat_request'),
+        path('chat/request/join/<int:pk>/', JoinChatRequestView.as_view(), name='chat_request_join'),
 
         # Student Mobile Attendance
         path('attendance/', FetchStudentAttendanceView.as_view(), name='fetch_student_attendance'),

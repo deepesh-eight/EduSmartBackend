@@ -32,6 +32,7 @@ from student.serializers import StudentUserSignupSerializer, StudentDetailSerial
     StudentZoomLinkSerializer, StudentContentListSerializer, StudentClassEventListSerializer, \
     StudentDayReviewDetailSerializer, ConnectWithTeacherSerializer, StudentSubjectListSerializer, ChatHistorySerializer, \
     StudentUserAttendanceListSerializer
+from teacher.serializers import StudentChatRequestMessageSerializer
 from utils import create_response_data, create_response_list_data, get_student_total_attendance, \
     get_student_total_absent, get_student_attendence_percentage, generate_random_password
 from pytz import timezone as pytz_timezone
@@ -1516,3 +1517,64 @@ class StudentScheduleView(APIView):
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
 
+class ChatRequestView(APIView):
+    """
+    This class is used to get request from the teacher for join meeting
+    """
+    permission_classes = [IsStudentUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            student = StudentUser.objects.get(user__school_id= request.user.school_id, user=request.user.id)
+            chat_data = ConnectWithTeacher.objects.filter(school_id= request.user.school_id, student=student.id, status__in=[1]).order_by('-id')
+            serializer = StudentChatRequestMessageSerializer(chat_data, many=True)
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=ChatMessage.CHAT_REQUEST_GET,
+                data=serializer.data
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class JoinChatRequestView(APIView):
+    """
+    This class is used to join chat which is accepted by teacher.
+    """
+    permission_classes = [IsStudentUser, IsInSameSchool]
+
+    def get(self, request, pk):
+        try:
+            chat_data = ConnectWithTeacher.objects.filter(school_id=request.user.school_id, id=pk)
+            join = request.query_params.get('2', None)
+            cancel = request.query_params.get('3', None)
+
+            if join is not None:
+                chat_data.update(status=2)
+                response_data = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=ChatMessage.CHAT_JOIN,
+                    data={}
+                )
+                return Response(response_data, status=status.HTTP_200_OK)
+            elif cancel is not None:
+                chat_data.update(status=3)
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message=ChatMessage.CHAT_REQUEST_CANCEL,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)

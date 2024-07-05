@@ -1122,3 +1122,34 @@ class TeacherChatHistorySerializer(serializers.ModelSerializer):
             return student.name
         else:
             None
+
+
+class StudentChatRequestMessageSerializer(serializers.ModelSerializer):
+    teacher_image = serializers.SerializerMethodField()
+    teacher_name = serializers.SerializerMethodField()
+    start_time = serializers.SerializerMethodField()
+    class Meta:
+        model = ConnectWithTeacher
+        fields = ['id', 'teacher_image', 'teacher_name', 'start_time', 'status']
+
+    def get_teacher_name(self, obj):
+        teacher = TeacherUser.objects.get(id=obj.teacher.id)
+        if teacher:
+            return teacher.full_name
+        else:
+            None
+
+    def get_teacher_image(self, obj):
+        teacher = TeacherUser.objects.get(id=obj.teacher.id)
+        if teacher:
+            if teacher.image.name.startswith(settings.base_url + settings.MEDIA_URL):
+                return str(teacher.image)
+            else:
+                return f'{settings.base_url}{settings.MEDIA_URL}{str(teacher.image)}'
+        else:
+            None
+
+    def get_start_time(self, obj):
+        start_time = str(obj.start_time)
+        if start_time:
+            return datetime.strptime(start_time, '%H:%M:%S').strftime('%I:%M %p')
