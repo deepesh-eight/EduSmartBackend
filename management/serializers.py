@@ -3,7 +3,7 @@ import re
 from rest_framework import serializers
 
 from EduSmart import settings
-from authentication.models import StaffUser, Certificate, TimeTable, TeacherUser, StudentUser
+from authentication.models import StaffUser, Certificate, TimeTable, TeacherUser, StudentUser, User
 from curriculum.models import Curriculum
 from management.models import Salary, SalaryFormat
 from student.models import ExmaReportCard
@@ -317,15 +317,34 @@ class AddSalarySerializer(serializers.ModelSerializer):
 class SalaryDetailSerializer(serializers.ModelSerializer):
     staff_name = serializers.SerializerMethodField()
     staff_id = serializers.SerializerMethodField()
+    institute_name = serializers.SerializerMethodField()
     class Meta:
         model = Salary
         fields = [
-            'department', 'designation', 'name', 'joining_date', 'pan_no',
+            'institute_name', 'department', 'designation', 'name', 'joining_date', 'pan_no',
             'total_salary', 'in_hand_salary', 'basic_salary', 'hra',
             'other_allowances', 'deducted_salary', 'professional_tax', 'tds',
             'epf', 'other_deduction', 'incentive', 'net_payable_amount',
             'bank_name', 'account_type', 'ifsc_code', 'account_number', 'staff_name', 'staff_id'
         ]
+
+    def get_institute_name(self, obj):
+        try:
+            teaching_staff = TeacherUser.objects.get(user=obj.name)
+            user = User.objects.get(id=teaching_staff.user.id)
+            school = SchoolProfile.objects.get(school_id=user.school_id)
+            return f"{school.school_name} {school.city} {school.state}"
+        except TeacherUser.DoesNotExist:
+            pass
+
+        try:
+            non_teaching_staff = StaffUser.objects.get(user=obj.name)
+            user = User.objects.get(id=non_teaching_staff.user.id)
+            school = SchoolProfile.objects.get(school_id=user.school_id)
+            return f"{school.school_name} {school.city} {school.state}"
+        except StaffUser.DoesNotExist:
+            pass
+        return None
 
     def get_staff_name(self, obj):
         try:
