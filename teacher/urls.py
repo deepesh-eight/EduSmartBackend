@@ -7,6 +7,7 @@ urlpatterns = [
         path('teacher/list/', TeacherListView.as_view(), name='student_list'),
         path('teacher/delete/<int:pk>/', TeacherDeleteView.as_view(), name='teacher_delete'),
         path('teacher/update-profile/<int:pk>/', TeacherUpdateProfileView.as_view(), name='update_teacher_profile'),
+        path('teacher/update/<int:pk>/', TeacherUpdateView.as_view(), name='update_teacher_profile'),
 
         #Teacher schedule API'S
         path('schedule/create/', TeacherScheduleCreateView.as_view(), name='schedule_create'),

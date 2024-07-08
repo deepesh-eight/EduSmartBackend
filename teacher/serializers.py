@@ -24,7 +24,7 @@ class CertificateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Certificate
-        fields = ['certificate_file', 'certificate_name']
+        fields = ['id', 'certificate_file', 'certificate_name']
 
     def get_certificate_file(self, obj):
         # Assuming 'image' field stores the file path or URL

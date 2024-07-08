@@ -6,6 +6,7 @@ from django.db import IntegrityError
 from django.db.models import Q
 from rest_framework import status, permissions
 from rest_framework.exceptions import ValidationError
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
@@ -1413,3 +1414,102 @@ class StudyMaterialInfoDeleteView(APIView):
                 data={}
             )
             return Response(response, status=status.HTTP_401_UNAUTHORIZED)
+
+
+class TeacherUpdateView(APIView):
+    permission_classes = [IsAdminUser, IsInSameSchool]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def patch(self, request, pk):
+        try:
+            files_data = {}
+            for key, value in request.FILES.items():
+                if key.startswith('certificate_files_'):
+                    index = key.split('_')[-1]
+                    files_data[index] = value
+
+            class_subject_section_details = request.data.get('class_subject_section_details')
+            class_subject_section_details_str = json.loads(class_subject_section_details)
+            data = {
+                'email': request.data.get('email'),
+                'phone': request.data.get('phone'),
+                'full_name': request.data.get('full_name'),
+                'dob': request.data.get('dob'),
+                'image': request.data.get('image'),
+                'gender': request.data.get('gender'),
+                'joining_date': request.data.get('joining_date'),
+                'religion': request.data.get('religion'),
+                'blood_group': request.data.get('blood_group'),
+                'ctc': request.data.get('ctc'),
+                'experience': request.data.get('experience'),
+                'role': request.data.get('role'),
+                'address': request.data.get('address'),
+                'class_subject_section_details': class_subject_section_details_str,
+                'highest_qualification': request.data.get('highest_qualification'),
+            }
+            # Retrieve the teacher instance
+            teacher = TeacherUser.objects.get(id=pk, user__school_id=request.user.school_id)
+
+            # Iterate through certificate files to update or create
+            for cert_id, file in files_data.items():
+                try:
+                    cert_id = int(cert_id)
+                    if Certificate.objects.filter(id=cert_id).exists():
+                        # Update existing certificate
+                        certificate = Certificate.objects.get(id=cert_id)
+                        certificate.certificate_file = file
+                        certificate.save()
+                    else:
+                        # Create new certificate
+                        Certificate.objects.create(user=teacher.user, certificate_file=file)
+                except ValueError:
+                    # Handle case where cert_id is not a valid integer
+                    raise ValidationError(f"Invalid certificate ID: {cert_id}")
+
+            # Update teacher profile data
+            serializer = TeacherProfileSerializer(teacher, data=data, partial=True)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+
+                # Respond with success message
+                response = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=UserResponseMessage.PROFILE_UPDATED_SUCCESSFULLY,
+                    data={}
+                )
+                return Response(response, status=status.HTTP_200_OK)
+            else:
+                # Respond with serializer errors
+                response = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=serializer.errors,
+                    data=serializer.errors
+                )
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+        except TeacherUser.DoesNotExist:
+            # Handle case where teacher user does not exist
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=UserResponseMessage.USER_DOES_NOT_EXISTS,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+
+        except IntegrityError as e:
+            # Handle case where email already exists (IntegrityError)
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=UserResponseMessage.EMAIL_ALREADY_EXIST,
+                data={},
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+        except ValidationError as e:
+            # Handle validation errors
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=str(e),
+                data={}
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
