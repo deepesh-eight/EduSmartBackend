@@ -3099,3 +3099,92 @@ class InquiryCreateView(APIView):
                 data={},
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class StaffUpdateView(APIView):
+    """
+    This class is used to update the non teaching staff detail.
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+
+    def patch(self, request, pk):
+        try:
+            files_data = []
+            staff_data = StaffUser.objects.get(id=pk, user__school_id=request.user.school_id)
+            # image = staff_data.get('image')
+            files_data = {}
+            for key, value in request.FILES.items():
+                if key.startswith('certificate_files_'):
+                    index = key.split('_')[-1]
+                    files_data[index] = value
+            data = {
+                'email': request.data.get('email'),
+                'phone': request.data.get('phone'),
+                'first_name': request.data.get('first_name'),
+                'last_name': request.data.get('last_name'),
+                'dob': request.data.get('dob'),
+                'image': request.data.get('image') if 'image' in request.data and request.data.get('image') else str(staff_data.image),
+                'gender': request.data.get('gender'),
+                'joining_date': request.data.get('joining_date'),
+                'religion': request.data.get('religion'),
+                'blood_group': request.data.get('blood_group'),
+                'ctc': request.data.get('ctc'),
+                'experience': request.data.get('experience'),
+                'role': request.data.get('role'),
+                'address': request.data.get('address'),
+                'highest_qualification': request.data.get('highest_qualification'),
+            }
+            staff = StaffUser.objects.get(id=pk, user__school_id=request.user.school_id)
+            for cert_id, file in files_data.items():
+                try:
+                    cert_id = int(cert_id)
+                    if Certificate.objects.filter(id=cert_id).exists():
+                        # Update existing certificate
+                        certificate = Certificate.objects.get(id=cert_id)
+                        certificate.certificate_file = file
+                        certificate.save()
+                    else:
+                        # Create new certificate
+                        Certificate.objects.create(user=staff.user, certificate_file=file)
+                except ValueError:
+                    raise ValidationError(f"Invalid certificate ID: {cert_id}")
+
+            serializer = NonTeachingStaffProfileSerializers(staff, data=data, partial=True)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                response = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=UserResponseMessage.PROFILE_UPDATED_SUCCESSFULLY,
+                    data={}
+                )
+                return Response(response, status=status.HTTP_200_OK)
+            else:
+                response = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=serializer.errors,
+                    data=serializer.errors
+                )
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        except StaffUser.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=UserResponseMessage.USER_DOES_NOT_EXISTS,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+        except IntegrityError as e:
+            # Handle case where email already exists (IntegrityError)
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=UserResponseMessage.EMAIL_ALREADY_EXIST,
+                data={},
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        except ValidationError as e:
+            # Handle validation errors
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=str(e),
+                data={}
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
