@@ -206,7 +206,7 @@ class StudentListView(APIView):
             if name:
                 queryset = queryset.filter(user__name__icontains=name)
             if search is not None:
-                queryset = queryset.filter(Q(curriculum__icontains=search) | Q(class_enrolled__icontains=search) | Q(section__icontains=search))
+                queryset = queryset.filter(Q(curriculum__icontains=search) | Q(class_enrolled__icontains=search) | Q(section__icontains=search) | Q(name__icontains=search))
 
             # Paginate the queryset
             paginator = self.pagination_class()
