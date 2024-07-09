@@ -5,7 +5,7 @@ from rest_framework import serializers
 from EduSmart import settings
 from authentication.models import StaffUser, Certificate, TimeTable, TeacherUser, StudentUser, User
 from curriculum.models import Curriculum
-from management.models import Salary, SalaryFormat
+from management.models import Salary, SalaryFormat, Fee
 from student.models import ExmaReportCard
 from superadmin.models import SchoolProfile
 from teacher.serializers import CertificateSerializer
@@ -440,18 +440,50 @@ class SalaryUpdateSerializer(serializers.ModelSerializer):
 
         return instance
 
-        # instance.salary_structure.all().delete()
-        #
-        # # Re-create SalaryFormat related objects
-        # max_index = max(len(field_name_data), len(field_amount_data))
-        # for index in range(max_index):
-        #     field_name = field_name_data[index] if index < len(field_name_data) else None
-        #     field_amount = field_amount_data[index] if index < len(field_amount_data) else None
-        #
-        #     SalaryFormat.objects.create(
-        #         salary_structure=instance,
-        #         field_name=field_name.strip() if field_name else None,
-        #         field_amount=field_amount.strip() if field_amount else None
-        #     )
-        #
-        # return instance
+
+class AddFeeSerializer(serializers.ModelSerializer):
+    curriculum = serializers.CharField(required=True)
+    class_name = serializers.CharField(required=True)
+    payment_type = serializers.CharField(required=True)
+    instalment_amount = serializers.DecimalField(max_digits=16, decimal_places=2, required=True)
+    no_of_instalment = serializers.IntegerField(required=True)
+    school_fee = serializers.DecimalField(max_digits=16, decimal_places=2, required=True)
+    total_fee = serializers.DecimalField(max_digits=16, decimal_places=2, required=True)
+    bus_fee = serializers.DecimalField(max_digits=16, decimal_places=2, default=0.0)
+    canteen_fee = serializers.DecimalField(max_digits=16, decimal_places=2, default=0.0)
+    miscellaneous_fee = serializers.DecimalField(max_digits=16, decimal_places=2, default=0.0)
+    min_paid_amount = serializers.DecimalField(max_digits=16, decimal_places=2, default=0.0)
+    max_total_remain = serializers.DecimalField(max_digits=16, decimal_places=2, default=0.0)
+    field_name = serializers.ListField(child=serializers.CharField(), required=False)
+    field_amount = serializers.ListField(child=serializers.CharField(), required=False)
+    due_type = serializers.ListField(child=serializers.CharField(), required=False)
+    due_amount = serializers.ListField(child=serializers.CharField(), required=False)
+    last_due_date = serializers.ListField(child=serializers.CharField(), required=False)
+    late_fee = serializers.ListField(child=serializers.CharField(), required=False)
+
+    class Meta:
+        model = Fee
+        fields = [
+            'curriculum', 'class_name', 'payment_type', 'instalment_amount', 'no_of_instalment', 'school_fee', 'total_fee',
+            'bus_fee', 'canteen_fee', 'miscellaneous_fee', 'min_paid_amount', 'max_total_remain', 'field_name', 'field_amount',
+            'due_type', 'due_amount', 'last_due_date', 'late_fee']
+
+    def create(self, validated_data):
+        field_name_data = validated_data.pop('field_name', [])
+        field_amount_data = validated_data.pop('field_amount', [])
+
+        fee_structure = Fee.objects.create(**validated_data)
+
+        max_index = max(len(field_name_data), len(field_amount_data))
+
+        for index in range(max_index):
+            field_name = field_name_data[index] if index < len(field_name_data) else None
+            field_amount = field_amount_data[index] if index < len(field_amount_data) else None
+
+            SalaryFormat.objects.create(
+                fee_structure=fee_structure,
+                field_name=field_name.strip() if field_name else None,
+                field_amount=field_amount.strip() if field_amount else None
+            )
+
+        return fee_structure

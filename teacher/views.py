@@ -1430,12 +1430,14 @@ class TeacherUpdateView(APIView):
 
             class_subject_section_details = request.data.get('class_subject_section_details')
             class_subject_section_details_str = json.loads(class_subject_section_details)
+            # Retrieve the teacher instance
+            teacher = TeacherUser.objects.get(id=pk, user__school_id=request.user.school_id)
             data = {
                 'email': request.data.get('email'),
                 'phone': request.data.get('phone'),
                 'full_name': request.data.get('full_name'),
                 'dob': request.data.get('dob'),
-                'image': request.data.get('image'),
+                'image': request.data.get('image') if 'image' in request.data and request.data.get('image') else str(teacher.image),
                 'gender': request.data.get('gender'),
                 'joining_date': request.data.get('joining_date'),
                 'religion': request.data.get('religion'),
@@ -1447,8 +1449,6 @@ class TeacherUpdateView(APIView):
                 'class_subject_section_details': class_subject_section_details_str,
                 'highest_qualification': request.data.get('highest_qualification'),
             }
-            # Retrieve the teacher instance
-            teacher = TeacherUser.objects.get(id=pk, user__school_id=request.user.school_id)
 
             # Iterate through certificate files to update or create
             for cert_id, file in files_data.items():

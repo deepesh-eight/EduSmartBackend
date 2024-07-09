@@ -276,3 +276,10 @@ class SalaryMessage:
     SALARY_DETAIL_FETCH_SUCCESSFULLY = "Salary detail fetched successfully."
     SALARY_DETAIL_NOT_EXIST = "Salary detail does not exist."
     SALARY_UPDATED_SUCCESSFULLY = "Salary detail updated successfully."
+
+
+class FeeMessage:
+    FEE_ADDED_SUCCESSFULLY = "Fee added successfully."
+    FEE_DETAIL_FETCH_SUCCESSFULLY = "Fee detail fetched successfully."
+    FEE_DETAIL_NOT_EXIST = "Fee detail does not exist."
+    FEE_UPDATED_SUCCESSFULLY = "Fee detail updated successfully."

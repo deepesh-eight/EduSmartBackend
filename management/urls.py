@@ -18,4 +18,7 @@ urlpatterns = [
         path('add/salary/', AddSalaryView.as_view(), name='add_salary'),
         path('salary/detail/<int:pk>/', SalaryDetailView.as_view(), name='salary_detail'),
         path('salary/update/<int:pk>/', SalaryUpdateView.as_view(), name='salary_update'),
+
+        #Fee related API'S
+        path('add/fee/', AddFeeView.as_view(), name='add_fee'),
         ]

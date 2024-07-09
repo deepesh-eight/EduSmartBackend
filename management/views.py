@@ -8,11 +8,11 @@ from rest_framework.views import APIView
 from authentication.models import StaffUser, TimeTable
 from authentication.permissions import IsInSameSchool, IsStaffUser
 from constants import UserLoginMessage, UserResponseMessage, TimeTableMessage, ReportCardMesssage, month_mapping, \
-    SalaryMessage
+    SalaryMessage, FeeMessage
 from management.models import Salary
 from management.serializers import ManagementProfileSerializer, TimeTableSerializer, TimeTableDetailViewSerializer, \
     ExamReportCardSerializer, StudentReportCardSerializer, AddSalarySerializer, SalaryDetailSerializer, \
-    SalaryUpdateSerializer
+    SalaryUpdateSerializer, AddFeeSerializer
 from pagination import CustomPagination
 from student.models import ExmaReportCard
 from superadmin.models import SchoolProfile
@@ -505,3 +505,36 @@ class SalaryUpdateView(APIView):
                 data={}
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AddFeeView(APIView):
+    """
+    This class is used to add fee details of the student.
+    """
+    permission_classes = [IsStaffUser, IsInSameSchool]
+
+    def post(self, request):
+        try:
+            serializer = AddFeeSerializer(data=request.data)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                response = create_response_data(
+                    status=status.HTTP_201_CREATED,
+                    message=FeeMessage.FEE_ADDED_SUCCESSFULLY,
+                    data=serializer.data
+                )
+                return Response(response, status=status.HTTP_201_CREATED)
+            else:
+                response = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=serializer.errors,
+                    data={}
+                )
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
