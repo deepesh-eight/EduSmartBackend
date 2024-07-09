@@ -196,13 +196,13 @@ class TeacherProfileSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField(required=False)
     dob = serializers.DateField(required=False)
     image = ImageFieldStringAndFile(required=False)
-    gender = serializers.ChoiceField(choices=GENDER_CHOICES, required=False)
+    gender = serializers.CharField(required=False)
     joining_date = serializers.DateField(required=False)
-    religion = serializers.ChoiceField(choices=RELIGION_CHOICES, required=False)
-    blood_group = serializers.ChoiceField(choices=BLOOD_GROUP_CHOICES, required=False)
+    religion = serializers.CharField(required=False)
+    blood_group = serializers.CharField(required=False)
     ctc = serializers.DecimalField(max_digits=16, decimal_places=2, default=0.0)
     experience = serializers.IntegerField(required=False)
-    role = serializers.ChoiceField(choices=ROLE_CHOICES, required=False)
+    role = serializers.CharField(required=False)
     address = serializers.CharField(max_length=255, required=False)
     class_subject_section_details = serializers.ListField(
         child=serializers.DictField(
