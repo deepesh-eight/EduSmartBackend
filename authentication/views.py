@@ -2204,9 +2204,9 @@ class AdminBookContentList(APIView):
                 if search is not None:
                     content_data = content_data.filter(Q(content_type__icontains=search) | Q(content_name__icontains=search) | Q(curriculum__icontains=search) | Q
                     (classes__icontains=search) | Q(subject__icontains=search) | Q(supporting_detail__icontains=search) | Q(description__icontains=search) | Q(category__icontains=search) | Q(content_creator__icontains=search))
-                if content_type is not None:
+                if is_recommended == 'False' and content_type is not None:
                     content_data = content_data.filter(content_type=content_type)
-                if is_recommended is not None:
+                if is_recommended == 'True':
                     content_data = content_data.filter(is_recommended=is_recommended, school_id=self.request.user.school_id)
 
                 paginator = self.pagination_class()
