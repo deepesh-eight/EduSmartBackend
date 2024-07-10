@@ -13,7 +13,7 @@ from constants import UserLoginMessage, UserResponseMessage, TimeTableMessage, R
 from management.models import Salary, Fee
 from management.serializers import ManagementProfileSerializer, TimeTableSerializer, TimeTableDetailViewSerializer, \
     ExamReportCardSerializer, StudentReportCardSerializer, AddSalarySerializer, SalaryDetailSerializer, \
-    SalaryUpdateSerializer, AddFeeSerializer, FeeListSerializer
+    SalaryUpdateSerializer, AddFeeSerializer, FeeListSerializer, FeeUpdateSerializer
 from pagination import CustomPagination
 from student.models import ExmaReportCard
 from superadmin.models import SchoolProfile
@@ -549,29 +549,80 @@ class FeeListView(APIView):
     pagination_class = CustomPagination
 
     def get(self, request):
-        search = self.request.query_params.get('search', None)
+        try:
+            search = self.request.query_params.get('search', None)
 
-        data = Fee.objects.filter(school_id=request.user.school_id).order_by('-id')
-        if search:
-            data = data.filter(Q(curriculum__icontains=search) | Q(class_name__icontains=search) | Q(payment_type__icontains=search)
-                               | Q(total_fee__icontains=search) | Q(total_fee__icontains=search))
+            data = Fee.objects.filter(school_id=request.user.school_id).order_by('-id')
+            if search:
+                data = data.filter(Q(curriculum__icontains=search) | Q(class_name__icontains=search) | Q(payment_type__icontains=search)
+                                   | Q(total_fee__icontains=search) | Q(total_fee__icontains=search))
 
-            # Paginate the queryset
-        paginator = self.pagination_class()
-        paginated_queryset = paginator.paginate_queryset(data, request)
+                # Paginate the queryset
+            paginator = self.pagination_class()
+            paginated_queryset = paginator.paginate_queryset(data, request)
 
-        serializer = FeeListSerializer(paginated_queryset, many=True)
-        response = {
-            'status': status.HTTP_201_CREATED,
-            'count': len(serializer.data),
-            'message': FeeMessage.FEE_DETAIL_FETCH_SUCCESSFULLY,
-            'data': serializer.data,
-            'pagination': {
-                'page_size': paginator.page_size,
-                'next': paginator.get_next_link(),
-                'previous': paginator.get_previous_link(),
-                'total_pages': paginator.page.paginator.num_pages,
-                'current_page': paginator.page.number,
+            serializer = FeeListSerializer(paginated_queryset, many=True)
+            response = {
+                'status': status.HTTP_201_CREATED,
+                'count': len(serializer.data),
+                'message': FeeMessage.FEE_DETAIL_FETCH_SUCCESSFULLY,
+                'data': serializer.data,
+                'pagination': {
+                    'page_size': paginator.page_size,
+                    'next': paginator.get_next_link(),
+                    'previous': paginator.get_previous_link(),
+                    'total_pages': paginator.page.paginator.num_pages,
+                    'current_page': paginator.page.number,
+                }
             }
-        }
-        return Response(response, status=status.HTTP_200_OK)
+            return Response(response, status=status.HTTP_200_OK)
+        except Exception as e:
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+
+class FeeUpdateView(APIView):
+    """
+    This class is used to update detail of the student fee.
+    """
+    permission_classes = [IsStaffUser, IsInSameSchool]
+
+    def patch(self, request, pk):
+        try:
+            data = Fee.objects.get(id=pk, school_id=request.user.school_id)
+            serializer = FeeUpdateSerializer(data, data=request.data, partial=True,
+                                                          context={'request': request})
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                response = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=FeeMessage.FEE_UPDATED_SUCCESSFULLY,
+                    data=serializer.data
+                )
+                return Response(response, status=status.HTTP_200_OK)
+            else:
+                response_data = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=serializer.errors,
+                    data={}
+                )
+                return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+        except Fee.DoesNotExist:
+            response = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=FeeMessage.FEE_DETAIL_NOT_EXIST,
+                data={}
+            )
+            return Response(response, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)

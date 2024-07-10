@@ -530,3 +530,85 @@ class FeeListSerializer(serializers.ModelSerializer):
                   'no_of_instalment', 'school_fee', 'total_fee', 'bus_fee', 'canteen_fee',
                   'miscellaneous_fee', 'min_paid_amount', 'max_total_remain',
                   'fee_structure', 'due_fee_details']
+
+
+class FeeUpdateSerializer(serializers.ModelSerializer):
+    curriculum = serializers.CharField(required=True)
+    class_name = serializers.CharField(required=True)
+    payment_type = serializers.CharField(required=True)
+    instalment_amount = serializers.DecimalField(max_digits=16, decimal_places=2, required=True)
+    no_of_instalment = serializers.IntegerField(required=True)
+    school_fee = serializers.DecimalField(max_digits=16, decimal_places=2, required=True)
+    total_fee = serializers.DecimalField(max_digits=16, decimal_places=2, required=True)
+    bus_fee = serializers.DecimalField(max_digits=16, decimal_places=2, default=0.0)
+    canteen_fee = serializers.DecimalField(max_digits=16, decimal_places=2, default=0.0)
+    miscellaneous_fee = serializers.DecimalField(max_digits=16, decimal_places=2, default=0.0)
+    min_paid_amount = serializers.DecimalField(max_digits=16, decimal_places=2, default=0.0)
+    max_total_remain = serializers.DecimalField(max_digits=16, decimal_places=2, default=0.0)
+    field_name = serializers.ListField(child=serializers.CharField(), required=False)
+    field_amount = serializers.ListField(child=serializers.CharField(), required=False)
+    due_type = serializers.ListField(child=serializers.CharField(), required=False)
+    due_amount = serializers.ListField(child=serializers.CharField(), required=False)
+    last_due_date = serializers.ListField(child=serializers.CharField(), required=False)
+    late_fee = serializers.ListField(child=serializers.CharField(), required=False)
+
+    class Meta:
+        model = Fee
+        fields = [
+            'curriculum', 'class_name', 'payment_type', 'instalment_amount', 'no_of_instalment', 'school_fee',
+            'total_fee',
+            'bus_fee', 'canteen_fee', 'miscellaneous_fee', 'min_paid_amount', 'max_total_remain', 'field_name',
+            'field_amount',
+            'due_type', 'due_amount', 'last_due_date', 'late_fee']
+
+    def update(self, instance, validated_data):
+        # Update the Salary instance
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        request = self.context.get('request')
+        if not request:
+            raise ValueError("Request is not in context")
+        field_name = []
+        field_amount = []
+        due_type = []
+        due_amount = []
+        last_due_date = []
+        late_fee = []
+
+        for key in request.data.keys():
+            if key.startswith('field_name'):
+                field_name.append(request.data[key])
+            if key.startswith('field_amount'):
+                field_amount.append(request.data[key])
+            if key.startswith('due_type'):
+                due_type.append(request.data[key])
+            if key.startswith('due_amount'):
+                due_amount.append(request.data[key])
+            if key.startswith('last_due_date'):
+                last_due_date.append(request.data[key])
+            if key.startswith('late_fee'):
+                late_fee.append(request.data[key])
+
+        if not field_name or not field_amount:
+            raise ValueError("field_name or field_amount subjects are missing")
+
+        FeeFormat.objects.filter(fee_structure=instance.id).delete()
+        DueFeeDetail.objects.filter(fee_structure=instance.id).delete()
+
+        for name, amount in zip(field_name, field_amount):
+            FeeFormat.objects.create(
+                fee_structure=instance,
+                field_name=name.strip() if amount else None,
+                field_amount=amount.strip() if amount else None
+            )
+        for due_type, due_amount, last_due_date, late_fee in zip(due_type, due_amount, last_due_date,late_fee):
+            DueFeeDetail.objects.create(
+                fee_structure=instance,
+                due_type=due_type,
+                due_amount=due_amount,
+                last_due_date=last_due_date,
+                late_fee=late_fee
+            )
+        return instance

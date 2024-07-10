@@ -22,4 +22,5 @@ urlpatterns = [
         #Fee related API'S
         path('add/fee/', AddFeeView.as_view(), name='add_fee'),
         path('fee/list/', FeeListView.as_view(), name='fee_list'),
+        path('fee/update/<int:pk>/', FeeUpdateView.as_view(), name='fee_update'),
         ]
