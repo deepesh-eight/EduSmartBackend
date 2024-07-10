@@ -1,6 +1,6 @@
 from django.db import models
 
-from authentication.models import User
+from authentication.models import User, StudentUser
 
 
 # Create your models here.
@@ -45,6 +45,7 @@ class SalaryFormat(models.Model):
 
 class Fee(models.Model):
     school_id = models.CharField(max_length=255)
+    name = models.ForeignKey(StudentUser, on_delete=models.CASCADE, null=True, blank=True)
     curriculum = models.CharField(max_length=255)
     class_name = models.CharField(max_length=255)
     payment_type = models.CharField(max_length=255)
@@ -72,7 +73,7 @@ class FeeFormat(models.Model):
 
 
 class DueFeeDetail(models.Model):
-    fee_structure = models.ForeignKey(Fee, on_delete=models.CASCADE)
+    fee_structure = models.ForeignKey(Fee, on_delete=models.CASCADE, related_name='due_fee_detail')
     due_type = models.CharField(max_length=255)
     due_amount = models.DecimalField(max_digits=16, decimal_places=2, default=0.0)
     last_due_date = models.DateField()

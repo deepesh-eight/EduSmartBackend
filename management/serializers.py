@@ -472,7 +472,7 @@ class AddFeeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Fee
         fields = [
-            'curriculum', 'class_name', 'payment_type', 'instalment_amount', 'no_of_instalment', 'school_fee',
+            'curriculum', 'name', 'class_name', 'payment_type', 'instalment_amount', 'no_of_instalment', 'school_fee',
             'total_fee',
             'bus_fee', 'canteen_fee', 'miscellaneous_fee', 'min_paid_amount', 'max_total_remain', 'field_name',
             'field_amount',
@@ -522,14 +522,30 @@ class DueFeeDetailSerializer(serializers.ModelSerializer):
 
 class FeeListSerializer(serializers.ModelSerializer):
     fee_structure = FeeFormatSerializer(many=True, read_only=True)
-    due_fee_details = DueFeeDetailSerializer(many=True, read_only=True)
+    due_fee_detail = DueFeeDetailSerializer(many=True, read_only=True)
+    name = serializers.SerializerMethodField()
+    section = serializers.SerializerMethodField()
 
     class Meta:
         model = Fee
-        fields = ['id', 'school_id', 'curriculum', 'class_name', 'payment_type', 'instalment_amount',
+        fields = ['id', 'school_id', 'curriculum', 'name', 'class_name', 'section', 'payment_type', 'instalment_amount',
                   'no_of_instalment', 'school_fee', 'total_fee', 'bus_fee', 'canteen_fee',
                   'miscellaneous_fee', 'min_paid_amount', 'max_total_remain',
-                  'fee_structure', 'due_fee_details']
+                  'fee_structure', 'due_fee_detail']
+
+    def get_name(self, obj):
+        if obj.name:
+            student = StudentUser.objects.get(id=obj.name.id)
+            return student.name
+        else:
+            None
+
+    def get_section(self, obj):
+        if obj.name:
+            student = StudentUser.objects.get(id=obj.name.id)
+            return student.section
+        else:
+            None
 
 
 class FeeUpdateSerializer(serializers.ModelSerializer):
@@ -555,7 +571,7 @@ class FeeUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Fee
         fields = [
-            'curriculum', 'class_name', 'payment_type', 'instalment_amount', 'no_of_instalment', 'school_fee',
+            'curriculum', 'name', 'class_name', 'payment_type', 'instalment_amount', 'no_of_instalment', 'school_fee',
             'total_fee',
             'bus_fee', 'canteen_fee', 'miscellaneous_fee', 'min_paid_amount', 'max_total_remain', 'field_name',
             'field_amount',
@@ -612,3 +628,56 @@ class FeeUpdateSerializer(serializers.ModelSerializer):
                 late_fee=late_fee
             )
         return instance
+
+
+class FeeDetailSerializer(serializers.ModelSerializer):
+    fee_structure = FeeFormatSerializer(many=True, read_only=True)
+    due_fee_detail = DueFeeDetailSerializer(many=True, read_only=True)
+    student_name = serializers.SerializerMethodField()
+    section = serializers.SerializerMethodField()
+    joining_date = serializers.SerializerMethodField()
+    student_id = serializers.SerializerMethodField()
+    institute_name = serializers.SerializerMethodField()
+    class Meta:
+        model = Fee
+        fields = ['curriculum', 'class_name', 'student_name', 'student_id', 'section', 'joining_date', 'curriculum', 'institute_name',
+                  'payment_type', 'instalment_amount', 'no_of_instalment', 'school_fee', 'total_fee',
+                  'bus_fee', 'canteen_fee', 'miscellaneous_fee', 'min_paid_amount', 'max_total_remain', 'fee_structure', 'due_fee_detail'
+                  ]
+
+    def get_student_name(self, obj):
+        if obj.name:
+            student = StudentUser.objects.get(id=obj.name.id)
+            return student.name
+        else:
+            None
+
+    def get_section(self, obj):
+        if obj.name:
+            student = StudentUser.objects.get(id=obj.name.id)
+            return student.section
+        else:
+            None
+
+    def get_joining_date(self, obj):
+        if obj.name:
+            student = StudentUser.objects.get(id=obj.name.id)
+            return student.admission_date
+        else:
+            None
+
+    def get_student_id(self, obj):
+        if obj.name:
+            student = StudentUser.objects.get(id=obj.name.id)
+            return student.id
+        else:
+            None
+
+    def get_institute_name(self, obj):
+        if obj.name:
+            student = StudentUser.objects.get(user=obj.name.user)
+            user = User.objects.get(id=student.user.id)
+            school = SchoolProfile.objects.get(school_id=user.school_id)
+            return f"{school.school_name} {school.city} {school.state}"
+        else:
+            None

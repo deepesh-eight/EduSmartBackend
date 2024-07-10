@@ -23,4 +23,5 @@ urlpatterns = [
         path('add/fee/', AddFeeView.as_view(), name='add_fee'),
         path('fee/list/', FeeListView.as_view(), name='fee_list'),
         path('fee/update/<int:pk>/', FeeUpdateView.as_view(), name='fee_update'),
+        path('fee/detail/<int:pk>/', FeeDetailView.as_view(), name='fee_detail'),
         ]

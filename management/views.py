@@ -13,7 +13,7 @@ from constants import UserLoginMessage, UserResponseMessage, TimeTableMessage, R
 from management.models import Salary, Fee
 from management.serializers import ManagementProfileSerializer, TimeTableSerializer, TimeTableDetailViewSerializer, \
     ExamReportCardSerializer, StudentReportCardSerializer, AddSalarySerializer, SalaryDetailSerializer, \
-    SalaryUpdateSerializer, AddFeeSerializer, FeeListSerializer, FeeUpdateSerializer
+    SalaryUpdateSerializer, AddFeeSerializer, FeeListSerializer, FeeUpdateSerializer, FeeDetailSerializer
 from pagination import CustomPagination
 from student.models import ExmaReportCard
 from superadmin.models import SchoolProfile
@@ -619,6 +619,40 @@ class FeeUpdateView(APIView):
                 data={}
             )
             return Response(response, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+
+class FeeDetailView(APIView):
+    """
+    This class is used to fetch the detail of student fee.
+    """
+    permission_classes = [IsStaffUser, IsInSameSchool]
+
+    def get(self, request, pk):
+        try:
+            data = Fee.objects.get(id=pk, school_id=request.user.school_id)
+            serializer = FeeDetailSerializer(data)
+            response = create_response_data(
+                status=status.HTTP_200_OK,
+                message=FeeMessage.FEE_DETAIL_FETCH_SUCCESSFULLY,
+                data=serializer.data
+            )
+            return Response(response, status=status.HTTP_200_OK)
+
+        except Fee.DoesNotExist:
+            response = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=FeeMessage.FEE_DETAIL_NOT_EXIST,
+                data={}
+            )
+            return Response(response, status=status.HTTP_404_NOT_FOUND)
+
         except Exception as e:
             response = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
