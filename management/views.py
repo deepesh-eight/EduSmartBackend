@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.db.models.functions import ExtractMonth
 from django.shortcuts import render
 from django.utils import timezone
@@ -9,10 +10,10 @@ from authentication.models import StaffUser, TimeTable
 from authentication.permissions import IsInSameSchool, IsStaffUser
 from constants import UserLoginMessage, UserResponseMessage, TimeTableMessage, ReportCardMesssage, month_mapping, \
     SalaryMessage, FeeMessage
-from management.models import Salary
+from management.models import Salary, Fee
 from management.serializers import ManagementProfileSerializer, TimeTableSerializer, TimeTableDetailViewSerializer, \
     ExamReportCardSerializer, StudentReportCardSerializer, AddSalarySerializer, SalaryDetailSerializer, \
-    SalaryUpdateSerializer, AddFeeSerializer
+    SalaryUpdateSerializer, AddFeeSerializer, FeeListSerializer
 from pagination import CustomPagination
 from student.models import ExmaReportCard
 from superadmin.models import SchoolProfile
@@ -408,7 +409,7 @@ class AddSalaryView(APIView):
         try:
             serializer = AddSalarySerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
-                serializer.save()
+                serializer.save(school_id=request.user.school_id)
                 response = create_response_data(
                     status=status.HTTP_201_CREATED,
                     message=SalaryMessage.SALARY_ADDED_SUCCESSFULLY,
@@ -439,7 +440,7 @@ class SalaryDetailView(APIView):
 
     def get(self, request, pk):
         try:
-            data = Salary.objects.get(id=pk)
+            data = Salary.objects.get(id=pk, school_id=request.user.school_id)
             serilizer = SalaryDetailSerializer(data)
             response = create_response_data(
                         status=status.HTTP_201_CREATED,
@@ -471,7 +472,7 @@ class SalaryUpdateView(APIView):
 
     def patch(self, request, pk):
         try:
-            data = Salary.objects.get(id=pk)
+            data = Salary.objects.get(id=pk, school_id=request.user.school_id)
             serializer = SalaryUpdateSerializer(data, data=request.data, partial=True,
                                                           context={'request': request})
             if serializer.is_valid(raise_exception=True):
@@ -517,7 +518,7 @@ class AddFeeView(APIView):
         try:
             serializer = AddFeeSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
-                serializer.save()
+                serializer.save(school_id=request.user.school_id)
                 response = create_response_data(
                     status=status.HTTP_201_CREATED,
                     message=FeeMessage.FEE_ADDED_SUCCESSFULLY,
@@ -538,3 +539,39 @@ class AddFeeView(APIView):
                 data={}
             )
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+
+class FeeListView(APIView):
+    """
+    This class is used to fetch list of salary list of all student's.
+    """
+    permission_classes = [IsStaffUser, IsInSameSchool]
+    pagination_class = CustomPagination
+
+    def get(self, request):
+        search = self.request.query_params.get('search', None)
+
+        data = Fee.objects.filter(school_id=request.user.school_id).order_by('-id')
+        if search:
+            data = data.filter(Q(curriculum__icontains=search) | Q(class_name__icontains=search) | Q(payment_type__icontains=search)
+                               | Q(total_fee__icontains=search) | Q(total_fee__icontains=search))
+
+            # Paginate the queryset
+        paginator = self.pagination_class()
+        paginated_queryset = paginator.paginate_queryset(data, request)
+
+        serializer = FeeListSerializer(paginated_queryset, many=True)
+        response = {
+            'status': status.HTTP_201_CREATED,
+            'count': len(serializer.data),
+            'message': FeeMessage.FEE_DETAIL_FETCH_SUCCESSFULLY,
+            'data': serializer.data,
+            'pagination': {
+                'page_size': paginator.page_size,
+                'next': paginator.get_next_link(),
+                'previous': paginator.get_previous_link(),
+                'total_pages': paginator.page.paginator.num_pages,
+                'current_page': paginator.page.number,
+            }
+        }
+        return Response(response, status=status.HTTP_200_OK)

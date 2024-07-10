@@ -5,7 +5,7 @@ from rest_framework import serializers
 from EduSmart import settings
 from authentication.models import StaffUser, Certificate, TimeTable, TeacherUser, StudentUser, User
 from curriculum.models import Curriculum
-from management.models import Salary, SalaryFormat, Fee
+from management.models import Salary, SalaryFormat, Fee, FeeFormat, DueFeeDetail
 from student.models import ExmaReportCard
 from superadmin.models import SchoolProfile
 from teacher.serializers import CertificateSerializer
@@ -28,7 +28,8 @@ class ManagementProfileSerializer(serializers.ModelSerializer):
         model = StaffUser
         fields = ['id', 'first_name', 'last_name', 'role', 'phone', 'email', 'image', 'dob', 'gender', 'religion',
                   'blood_group', 'address', 'joining_date',
-                  'ctc', 'certificates', 'experience', 'highest_qualification', 'school_id', 'school_name', 'school_website',
+                  'ctc', 'certificates', 'experience', 'highest_qualification', 'school_id', 'school_name',
+                  'school_website',
                   'school_address', 'school_about', 'curriculum', 'super_admin_mail']
 
     def get_phone(self, obj):
@@ -120,9 +121,11 @@ class TimeTableSerializer(serializers.ModelSerializer):
 
 class TimeTableDetailViewSerializer(serializers.ModelSerializer):
     teacher = serializers.SerializerMethodField()
+
     class Meta:
         model = TimeTable
-        fields = ['id', 'teacher', 'class_name', 'curriculum', 'class_section', 'exam_type', 'exam_month', 'more_subject']
+        fields = ['id', 'teacher', 'class_name', 'curriculum', 'class_section', 'exam_type', 'exam_month',
+                  'more_subject']
 
     def get_teacher(self, obj):
         teacher = TeacherUser.objects.get(id=obj.teacher_id)
@@ -137,9 +140,11 @@ class ExamReportCardSerializer(serializers.ModelSerializer):
     exam_month = serializers.SerializerMethodField()
     student_name = serializers.SerializerMethodField()
     roll_no = serializers.SerializerMethodField()
+
     class Meta:
         model = ExmaReportCard
-        fields = ['id', 'class_name', 'curriculum', 'class_section', 'exam_type', 'exam_month', 'upload_date', 'student_name', 'roll_no']
+        fields = ['id', 'class_name', 'curriculum', 'class_section', 'exam_type', 'exam_month', 'upload_date',
+                  'student_name', 'roll_no']
 
     def get_upload_date(self, obj):
         return obj.updated_at.date()
@@ -176,8 +181,9 @@ class StudentReportCardSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ExmaReportCard
-        fields = ['id', 'class_name', 'curriculum', 'class_section', 'roll_no', 'student_id', 'student_name', 'father_name', 'mother_name', 'exam_type',
-                 'marks_grades', 'total_marks', 'overall_grades', 'teacher_name']
+        fields = ['id', 'class_name', 'curriculum', 'class_section', 'roll_no', 'student_id', 'student_name',
+                  'father_name', 'mother_name', 'exam_type',
+                  'marks_grades', 'total_marks', 'overall_grades', 'teacher_name']
 
     def get_upload_date(self, obj):
         return obj.updated_at.date()
@@ -205,7 +211,8 @@ class StudentReportCardSerializer(serializers.ModelSerializer):
         if obj.student_name:
             _, roll_no = self.split_student_data(obj.student_name)
             student = StudentUser.objects.get(roll_no=roll_no)
-            teacher = TeacherUser.objects.filter(class_subject_section_details__0__curriculum=student.curriculum,class_subject_section_details__0__class=student.class_enrolled).first()
+            teacher = TeacherUser.objects.filter(class_subject_section_details__0__curriculum=student.curriculum,
+                                                 class_subject_section_details__0__class=student.class_enrolled).first()
             if teacher:
                 return teacher.full_name
         else:
@@ -245,7 +252,7 @@ class AddSalarySerializer(serializers.ModelSerializer):
     pan_no = serializers.CharField(required=True)
     total_salary = serializers.DecimalField(max_digits=16, decimal_places=2, required=True)
     in_hand_salary = serializers.DecimalField(max_digits=16, decimal_places=2, required=True)
-    basic_salary = serializers.DecimalField(max_digits=16, decimal_places=2,  required=True)
+    basic_salary = serializers.DecimalField(max_digits=16, decimal_places=2, required=True)
     hra = serializers.DecimalField(max_digits=16, decimal_places=2, default=0.0)
     other_allowances = serializers.DecimalField(max_digits=16, decimal_places=2, default=0.0)
     deducted_salary = serializers.DecimalField(max_digits=16, decimal_places=2, default=0.0)
@@ -254,14 +261,13 @@ class AddSalarySerializer(serializers.ModelSerializer):
     epf = serializers.DecimalField(max_digits=16, decimal_places=2, default=0.0)
     other_deduction = serializers.DecimalField(max_digits=16, decimal_places=2, default=0.0)
     incentive = serializers.DecimalField(max_digits=16, decimal_places=2, default=0.0)
-    net_payable_amount = serializers.DecimalField(max_digits=16, decimal_places=2,required=True)
+    net_payable_amount = serializers.DecimalField(max_digits=16, decimal_places=2, required=True)
     bank_name = serializers.CharField(required=True)
     account_type = serializers.CharField(required=True)
     ifsc_code = serializers.CharField(required=True)
     account_number = serializers.CharField(required=True)
     field_name = serializers.ListField(child=serializers.CharField(), required=False)
     field_amount = serializers.ListField(child=serializers.CharField(), required=False)
-
 
     class Meta:
         model = Salary
@@ -318,6 +324,7 @@ class SalaryDetailSerializer(serializers.ModelSerializer):
     staff_name = serializers.SerializerMethodField()
     staff_id = serializers.SerializerMethodField()
     institute_name = serializers.SerializerMethodField()
+
     class Meta:
         model = Salary
         fields = [
@@ -398,6 +405,7 @@ class SalaryUpdateSerializer(serializers.ModelSerializer):
     account_number = serializers.CharField(required=True)
     field_name = serializers.ListField(child=serializers.CharField(), required=False)
     field_amount = serializers.ListField(child=serializers.CharField(), required=False)
+
     class Meta:
         model = Salary
         fields = [
@@ -464,26 +472,61 @@ class AddFeeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Fee
         fields = [
-            'curriculum', 'class_name', 'payment_type', 'instalment_amount', 'no_of_instalment', 'school_fee', 'total_fee',
-            'bus_fee', 'canteen_fee', 'miscellaneous_fee', 'min_paid_amount', 'max_total_remain', 'field_name', 'field_amount',
+            'curriculum', 'class_name', 'payment_type', 'instalment_amount', 'no_of_instalment', 'school_fee',
+            'total_fee',
+            'bus_fee', 'canteen_fee', 'miscellaneous_fee', 'min_paid_amount', 'max_total_remain', 'field_name',
+            'field_amount',
             'due_type', 'due_amount', 'last_due_date', 'late_fee']
 
     def create(self, validated_data):
         field_name_data = validated_data.pop('field_name', [])
         field_amount_data = validated_data.pop('field_amount', [])
+        due_type_data = validated_data.pop('due_type', [])
+        due_amount_data = validated_data.pop('due_amount', [])
+        last_due_date_data = validated_data.pop('last_due_date', [])
+        late_fee_data = validated_data.pop('late_fee', [])
 
         fee_structure = Fee.objects.create(**validated_data)
 
-        max_index = max(len(field_name_data), len(field_amount_data))
-
-        for index in range(max_index):
-            field_name = field_name_data[index] if index < len(field_name_data) else None
-            field_amount = field_amount_data[index] if index < len(field_amount_data) else None
-
-            SalaryFormat.objects.create(
+        for field_name, field_amount in zip(field_name_data, field_amount_data):
+            FeeFormat.objects.create(
                 fee_structure=fee_structure,
-                field_name=field_name.strip() if field_name else None,
-                field_amount=field_amount.strip() if field_amount else None
+                field_name=field_name,
+                field_amount=field_amount
+            )
+
+        for due_type, due_amount, last_due_date, late_fee in zip(due_type_data, due_amount_data, last_due_date_data,
+                                                                 late_fee_data):
+            DueFeeDetail.objects.create(
+                fee_structure=fee_structure,
+                due_type=due_type,
+                due_amount=due_amount,
+                last_due_date=last_due_date,
+                late_fee=late_fee
             )
 
         return fee_structure
+
+
+class FeeFormatSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FeeFormat
+        fields = ['field_name', 'field_amount']
+
+
+class DueFeeDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DueFeeDetail
+        fields = ['due_type', 'due_amount', 'last_due_date', 'late_fee']
+
+
+class FeeListSerializer(serializers.ModelSerializer):
+    fee_structure = FeeFormatSerializer(many=True, read_only=True)
+    due_fee_details = DueFeeDetailSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Fee
+        fields = ['id', 'school_id', 'curriculum', 'class_name', 'payment_type', 'instalment_amount',
+                  'no_of_instalment', 'school_fee', 'total_fee', 'bus_fee', 'canteen_fee',
+                  'miscellaneous_fee', 'min_paid_amount', 'max_total_remain',
+                  'fee_structure', 'due_fee_details']
