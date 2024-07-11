@@ -265,14 +265,14 @@ class NonTeachingStaffProfileSerializers(serializers.ModelSerializer):
         child=serializers.FileField(),
         required=False
     )
-    experience = serializers.IntegerField(required=False)
-    highest_qualification = serializers.CharField(max_length=255, required=False)
+    # experience = serializers.IntegerField(required=False)
+    # highest_qualification = serializers.CharField(max_length=255, required=False)
 
 
     class Meta:
         model = StaffUser
         fields = ['image', 'first_name', 'last_name', 'gender', 'dob', 'blood_group', 'religion', 'email', 'phone', 'user_type',
-                  'role', 'address', 'address', 'joining_date', 'ctc','certificate_files', 'experience', 'highest_qualification']
+                  'role', 'address', 'address', 'joining_date', 'ctc','certificate_files']
 
     def update(self, instance, validated_data):
         user_data = validated_data.pop('user', {})
