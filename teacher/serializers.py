@@ -1153,3 +1153,9 @@ class StudentChatRequestMessageSerializer(serializers.ModelSerializer):
         start_time = str(obj.start_time)
         if start_time:
             return datetime.strptime(start_time, '%H:%M:%S').strftime('%I:%M %p')
+
+
+class TeacherListBySectionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TeacherUser
+        fields = ['id', 'full_name']

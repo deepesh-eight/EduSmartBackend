@@ -46,4 +46,7 @@ urlpatterns = [
         path('study/material/', StudyMaterialView.as_view(), name='study_material_list'),
         path('study/material/detail/<int:pk>/', StudyMaterialInfoView.as_view(), name='study_material_detail'),
         path('study/material/delete/<int:pk>/', StudyMaterialInfoDeleteView.as_view(), name='study_material_delete'),
+
+        # Teacher attendance admin mobile API
+        path('mobile/teacher/list/', MobileTeacherList.as_view(), name='mobile_teacher_list'),
 ]

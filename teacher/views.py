@@ -29,7 +29,7 @@ from teacher.serializers import TeacherUserSignupSerializer, TeacherDetailSerial
     TeacherAttendanceListSerializer, SectionListSerializer, SubjectListSerializer, \
     TeacherAttendanceFilterListSerializer, AvailabilityCreateSerializer, \
     ChatRequestMessageSerializer, TeacherChatHistorySerializer, AvailabilityGetSerializer, StudyMaterialListSerializer, \
-    StudyMaterialDetailSerializer
+    StudyMaterialDetailSerializer, TeacherListBySectionSerializer
 from utils import create_response_data, create_response_list_data, generate_random_password,get_teacher_total_attendance, \
     get_teacher_monthly_attendance, get_teacher_total_absent, get_teacher_monthly_absent
 
@@ -1513,3 +1513,55 @@ class TeacherUpdateView(APIView):
                 data={}
             )
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+
+class MobileTeacherList(APIView):
+    """
+    This class is used to fetch list of the teacher for mobile app.
+    """
+
+    permission_classes = [IsAdminUser, IsInSameSchool]
+    pagination_class = CustomPagination
+
+    def get(self, request):
+        selected_date_str = request.query_params.get('date')
+        all_mark = True
+        if selected_date_str:
+            try:
+                selected_date = datetime.datetime.strptime(selected_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                response = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message="Invalid date format. Please provide date in YYYY-MM-DD format.",
+                    data={}
+                )
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            selected_date = None
+
+        teacher = TeacherUser.objects.filter(user__school_id=request.user.school_id, user__is_active=True)
+        serializer = TeacherListBySectionSerializer(teacher, many=True)
+
+        if selected_date:
+            attendance_records = TeacherAttendence.objects.filter(date=selected_date, teacher__in=teacher)
+            attendance_mapping = {
+                attendance.teacher_id: {'date': attendance.date, 'mark_attendence': attendance.mark_attendence} for
+                attendance in attendance_records}
+
+            for student_data in serializer.data:
+                teacher_id = student_data['id']
+                if teacher_id in attendance_mapping:
+                    attendance_data = attendance_mapping[teacher_id]
+                    student_data['date'] = attendance_data['date']
+                    student_data['mark_attendence'] = attendance_data['mark_attendence']
+                else:
+                    all_mark = False
+                    student_data['date'] = selected_date
+                    student_data['mark_attendence'] = None
+        response = {
+            'status': status.HTTP_200_OK,
+            'message': "Teacher list fetched successfully.",
+            'all_attendance_marked': all_mark,
+            'data': serializer.data
+        }
+        return Response(response, status=status.HTTP_200_OK)
