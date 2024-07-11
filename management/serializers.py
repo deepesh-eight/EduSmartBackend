@@ -681,3 +681,108 @@ class FeeDetailSerializer(serializers.ModelSerializer):
             return f"{school.school_name} {school.city} {school.state}"
         else:
             None
+
+
+class StudentListsSerializer(serializers.ModelSerializer):
+    curriculum = serializers.SerializerMethodField()
+    class_name = serializers.SerializerMethodField()
+    section = serializers.SerializerMethodField()
+    class_teacher = serializers.SerializerMethodField()
+    total_students = serializers.SerializerMethodField()
+
+    class Meta:
+        model = TeacherUser
+        fields = ['class_teacher', 'curriculum', 'class_name', 'section', 'total_students']
+
+    def get_curriculum(self, obj):
+        if obj.role == 'class teacher':
+            class_teacher = obj.class_subject_section_details[0].get('curriculum')
+            return class_teacher
+        else:
+            None
+
+    def get_class_name(self, obj):
+        if obj.role == 'class teacher':
+            class_teacher = obj.class_subject_section_details[0].get('class')
+            return class_teacher
+        else:
+            None
+
+    def get_section(self, obj):
+        if obj.role == 'class teacher':
+            class_teacher = obj.class_subject_section_details[0].get('section')
+            return class_teacher
+        else:
+            None
+
+    def get_class_teacher(self, obj):
+        if obj.role == 'class teacher':
+            class_teacher = obj.full_name
+            return class_teacher
+        else:
+            None
+
+    def get_total_students(self, obj):
+        if obj.role == 'class teacher':
+            curriculum = obj.class_subject_section_details[0].get('curriculum')
+            class_name = obj.class_subject_section_details[0].get('class')
+            section = obj.class_subject_section_details[0].get('section')
+            return StudentUser.objects.filter(curriculum=curriculum, class_enrolled=class_name, section=section, user__is_active=True).count()
+        return None
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        if instance.role != 'class teacher':
+            # Remove fields if the user is not a class teacher
+            representation.pop('curriculum', None)
+            representation.pop('class_name', None)
+            representation.pop('section', None)
+            representation.pop('class_teacher', None)
+            if all(value is None for value in representation.values()):
+                return None
+        return representation
+
+
+class StudentFilterListSerializer(serializers.ModelSerializer):
+    fee_type = serializers.SerializerMethodField()
+    total_fee = serializers.SerializerMethodField()
+    paid_fee = serializers.SerializerMethodField()
+    due_fee = serializers.SerializerMethodField()
+    class Meta:
+        model = StudentUser
+        fields = ['id', 'name', 'roll_no', 'admission_date', 'fee_type', 'total_fee', 'paid_fee', 'due_fee']
+
+    def get_fee_type(self, obj):
+        try:
+            fee_detail = Fee.objects.get(name=obj)
+            return fee_detail.payment_type
+        except Fee.DoesNotExist:
+            return None
+
+    def get_total_fee(self, obj):
+        try:
+            fee_detail = Fee.objects.get(name=obj)
+            return fee_detail.total_fee
+        except Fee.DoesNotExist:
+            return None
+
+    def get_paid_fee(self, obj):
+        try:
+            fee_detail = Fee.objects.get(name=obj)
+            return fee_detail.total_fee # Here i need to add paid fee field
+        except Fee.DoesNotExist:
+            return None
+
+    def get_due_fee(self, obj):
+        try:
+            fee_detail = Fee.objects.get(name=obj)
+            return fee_detail.total_fee-10000 # In the place of 10000 we need to write paid_fee
+        except Fee.DoesNotExist:
+            return None
+
+
+class StudentDetailSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = StudentUser
+        fields = ['id', 'name', 'roll_no', 'curriculum', 'class_enrolled', 'section','admission_date']
