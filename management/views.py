@@ -718,9 +718,11 @@ class StudentFilterList(APIView):
             curriculum = self.request.query_params.get('curriculum', None)
             class_name = self.request.query_params.get('class', None)
             section = self.request.query_params.get('section', None)
+            search  = self.request.query_params.get('search', None)
             if curriculum and class_name and section:
                 data = data.filter(curriculum=curriculum, class_enrolled=class_name, section=section)
-
+                if search:
+                    data = data.filter(name__icontains=search)
                 paginator = self.pagination_class()
                 paginator_queryset = paginator.paginate_queryset(data, request)
 
@@ -742,7 +744,7 @@ class StudentFilterList(APIView):
             else:
                 response = create_response_data(
                     status=status.HTTP_400_BAD_REQUEST,
-                    message="Please provide curriculum, class, and ",
+                    message="Please provide curriculum, class, and section.",
                     data={}
                 )
                 return Response(response, status=status.HTTP_400_BAD_REQUEST)
