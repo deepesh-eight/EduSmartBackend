@@ -750,7 +750,7 @@ class StudentFilterListSerializer(serializers.ModelSerializer):
     due_fee = serializers.SerializerMethodField()
     class Meta:
         model = StudentUser
-        fields = ['name', 'roll_no', 'admission_date', 'fee_type', 'total_fee', 'paid_fee', 'due_fee']
+        fields = ['id', 'name', 'roll_no', 'admission_date', 'fee_type', 'total_fee', 'paid_fee', 'due_fee']
 
     def get_fee_type(self, obj):
         try:
@@ -779,3 +779,10 @@ class StudentFilterListSerializer(serializers.ModelSerializer):
             return fee_detail.total_fee-10000 # In the place of 10000 we need to write paid_fee
         except Fee.DoesNotExist:
             return None
+
+
+class StudentDetailSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = StudentUser
+        fields = ['id', 'name', 'roll_no', 'curriculum', 'class_enrolled', 'section','admission_date']

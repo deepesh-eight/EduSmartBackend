@@ -28,5 +28,5 @@ urlpatterns = [
         #Student related API'S
         path('student/list/', StudentList.as_view(), name='student_list'),
         path('students/filter/list/', StudentFilterList.as_view(), name='student_filter_list'),
-
+        path('students/fee/detail/<int:pk>/', StudentFeeDetail.as_view(), name='student_fee_detail'),
         ]

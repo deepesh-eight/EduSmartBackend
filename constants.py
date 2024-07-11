@@ -283,3 +283,4 @@ class FeeMessage:
     FEE_DETAIL_FETCH_SUCCESSFULLY = "Fee detail fetched successfully."
     FEE_DETAIL_NOT_EXIST = "Fee detail does not exist."
     FEE_UPDATED_SUCCESSFULLY = "Fee detail updated successfully."
+    STUDENT_FEE_DETAIL_FETCH_SUCCESSFULLY = "Student fee detail fetch successfully."

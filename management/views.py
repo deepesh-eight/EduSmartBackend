@@ -14,7 +14,7 @@ from management.models import Salary, Fee
 from management.serializers import ManagementProfileSerializer, TimeTableSerializer, TimeTableDetailViewSerializer, \
     ExamReportCardSerializer, StudentReportCardSerializer, AddSalarySerializer, SalaryDetailSerializer, \
     SalaryUpdateSerializer, AddFeeSerializer, FeeListSerializer, FeeUpdateSerializer, FeeDetailSerializer, \
-    StudentListsSerializer, StudentFilterListSerializer
+    StudentListsSerializer, StudentFilterListSerializer, StudentDetailSerializer
 from pagination import CustomPagination
 from student.models import ExmaReportCard
 from superadmin.models import SchoolProfile
@@ -748,6 +748,38 @@ class StudentFilterList(APIView):
                     data={}
                 )
                 return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+
+class StudentFeeDetail(APIView):
+    """
+    This class is used to fetch detail of the student fee.
+    """
+    permission_classes = [IsStaffUser, IsInSameSchool]
+
+    def get(self, reqeuest, pk):
+        try:
+            student_data = StudentUser.objects.get(id=pk)
+            serializer = StudentDetailSerializer(student_data)
+            response = create_response_data(
+                status=status.HTTP_200_OK,
+                message=FeeMessage.STUDENT_FEE_DETAIL_FETCH_SUCCESSFULLY,
+                data=serializer.data
+            )
+            return Response(response, status=status.HTTP_200_OK)
+        except StudentUser.DoesNotExist:
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=FeeMessage.FEE_DETAIL_NOT_EXIST,
+                data={}
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             response = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,

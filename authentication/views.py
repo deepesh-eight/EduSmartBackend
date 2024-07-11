@@ -3129,10 +3129,10 @@ class StaffUpdateView(APIView):
                 'religion': request.data.get('religion'),
                 'blood_group': request.data.get('blood_group'),
                 'ctc': request.data.get('ctc'),
-                'experience': request.data.get('experience'),
+                'experience': request.data.get('experience') if request.data.get('experience') else staff_data.experience,
                 'role': request.data.get('role'),
                 'address': request.data.get('address'),
-                'highest_qualification': request.data.get('highest_qualification'),
+                'highest_qualification': request.data.get('highest_qualification') if request.data.get('highest_qualification') else staff_data.highest_qualification,
             }
             staff = StaffUser.objects.get(id=pk, user__school_id=request.user.school_id)
             for cert_id, file in files_data.items():
