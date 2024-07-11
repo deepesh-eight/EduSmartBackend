@@ -6,7 +6,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from authentication.models import StaffUser, TimeTable, TeacherUser
+from authentication.models import StaffUser, TimeTable, TeacherUser, StudentUser
 from authentication.permissions import IsInSameSchool, IsStaffUser
 from constants import UserLoginMessage, UserResponseMessage, TimeTableMessage, ReportCardMesssage, month_mapping, \
     SalaryMessage, FeeMessage
@@ -14,7 +14,7 @@ from management.models import Salary, Fee
 from management.serializers import ManagementProfileSerializer, TimeTableSerializer, TimeTableDetailViewSerializer, \
     ExamReportCardSerializer, StudentReportCardSerializer, AddSalarySerializer, SalaryDetailSerializer, \
     SalaryUpdateSerializer, AddFeeSerializer, FeeListSerializer, FeeUpdateSerializer, FeeDetailSerializer, \
-    StudentListsSerializer
+    StudentListsSerializer, StudentFilterListSerializer
 from pagination import CustomPagination
 from student.models import ExmaReportCard
 from superadmin.models import SchoolProfile
@@ -665,7 +665,7 @@ class FeeDetailView(APIView):
 
 class StudentList(APIView):
     """
-    This class is used to fetch list of the student according to the classes.
+    This class is used to fetch total list of the student in every class.
     """
     permission_classes = [IsStaffUser, IsInSameSchool]
     pagination_class = CustomPagination
@@ -696,6 +696,56 @@ class StudentList(APIView):
                 }
             }
             return Response(response_data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+
+class StudentFilterList(APIView):
+    """
+    This class is used to fetch list of the student according to the classes.
+    """
+    permission_classes = [IsStaffUser, IsInSameSchool]
+    pagination_class = CustomPagination
+
+    def get(self, request):
+        try:
+            data = StudentUser.objects.filter(user__school_id=request.user.school_id, user__is_active=True)
+            curriculum = self.request.query_params.get('curriculum', None)
+            class_name = self.request.query_params.get('class', None)
+            section = self.request.query_params.get('section', None)
+            if curriculum and class_name and section:
+                data = data.filter(curriculum=curriculum, class_enrolled=class_name, section=section)
+
+                paginator = self.pagination_class()
+                paginator_queryset = paginator.paginate_queryset(data, request)
+
+                serializer = StudentFilterListSerializer(paginator_queryset, many=True)
+                response_data = {
+                    'status': status.HTTP_201_CREATED,
+                    'count': len(serializer.data),
+                    'message': UserResponseMessage.USER_LIST_MESSAGE,
+                    'data': serializer.data,
+                    'pagination': {
+                        'page_size': paginator.page_size,
+                        'next': paginator.get_next_link(),
+                        'previous': paginator.get_previous_link(),
+                        'total_pages': paginator.page.paginator.num_pages,
+                        'current_page': paginator.page.number,
+                    }
+                }
+                return Response(response_data, status=status.HTTP_201_CREATED)
+            else:
+                response = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message="Please provide curriculum, class, and ",
+                    data={}
+                )
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             response = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,

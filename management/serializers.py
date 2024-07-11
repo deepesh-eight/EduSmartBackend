@@ -742,3 +742,40 @@ class StudentListsSerializer(serializers.ModelSerializer):
                 return None
         return representation
 
+
+class StudentFilterListSerializer(serializers.ModelSerializer):
+    fee_type = serializers.SerializerMethodField()
+    total_fee = serializers.SerializerMethodField()
+    paid_fee = serializers.SerializerMethodField()
+    due_fee = serializers.SerializerMethodField()
+    class Meta:
+        model = StudentUser
+        fields = ['name', 'roll_no', 'admission_date', 'fee_type', 'total_fee', 'paid_fee', 'due_fee']
+
+    def get_fee_type(self, obj):
+        try:
+            fee_detail = Fee.objects.get(name=obj)
+            return fee_detail.payment_type
+        except Fee.DoesNotExist:
+            return None
+
+    def get_total_fee(self, obj):
+        try:
+            fee_detail = Fee.objects.get(name=obj)
+            return fee_detail.total_fee
+        except Fee.DoesNotExist:
+            return None
+
+    def get_paid_fee(self, obj):
+        try:
+            fee_detail = Fee.objects.get(name=obj)
+            return fee_detail.total_fee # Here i need to add paid fee field
+        except Fee.DoesNotExist:
+            return None
+
+    def get_due_fee(self, obj):
+        try:
+            fee_detail = Fee.objects.get(name=obj)
+            return fee_detail.total_fee-10000 # In the place of 10000 we need to write paid_fee
+        except Fee.DoesNotExist:
+            return None

@@ -26,5 +26,7 @@ urlpatterns = [
         path('fee/detail/<int:pk>/', FeeDetailView.as_view(), name='fee_detail'),
 
         #Student related API'S
-        path('student/list/', StudentList.as_view(), name='student_list')
+        path('student/list/', StudentList.as_view(), name='student_list'),
+        path('students/filter/list/', StudentFilterList.as_view(), name='student_filter_list'),
+
         ]
