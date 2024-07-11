@@ -782,7 +782,108 @@ class StudentFilterListSerializer(serializers.ModelSerializer):
 
 
 class StudentDetailSerializer(serializers.ModelSerializer):
+    institute_name = serializers.SerializerMethodField()
+    fee_type = serializers.SerializerMethodField()
+    due_type = serializers.SerializerMethodField()
+    school_fee = serializers.SerializerMethodField()
+    total_due_amount = serializers.SerializerMethodField()
+    bus_fee = serializers.SerializerMethodField()
+    monthly_instalment = serializers.SerializerMethodField()
+    canteen_fee = serializers.SerializerMethodField()
+    no_of_instalment = serializers.SerializerMethodField()
+    miscellaneous_fee = serializers.SerializerMethodField()
+    # next_due_amount = serializers.SerializerMethodField()
+    # last_amount_paid = serializers.SerializerMethodField()
+    # next_due_date = serializers.SerializerMethodField()
+    # last_paid_date = serializers.SerializerMethodField()
+    # late_fee = serializers.SerializerMethodField()
+    # fee_paid_by_student = serializers.SerializerMethodField()
+    # total_due_to_pay = serializers.SerializerMethodField()
+    # total_fee = serializers.SerializerMethodField()
+
 
     class Meta:
         model = StudentUser
-        fields = ['id', 'name', 'roll_no', 'curriculum', 'class_enrolled', 'section','admission_date']
+        fields = ['id', 'name', 'roll_no', 'curriculum', 'class_enrolled', 'section', 'admission_date', 'institute_name', 'fee_type',
+                  'due_type', 'school_fee', 'total_due_amount', 'bus_fee', 'monthly_instalment', 'no_of_instalment', 'canteen_fee',
+                  'miscellaneous_fee']
+
+    def get_institute_name(self, obj):
+        if obj.name:
+            student = StudentUser.objects.get(user=obj.user)
+            user = User.objects.get(id=student.user.id)
+            school = SchoolProfile.objects.get(school_id=user.school_id)
+            return f"{school.school_name} {school.city} {school.state}"
+        else:
+            None
+
+    def get_fee_type(self, obj):
+        try:
+            fee_detail = Fee.objects.get(name=obj)
+            return fee_detail.payment_type
+        except Fee.DoesNotExist:
+            return None
+
+    def get_due_type(self, obj):
+        try:
+            fee_due_type = []
+            fee_detail = Fee.objects.get(name=obj)
+            fee = DueFeeDetail.objects.filter(fee_structure=fee_detail.id)
+            for detail in fee:
+                fee_due_type.append(detail.due_type)
+            return fee_due_type
+        except Fee.DoesNotExist:
+            return None
+
+    def get_school_fee(self, obj):
+        try:
+            fee_detail = Fee.objects.get(name=obj)
+            return fee_detail.school_fee
+        except Fee.DoesNotExist:
+            return None
+
+    def get_total_due_amount(self, obj):
+        try:
+            fee_due_amount = []
+            fee_detail = Fee.objects.get(name=obj)
+            fee = DueFeeDetail.objects.filter(fee_structure=fee_detail.id)
+            for detail in fee:
+                fee_due_amount.append(detail.due_amount)
+            return fee_due_amount
+        except Fee.DoesNotExist:
+            return None
+
+    def get_bus_fee(self, obj):
+        try:
+            fee_detail = Fee.objects.get(name=obj)
+            return fee_detail.bus_fee
+        except Fee.DoesNotExist:
+            return None
+
+    def get_monthly_instalment(self, obj):
+        try:
+            fee_detail = Fee.objects.get(name=obj)
+            return fee_detail.instalment_amount
+        except Fee.DoesNotExist:
+            return None
+
+    def get_no_of_instalment(self, obj):
+        try:
+            fee_detail = Fee.objects.get(name=obj)
+            return fee_detail.no_of_instalment
+        except Fee.DoesNotExist:
+            return None
+
+    def get_canteen_fee(self, obj):
+        try:
+            fee_detail = Fee.objects.get(name=obj)
+            return fee_detail.canteen_fee
+        except Fee.DoesNotExist:
+            return None
+
+    def get_miscellaneous_fee(self, obj):
+        try:
+            fee_detail = Fee.objects.get(name=obj)
+            return fee_detail.miscellaneous_fee
+        except Fee.DoesNotExist:
+            return None
