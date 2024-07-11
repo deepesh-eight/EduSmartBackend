@@ -6,14 +6,15 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from authentication.models import StaffUser, TimeTable
+from authentication.models import StaffUser, TimeTable, TeacherUser
 from authentication.permissions import IsInSameSchool, IsStaffUser
 from constants import UserLoginMessage, UserResponseMessage, TimeTableMessage, ReportCardMesssage, month_mapping, \
     SalaryMessage, FeeMessage
 from management.models import Salary, Fee
 from management.serializers import ManagementProfileSerializer, TimeTableSerializer, TimeTableDetailViewSerializer, \
     ExamReportCardSerializer, StudentReportCardSerializer, AddSalarySerializer, SalaryDetailSerializer, \
-    SalaryUpdateSerializer, AddFeeSerializer, FeeListSerializer, FeeUpdateSerializer, FeeDetailSerializer
+    SalaryUpdateSerializer, AddFeeSerializer, FeeListSerializer, FeeUpdateSerializer, FeeDetailSerializer, \
+    StudentListsSerializer
 from pagination import CustomPagination
 from student.models import ExmaReportCard
 from superadmin.models import SchoolProfile
@@ -653,6 +654,48 @@ class FeeDetailView(APIView):
             )
             return Response(response, status=status.HTTP_404_NOT_FOUND)
 
+        except Exception as e:
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+
+class StudentList(APIView):
+    """
+    This class is used to fetch list of the student according to the classes.
+    """
+    permission_classes = [IsStaffUser, IsInSameSchool]
+    pagination_class = CustomPagination
+
+    def get(self, request):
+        try:
+            data = TeacherUser.objects.filter(user__school_id=request.user.school_id, user__is_active=True)
+            search = self.request.query_params.get('search', None)
+            if search:
+                data = data.filter(class_subject_section_details__contains=[{'class': search}])
+
+            paginator = self.pagination_class()
+            paginator_queryset = paginator.paginate_queryset(data, request)
+
+            serializer = StudentListsSerializer(paginator_queryset, many=True)
+            filtered_data = [entry for entry in serializer.data if entry]
+            response_data = {
+                'status': status.HTTP_201_CREATED,
+                'count': len(serializer.data),
+                'message': UserResponseMessage.USER_LIST_MESSAGE,
+                'data': filtered_data,
+                'pagination': {
+                    'page_size': paginator.page_size,
+                    'next': paginator.get_next_link(),
+                    'previous': paginator.get_previous_link(),
+                    'total_pages': paginator.page.paginator.num_pages,
+                    'current_page': paginator.page.number,
+                }
+            }
+            return Response(response_data, status=status.HTTP_201_CREATED)
         except Exception as e:
             response = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
