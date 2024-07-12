@@ -5,7 +5,8 @@ from datetime import datetime
 from rest_framework import serializers
 
 from EduSmart import settings
-from authentication.models import StaffUser, Certificate, TimeTable, TeacherUser, StudentUser, User, TeacherAttendence
+from authentication.models import StaffUser, Certificate, TimeTable, TeacherUser, StudentUser, User, TeacherAttendence, \
+    StaffAttendence
 from curriculum.models import Curriculum
 from management.models import Salary, SalaryFormat, Fee, FeeFormat, DueFeeDetail
 from student.models import ExmaReportCard
@@ -910,7 +911,7 @@ class StudentDetailSerializer(serializers.ModelSerializer):
             return None
 
 
-class StudentListsSerializer(serializers.ModelSerializer):
+class TeacherListsSerializer(serializers.ModelSerializer):
     mail = serializers.EmailField(source='user.email')
     phone = serializers.SerializerMethodField()
     attendance = serializers.SerializerMethodField()
@@ -938,5 +939,59 @@ class StudentListsSerializer(serializers.ModelSerializer):
         if attendance:
             for teacher_attendance in attendance:
                 data.append(teacher_attendance.mark_attendence)
+            return f'{len(data)}/{monthrange(year, month)[1]}'
+        return None
+
+
+class TeacherFeeDetailSerializer(serializers.ModelSerializer):
+    department = serializers.SerializerMethodField()
+    institute_name = serializers.SerializerMethodField()
+    class Meta:
+        model = TeacherUser
+        fields = ['id', 'institute_name', 'full_name', 'role', 'department', 'joining_date',]
+
+    def get_institute_name(self, obj):
+        teaching_staff = TeacherUser.objects.get(user=obj.user)
+        user = User.objects.get(id=teaching_staff.user.id)
+        school = SchoolProfile.objects.get(school_id=user.school_id)
+        return f"{school.school_name} {school.city} {school.state}"
+
+    def get_department(self, obj):
+        teaching_staff = TeacherUser.objects.get(user=obj.user)
+        user = User.objects.get(id=teaching_staff.user.id)
+        return user.user_type
+
+
+class StaffListsSerializer(serializers.ModelSerializer):
+    mail = serializers.EmailField(source='user.email')
+    phone = serializers.SerializerMethodField()
+    attendance = serializers.SerializerMethodField()
+    name = serializers.SerializerMethodField()
+    class Meta:
+        model = StaffUser
+        fields = ['id', 'name', 'role', 'mail', 'phone', 'attendance']
+
+
+    def get_name(self, obj):
+        return f'{obj.first_name} {obj.last_name}'
+    def get_phone(self, obj):
+        phone_number = obj.user.phone
+        if phone_number:
+            return str(phone_number)
+        return None
+
+    def get_attendance(self, obj):
+        current_date = datetime.now()
+        year = current_date.year
+        month = current_date.month
+        start_date = current_date.replace(day=1)
+        end_date = current_date.replace(day=monthrange(current_date.year, current_date.month)[1])
+
+        attendance = StaffAttendence.objects.filter(staff=obj, date__range=(start_date, end_date), mark_attendence='P')
+        data = []
+
+        if attendance:
+            for staff_attendance in attendance:
+                data.append(staff_attendance.mark_attendence)
             return f'{len(data)}/{monthrange(year, month)[1]}'
         return None

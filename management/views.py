@@ -14,7 +14,8 @@ from management.models import Salary, Fee
 from management.serializers import ManagementProfileSerializer, TimeTableSerializer, TimeTableDetailViewSerializer, \
     ExamReportCardSerializer, StudentReportCardSerializer, AddSalarySerializer, SalaryDetailSerializer, \
     SalaryUpdateSerializer, AddFeeSerializer, FeeListSerializer, FeeUpdateSerializer, FeeDetailSerializer, \
-    StudentListsSerializer, StudentFilterListSerializer, StudentDetailSerializer
+    StudentListsSerializer, StudentFilterListSerializer, StudentDetailSerializer, TeacherFeeDetailSerializer, \
+    TeacherListsSerializer, StaffListsSerializer
 from pagination import CustomPagination
 from student.models import ExmaReportCard
 from superadmin.models import SchoolProfile
@@ -776,7 +777,7 @@ class StudentFeeDetail(APIView):
         except StudentUser.DoesNotExist:
             response = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
-                message=FeeMessage.FEE_DETAIL_NOT_EXIST,
+                message=UserResponseMessage.USER_NOT_FOUND,
                 data={}
             )
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
@@ -802,13 +803,84 @@ class TeacherList(APIView):
             paginator = self.pagination_class()
             paginator_queryset = paginator.paginate_queryset(data, request)
 
-            serializer = StudentListsSerializer(paginator_queryset, many=True)
+            serializer = TeacherListsSerializer(paginator_queryset, many=True)
             filtered_data = [entry for entry in serializer.data if entry]
             response_data = {
                 'status': status.HTTP_201_CREATED,
                 'count': len(serializer.data),
                 'message': UserResponseMessage.USER_LIST_MESSAGE,
                 'data': filtered_data,
+                'pagination': {
+                    'page_size': paginator.page_size,
+                    'next': paginator.get_next_link(),
+                    'previous': paginator.get_previous_link(),
+                    'total_pages': paginator.page.paginator.num_pages,
+                    'current_page': paginator.page.number,
+                }
+            }
+            return Response(response_data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TeacherFeeDetailView(APIView):
+    """
+    This class is used to fetch the detail of teacher .
+    """
+    permission_classes = [IsStaffUser, IsInSameSchool]
+
+    def get(self, request, pk):
+        try:
+            data = TeacherUser.objects.get(id=pk, user__school_id=request.user.school_id)
+            serializer = TeacherFeeDetailSerializer(data)
+            response = create_response_data(
+                status=status.HTTP_200_OK,
+                message=FeeMessage.FEE_DETAIL_FETCH_SUCCESSFULLY,
+                data=serializer.data
+            )
+            return Response(response, status=status.HTTP_200_OK)
+
+        except TeacherUser.DoesNotExist:
+            response = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=UserResponseMessage.USER_NOT_FOUND,
+                data={}
+            )
+            return Response(response, status=status.HTTP_404_NOT_FOUND)
+
+        except Exception as e:
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+
+class StaffList(APIView):
+    """
+    This class is used to fetch detail of the staff.
+    """
+    permission_classes = [IsStaffUser, IsInSameSchool]
+    pagination_class = CustomPagination
+
+    def get(self, request):
+        try:
+            data = StaffUser.objects.filter(user__school_id=request.user.school_id, user__is_active=True)
+            paginator = self.pagination_class()
+            paginator_queryset = paginator.paginate_queryset(data, request)
+
+            serializer = StaffListsSerializer(paginator_queryset, many=True)
+            response_data = {
+                'status': status.HTTP_201_CREATED,
+                'count': len(serializer.data),
+                'message': UserResponseMessage.USER_LIST_MESSAGE,
+                'data': serializer.data,
                 'pagination': {
                     'page_size': paginator.page_size,
                     'next': paginator.get_next_link(),
