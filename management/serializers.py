@@ -271,6 +271,9 @@ class AddSalarySerializer(serializers.ModelSerializer):
     account_number = serializers.CharField(required=True)
     field_name = serializers.ListField(child=serializers.CharField(), required=False)
     field_amount = serializers.ListField(child=serializers.CharField(), required=False)
+    master_days = serializers.IntegerField(required=True)
+    total_working_days = serializers.IntegerField(required=True)
+    leave_days = serializers.IntegerField(required=True)
 
     class Meta:
         model = Salary
@@ -279,7 +282,8 @@ class AddSalarySerializer(serializers.ModelSerializer):
             'total_salary', 'in_hand_salary', 'basic_salary', 'hra',
             'other_allowances', 'deducted_salary', 'professional_tax', 'tds',
             'epf', 'other_deduction', 'incentive', 'net_payable_amount',
-            'bank_name', 'account_type', 'ifsc_code', 'account_number', 'field_name', 'field_amount'
+            'bank_name', 'account_type', 'ifsc_code', 'account_number', 'field_name', 'field_amount',
+            'master_days', 'total_working_days', 'leave_days'
         ]
 
     def create(self, validated_data):
@@ -332,7 +336,7 @@ class SalaryDetailSerializer(serializers.ModelSerializer):
         model = Salary
         fields = [
             'institute_name', 'department', 'designation', 'name', 'joining_date', 'pan_no',
-            'total_salary', 'in_hand_salary', 'basic_salary', 'hra',
+            'total_salary', 'in_hand_salary', 'basic_salary', 'hra', 'master_days', 'total_working_days', 'leave_days',
             'other_allowances', 'deducted_salary', 'professional_tax', 'tds',
             'epf', 'other_deduction', 'incentive', 'net_payable_amount',
             'bank_name', 'account_type', 'ifsc_code', 'account_number', 'staff_name', 'staff_id'
@@ -386,12 +390,12 @@ class SalaryDetailSerializer(serializers.ModelSerializer):
 
 
 class SalaryUpdateSerializer(serializers.ModelSerializer):
-    department = serializers.CharField(required=True)
-    designation = serializers.CharField(required=True)
-    joining_date = serializers.DateField(required=True)
-    pan_no = serializers.CharField(required=True)
-    total_salary = serializers.DecimalField(max_digits=16, decimal_places=2, required=True)
-    in_hand_salary = serializers.DecimalField(max_digits=16, decimal_places=2, required=True)
+    department = serializers.CharField(required=False)
+    designation = serializers.CharField(required=False)
+    joining_date = serializers.DateField(required=False)
+    pan_no = serializers.CharField(required=False)
+    total_salary = serializers.DecimalField(max_digits=16, decimal_places=2, required=False)
+    in_hand_salary = serializers.DecimalField(max_digits=16, decimal_places=2, required=False)
     basic_salary = serializers.DecimalField(max_digits=16, decimal_places=2, required=True)
     hra = serializers.DecimalField(max_digits=16, decimal_places=2, default=0.0)
     other_allowances = serializers.DecimalField(max_digits=16, decimal_places=2, default=0.0)
@@ -401,13 +405,16 @@ class SalaryUpdateSerializer(serializers.ModelSerializer):
     epf = serializers.DecimalField(max_digits=16, decimal_places=2, default=0.0)
     other_deduction = serializers.DecimalField(max_digits=16, decimal_places=2, default=0.0)
     incentive = serializers.DecimalField(max_digits=16, decimal_places=2, default=0.0)
-    net_payable_amount = serializers.DecimalField(max_digits=16, decimal_places=2, required=True)
-    bank_name = serializers.CharField(required=True)
-    account_type = serializers.CharField(required=True)
-    ifsc_code = serializers.CharField(required=True)
-    account_number = serializers.CharField(required=True)
+    net_payable_amount = serializers.DecimalField(max_digits=16, decimal_places=2, required=False)
+    bank_name = serializers.CharField(required=False)
+    account_type = serializers.CharField(required=False)
+    ifsc_code = serializers.CharField(required=False)
+    account_number = serializers.CharField(required=False)
     field_name = serializers.ListField(child=serializers.CharField(), required=False)
     field_amount = serializers.ListField(child=serializers.CharField(), required=False)
+    master_days = serializers.IntegerField(required=False)
+    total_working_days = serializers.IntegerField(required=False)
+    leave_days = serializers.IntegerField(required=False)
 
     class Meta:
         model = Salary
@@ -416,7 +423,8 @@ class SalaryUpdateSerializer(serializers.ModelSerializer):
             'total_salary', 'in_hand_salary', 'basic_salary', 'hra',
             'other_allowances', 'deducted_salary', 'professional_tax', 'tds',
             'epf', 'other_deduction', 'incentive', 'net_payable_amount',
-            'bank_name', 'account_type', 'ifsc_code', 'account_number', 'field_name', 'field_amount'
+            'bank_name', 'account_type', 'ifsc_code', 'account_number', 'field_name', 'field_amount',
+            'master_days', 'total_working_days', 'leave_days'
         ]
 
     def update(self, instance, validated_data):

@@ -29,6 +29,9 @@ class Salary(models.Model):
     account_type = models.CharField(max_length=255)
     ifsc_code = models.CharField(max_length=255)
     account_number = models.CharField(max_length=255)
+    master_days = models.IntegerField(null=True, blank=True)
+    total_working_days = models.IntegerField(null=True, blank=True)
+    leave_days = models.IntegerField(null=True, blank=True)
 
     def __str__(self) -> str:
         return f'{self.id}'
