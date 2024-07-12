@@ -49,4 +49,5 @@ urlpatterns = [
 
         # Teacher attendance admin mobile API
         path('mobile/teacher/list/', MobileTeacherList.as_view(), name='mobile_teacher_list'),
+        path('mobile/teacher/attendance/', MobileTeacherAttendance.as_view(), name='mobile_teacher_attendance')
 ]
