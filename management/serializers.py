@@ -1,9 +1,11 @@
 import re
+from calendar import monthrange
+from datetime import datetime
 
 from rest_framework import serializers
 
 from EduSmart import settings
-from authentication.models import StaffUser, Certificate, TimeTable, TeacherUser, StudentUser, User
+from authentication.models import StaffUser, Certificate, TimeTable, TeacherUser, StudentUser, User, TeacherAttendence
 from curriculum.models import Curriculum
 from management.models import Salary, SalaryFormat, Fee, FeeFormat, DueFeeDetail
 from student.models import ExmaReportCard
@@ -796,17 +798,17 @@ class StudentDetailSerializer(serializers.ModelSerializer):
     # last_amount_paid = serializers.SerializerMethodField()
     # next_due_date = serializers.SerializerMethodField()
     # last_paid_date = serializers.SerializerMethodField()
-    # late_fee = serializers.SerializerMethodField()
+    late_fee = serializers.SerializerMethodField()
     # fee_paid_by_student = serializers.SerializerMethodField()
     # total_due_to_pay = serializers.SerializerMethodField()
-    # total_fee = serializers.SerializerMethodField()
+    total_fee = serializers.SerializerMethodField()
 
 
     class Meta:
         model = StudentUser
         fields = ['id', 'name', 'roll_no', 'curriculum', 'class_enrolled', 'section', 'admission_date', 'institute_name', 'fee_type',
                   'due_type', 'school_fee', 'total_due_amount', 'bus_fee', 'monthly_instalment', 'no_of_instalment', 'canteen_fee',
-                  'miscellaneous_fee']
+                  'miscellaneous_fee', 'late_fee', 'total_fee']
 
     def get_institute_name(self, obj):
         if obj.name:
@@ -887,3 +889,54 @@ class StudentDetailSerializer(serializers.ModelSerializer):
             return fee_detail.miscellaneous_fee
         except Fee.DoesNotExist:
             return None
+
+    def get_total_fee(self, obj):
+        try:
+            fee_detail = Fee.objects.get(name=obj)
+            return fee_detail.total_fee
+        except Fee.DoesNotExist:
+            return None
+
+
+    def get_late_fee(self, obj):
+        try:
+            late_fee = []
+            fee_detail = Fee.objects.get(name=obj)
+            fee = DueFeeDetail.objects.filter(fee_structure=fee_detail.id)
+            for detail in fee:
+                late_fee.append(detail.late_fee)
+            return late_fee
+        except Fee.DoesNotExist:
+            return None
+
+
+class StudentListsSerializer(serializers.ModelSerializer):
+    mail = serializers.EmailField(source='user.email')
+    phone = serializers.SerializerMethodField()
+    attendance = serializers.SerializerMethodField()
+    class Meta:
+        model = TeacherUser
+        fields = ['id', 'full_name', 'role', 'mail', 'phone', 'attendance']
+
+
+    def get_phone(self, obj):
+        phone_number = obj.user.phone
+        if phone_number:
+            return str(phone_number)
+        return None
+
+    def get_attendance(self, obj):
+        current_date = datetime.now()
+        year = current_date.year
+        month = current_date.month
+        start_date = current_date.replace(day=1)
+        end_date = current_date.replace(day=monthrange(current_date.year, current_date.month)[1])
+
+        attendance = TeacherAttendence.objects.filter(teacher=obj, date__range=(start_date, end_date), mark_attendence='P')
+        data = []
+
+        if attendance:
+            for teacher_attendance in attendance:
+                data.append(teacher_attendance.mark_attendence)
+            return f'{len(data)}/{monthrange(year, month)[1]}'
+        return None

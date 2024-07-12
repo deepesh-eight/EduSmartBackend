@@ -787,3 +787,41 @@ class StudentFeeDetail(APIView):
                 data={}
             )
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TeacherList(APIView):
+    """
+    This class is used to fetch list of the teacher's.
+    """
+    permission_classes = [IsStaffUser, IsInSameSchool]
+    pagination_class = CustomPagination
+
+    def get(self, request):
+        try:
+            data = TeacherUser.objects.filter(user__school_id=request.user.school_id, user__is_active=True)
+            paginator = self.pagination_class()
+            paginator_queryset = paginator.paginate_queryset(data, request)
+
+            serializer = StudentListsSerializer(paginator_queryset, many=True)
+            filtered_data = [entry for entry in serializer.data if entry]
+            response_data = {
+                'status': status.HTTP_201_CREATED,
+                'count': len(serializer.data),
+                'message': UserResponseMessage.USER_LIST_MESSAGE,
+                'data': filtered_data,
+                'pagination': {
+                    'page_size': paginator.page_size,
+                    'next': paginator.get_next_link(),
+                    'previous': paginator.get_previous_link(),
+                    'total_pages': paginator.page.paginator.num_pages,
+                    'current_page': paginator.page.number,
+                }
+            }
+            return Response(response_data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
