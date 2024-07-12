@@ -954,9 +954,20 @@ class TeacherListsSerializer(serializers.ModelSerializer):
 class TeacherFeeDetailSerializer(serializers.ModelSerializer):
     department = serializers.SerializerMethodField()
     institute_name = serializers.SerializerMethodField()
+    pan_no = serializers.SerializerMethodField()
+    master_days = serializers.SerializerMethodField()
+    total_working_days = serializers.SerializerMethodField()
+    leave_days = serializers.SerializerMethodField()
+    attendance = serializers.SerializerMethodField()
+    designation = serializers.SerializerMethodField()
+    account_type = serializers.SerializerMethodField()
+    bank_name = serializers.SerializerMethodField()
+    ifsc_code = serializers.SerializerMethodField()
+    account_number = serializers.SerializerMethodField()
     class Meta:
         model = TeacherUser
-        fields = ['id', 'institute_name', 'full_name', 'role', 'department', 'joining_date',]
+        fields = ['id', 'institute_name', 'full_name', 'department', 'joining_date', 'pan_no', 'master_days', 'total_working_days',
+                  'leave_days', 'attendance', 'designation', 'account_type', 'bank_name', 'ifsc_code', 'account_number']
 
     def get_institute_name(self, obj):
         teaching_staff = TeacherUser.objects.get(user=obj.user)
@@ -965,9 +976,60 @@ class TeacherFeeDetailSerializer(serializers.ModelSerializer):
         return f"{school.school_name} {school.city} {school.state}"
 
     def get_department(self, obj):
-        teaching_staff = TeacherUser.objects.get(user=obj.user)
-        user = User.objects.get(id=teaching_staff.user.id)
-        return user.user_type
+        department = Salary.objects.get(name=obj.user)
+        return department.department
+
+    def get_pan_no(self, obj):
+        teaching_staff = Salary.objects.get(name=obj.user)
+        return teaching_staff.pan_no
+
+    def get_master_days(self, obj):
+        teaching_staff = Salary.objects.get(name=obj.user)
+        return teaching_staff.master_days
+
+    def get_total_working_days(self, obj):
+        teaching_staff = Salary.objects.get(name=obj.user)
+        return teaching_staff.total_working_days
+
+    def get_leave_days(self, obj):
+        teaching_staff = Salary.objects.get(name=obj.user)
+        return teaching_staff.leave_days
+
+    def get_attendance(self, obj):
+        current_date = datetime.now()
+        year = current_date.year
+        month = current_date.month
+        start_date = current_date.replace(day=1)
+        end_date = current_date.replace(day=monthrange(current_date.year, current_date.month)[1])
+
+        attendance = TeacherAttendence.objects.filter(teacher=obj, date__range=(start_date, end_date), mark_attendence='P')
+        data = []
+
+        if attendance:
+            for teacher_attendance in attendance:
+                data.append(teacher_attendance.mark_attendence)
+            return f'{len(data)}/{monthrange(year, month)[1]}'
+        return None
+
+    def get_designation(self, obj):
+        teaching_staff = Salary.objects.get(name=obj.user)
+        return teaching_staff.designation
+
+    def get_bank_name(self, obj):
+        teaching_staff = Salary.objects.get(name=obj.user)
+        return teaching_staff.bank_name
+
+    def get_account_type(self, obj):
+        teaching_staff = Salary.objects.get(name=obj.user)
+        return teaching_staff.account_type
+
+    def get_ifsc_code(self, obj):
+        teaching_staff = Salary.objects.get(name=obj.user)
+        return teaching_staff.ifsc_code
+
+    def get_account_number(self, obj):
+        teaching_staff = Salary.objects.get(name=obj.user)
+        return teaching_staff.account_number
 
 
 class StaffListsSerializer(serializers.ModelSerializer):

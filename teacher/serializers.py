@@ -1178,12 +1178,12 @@ class TeacherAttendanceCreateSerializer(serializers.ModelSerializer):
 
 
 class StaffListBySectionSerializer(serializers.ModelSerializer):
-    name = serializers.SerializerMethodField()
+    full_name = serializers.SerializerMethodField()
     class Meta:
         model = StaffUser
-        fields = ['id', 'name']
+        fields = ['id', 'full_name']
 
-    def get_name(self, obj):
+    def get_full_name(self, obj):
         return f'{obj.first_name} {obj.last_name}'
 
 
