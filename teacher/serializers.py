@@ -1153,3 +1153,25 @@ class StudentChatRequestMessageSerializer(serializers.ModelSerializer):
         start_time = str(obj.start_time)
         if start_time:
             return datetime.strptime(start_time, '%H:%M:%S').strftime('%I:%M %p')
+
+
+class TeacherListBySectionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TeacherUser
+        fields = ['id', 'full_name']
+
+
+class TeacherAttendanceCreateSerializer(serializers.ModelSerializer):
+    date = serializers.SerializerMethodField(required=False)
+    class Meta:
+        model = TeacherAttendence
+        fields = ['id', 'date', 'mark_attendence']
+
+    def validate(self, data):
+        if 'date' in data:
+            try:
+                # Attempt to parse the date string
+                data['date'] = serializers.DateField().to_internal_value(data['date'])
+            except serializers.ValidationError:
+                raise serializers.ValidationError({"date": ["Date must be in YYYY-MM-DD format"]})
+        return data
