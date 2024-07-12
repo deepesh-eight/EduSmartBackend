@@ -14,7 +14,7 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from authentication.models import User, Class, TeacherUser, StudentUser, Certificate, TeachersSchedule, \
-    TeacherAttendence, StaffUser, Availability
+    TeacherAttendence, StaffUser, Availability, StaffAttendence
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsTeacherUser, IsInSameSchool
 from authentication.serializers import UserLoginSerializer
 from authentication.views import NonTeachingStaffDetailView
@@ -30,7 +30,8 @@ from teacher.serializers import TeacherUserSignupSerializer, TeacherDetailSerial
     TeacherAttendanceListSerializer, SectionListSerializer, SubjectListSerializer, \
     TeacherAttendanceFilterListSerializer, AvailabilityCreateSerializer, \
     ChatRequestMessageSerializer, TeacherChatHistorySerializer, AvailabilityGetSerializer, StudyMaterialListSerializer, \
-    StudyMaterialDetailSerializer, TeacherListBySectionSerializer, TeacherAttendanceCreateSerializer
+    StudyMaterialDetailSerializer, TeacherListBySectionSerializer, TeacherAttendanceCreateSerializer, \
+    StaffAttendanceCreateSerializer, StaffListBySectionSerializer
 from utils import create_response_data, create_response_list_data, generate_random_password,get_teacher_total_attendance, \
     get_teacher_monthly_attendance, get_teacher_total_absent, get_teacher_monthly_absent
 
@@ -1593,6 +1594,101 @@ class MobileTeacherAttendance(APIView):
                 # Create or update attendance record
                 TeacherAttendence.objects.update_or_create(
                     teacher=teacher_user,
+                    date=date,
+                    mark_attendence=mark_attendence
+                )
+            else:
+                response = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=serializer.errors,
+                    data={}
+                )
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        response = create_response_data(
+            status=status.HTTP_200_OK,
+            message=AttendenceMarkedMessage.ATTENDENCE_MARKED_SUCCESSFULLY,
+            data={}
+        )
+        return Response(response, status=status.HTTP_200_OK)
+
+
+class MobileStaffList(APIView):
+    """
+    This class is used to fetch list of the staff for mobile app.
+    """
+
+    permission_classes = [IsAdminUser, IsInSameSchool]
+    pagination_class = CustomPagination
+
+    def get(self, request):
+        selected_date_str = request.query_params.get('date')
+        all_mark = True
+        if selected_date_str:
+            try:
+                selected_date = datetime.datetime.strptime(selected_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                response = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message="Invalid date format. Please provide date in YYYY-MM-DD format.",
+                    data={}
+                )
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            selected_date = None
+
+        staff = StaffUser.objects.filter(user__school_id=request.user.school_id, user__is_active=True)
+        serializer = StaffListBySectionSerializer(staff, many=True)
+
+        if selected_date:
+            attendance_records = StaffAttendence.objects.filter(date=selected_date, staff__in=staff)
+            attendance_mapping = {
+                attendance.staff_id: {'date': attendance.date, 'mark_attendence': attendance.mark_attendence} for
+                attendance in attendance_records}
+
+            for staff_data in serializer.data:
+                teacher_id = staff_data['id']
+                if teacher_id in attendance_mapping:
+                    attendance_data = attendance_mapping[teacher_id]
+                    staff_data['date'] = attendance_data['date']
+                    staff_data['mark_attendence'] = attendance_data['mark_attendence']
+                else:
+                    all_mark = False
+                    staff_data['date'] = selected_date
+                    staff_data['mark_attendence'] = None
+        response = {
+            'status': status.HTTP_200_OK,
+            'message': "Teacher list fetched successfully.",
+            'all_attendance_marked': all_mark,
+            'data': serializer.data
+        }
+        return Response(response, status=status.HTTP_200_OK)
+
+
+class MobileStaffAttendance(APIView):
+    """
+    This class is created to marked_attendance of the staff.
+    """
+    permission_classes = [IsAdminUser, IsInSameSchool]
+
+    def post(self, request):
+        data_str = request.data.get('data')
+
+        try:
+            data_json = json.loads(data_str)
+        except json.JSONDecodeError:
+            return Response("Invalid JSON format", status=status.HTTP_400_BAD_REQUEST)
+
+        for item in data_json:
+            serializer = StaffAttendanceCreateSerializer(data=item)
+            if serializer.is_valid():
+                staff_id = item['id']
+                date = item['date']
+                mark_attendence = item['mark_attendence']
+                staff_user = get_object_or_404(StaffUser, id=staff_id)
+
+                # Create or update attendance record
+                StaffAttendence.objects.update_or_create(
+                    staff=staff_user,
                     date=date,
                     mark_attendence=mark_attendence
                 )

@@ -10,7 +10,7 @@ from rest_framework import serializers
 
 from EduSmart import settings
 from authentication.models import TeacherUser, Certificate, TeachersSchedule, TeacherAttendence, DayReview, \
-    Notification, TimeTable, StudentUser, Availability
+    Notification, TimeTable, StudentUser, Availability, StaffUser, StaffAttendence
 from constants import USER_TYPE_CHOICES, GENDER_CHOICES, RELIGION_CHOICES, BLOOD_GROUP_CHOICES, CLASS_CHOICES, \
     SUBJECT_CHOICES, ROLE_CHOICES, ATTENDENCE_CHOICE, EXAME_TYPE_CHOICE
 from curriculum.models import Curriculum, Subjects
@@ -1165,6 +1165,32 @@ class TeacherAttendanceCreateSerializer(serializers.ModelSerializer):
     date = serializers.SerializerMethodField(required=False)
     class Meta:
         model = TeacherAttendence
+        fields = ['id', 'date', 'mark_attendence']
+
+    def validate(self, data):
+        if 'date' in data:
+            try:
+                # Attempt to parse the date string
+                data['date'] = serializers.DateField().to_internal_value(data['date'])
+            except serializers.ValidationError:
+                raise serializers.ValidationError({"date": ["Date must be in YYYY-MM-DD format"]})
+        return data
+
+
+class StaffListBySectionSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+    class Meta:
+        model = StaffUser
+        fields = ['id', 'name']
+
+    def get_name(self, obj):
+        return f'{obj.first_name} {obj.last_name}'
+
+
+class StaffAttendanceCreateSerializer(serializers.ModelSerializer):
+    date = serializers.SerializerMethodField(required=False)
+    class Meta:
+        model = StaffAttendence
         fields = ['id', 'date', 'mark_attendence']
 
     def validate(self, data):

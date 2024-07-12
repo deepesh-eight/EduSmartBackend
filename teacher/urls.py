@@ -49,5 +49,9 @@ urlpatterns = [
 
         # Teacher attendance admin mobile API
         path('mobile/teacher/list/', MobileTeacherList.as_view(), name='mobile_teacher_list'),
-        path('mobile/teacher/attendance/', MobileTeacherAttendance.as_view(), name='mobile_teacher_attendance')
+        path('mobile/teacher/attendance/', MobileTeacherAttendance.as_view(), name='mobile_teacher_attendance'),
+
+        # Non-teaching-staff attendance admin mobile API
+        path('mobile/staff/list/', MobileStaffList.as_view(), name='mobile_staff_list'),
+        path('mobile/staff/attendance/', MobileStaffAttendance.as_view(), name='mobile_staff_attendance'),
 ]
