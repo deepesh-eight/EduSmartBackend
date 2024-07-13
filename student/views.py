@@ -7,7 +7,7 @@ from django.db import IntegrityError
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from rest_framework import status, generics
+from rest_framework import status, generics, permissions
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -579,7 +579,7 @@ class FetchStudentList(APIView):
     """
     This class is created to fetch the list of the student's according to section.
     """
-    permission_classes = [IsTeacherUser, IsInSameSchool]
+    permission_classes = [permissions.IsAuthenticated, IsInSameSchool]
     pagination_class = CustomPagination
 
     def get(self, request):
