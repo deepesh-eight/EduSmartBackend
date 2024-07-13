@@ -942,3 +942,47 @@ class TeacherSalaryUpdateView(APIView):
                 data={}
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class StaffSalaryUpdateView(APIView):
+    """
+    This class is used to update the detail of the non-teaching-staff fee detail.
+    """
+    permission_classes = [IsStaffUser, IsInSameSchool]
+
+    def patch(self, request, pk):
+        try:
+            staff_user = StaffUser.objects.get(id=pk)
+            data = Salary.objects.get(name=staff_user.user.id, school_id=request.user.school_id)
+            serializer = TeacherUserSalaryUpdateSerializer(data, data=request.data, partial=True)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                response_data = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=SalaryMessage.SALARY_UPDATED_SUCCESSFULLY,
+                    data=serializer.data
+                )
+                return Response(response_data, status=status.HTTP_200_OK)
+            else:
+                response_data = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=serializer.errors,
+                    data={}
+                )
+                return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+        except StaffUser.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=UserResponseMessage.USER_NOT_FOUND,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
