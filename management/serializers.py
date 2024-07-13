@@ -964,10 +964,21 @@ class TeacherFeeDetailSerializer(serializers.ModelSerializer):
     bank_name = serializers.SerializerMethodField()
     ifsc_code = serializers.SerializerMethodField()
     account_number = serializers.SerializerMethodField()
+    total_salary = serializers.SerializerMethodField()
+    professional_tax = serializers.SerializerMethodField()
+    basic_salary = serializers.SerializerMethodField()
+    hra = serializers.SerializerMethodField()
+    tds = serializers.SerializerMethodField()
+    other_deduction = serializers.SerializerMethodField()
+    other_allowances = serializers.SerializerMethodField()
+    in_hand_salary = serializers.SerializerMethodField()
+    total_deduction = serializers.SerializerMethodField()
     class Meta:
         model = TeacherUser
         fields = ['id', 'institute_name', 'full_name', 'department', 'joining_date', 'pan_no', 'master_days', 'total_working_days',
-                  'leave_days', 'attendance', 'designation', 'account_type', 'bank_name', 'ifsc_code', 'account_number']
+                  'leave_days', 'attendance', 'designation', 'account_type', 'bank_name', 'ifsc_code', 'account_number', 'total_salary',
+                  'professional_tax', 'basic_salary', 'hra', 'tds', 'other_deduction', 'other_allowances', 'in_hand_salary',
+                  'total_deduction']
 
     def get_institute_name(self, obj):
         teaching_staff = TeacherUser.objects.get(user=obj.user)
@@ -1031,6 +1042,47 @@ class TeacherFeeDetailSerializer(serializers.ModelSerializer):
         teaching_staff = Salary.objects.get(name=obj.user)
         return teaching_staff.account_number
 
+    def get_total_salary(self, obj):
+        teaching_staff = Salary.objects.get(name=obj.user)
+        return teaching_staff.total_salary
+
+    def get_professional_tax(self, obj):
+        teaching_staff = Salary.objects.get(name=obj.user)
+        return teaching_staff.professional_tax
+
+    def get_basic_salary(self, obj):
+        teaching_staff = Salary.objects.get(name=obj.user)
+        return teaching_staff.basic_salary
+
+    def get_hra(self, obj):
+        teaching_staff = Salary.objects.get(name=obj.user)
+        return teaching_staff.hra
+
+    def get_tds(self, obj):
+        teaching_staff = Salary.objects.get(name=obj.user)
+        return teaching_staff.tds
+
+    def get_other_deduction(self, obj):
+        teaching_staff = Salary.objects.get(name=obj.user)
+        return teaching_staff.other_deduction
+
+    def get_other_allowances(self, obj):
+        teaching_staff = Salary.objects.get(name=obj.user)
+        return teaching_staff.other_allowances
+
+    def get_incentive(self, obj):
+        teaching_staff = Salary.objects.get(name=obj.user)
+        return teaching_staff.incentive
+
+    def get_in_hand_salary(self, obj):
+        teaching_staff = Salary.objects.get(name=obj.user)
+        return teaching_staff.in_hand_salary
+
+    def get_total_deduction(self, obj):
+        teaching_staff = Salary.objects.get(name=obj.user)
+        return teaching_staff.deducted_salary+teaching_staff.other_deduction
+
+
 
 class StaffListsSerializer(serializers.ModelSerializer):
     mail = serializers.EmailField(source='user.email')
@@ -1065,3 +1117,11 @@ class StaffListsSerializer(serializers.ModelSerializer):
                 data.append(staff_attendance.mark_attendence)
             return f'{len(data)}/{monthrange(year, month)[1]}'
         return None
+
+
+class TeacherUserSalaryUpdateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Salary
+        fields = ['master_days', 'total_working_days', 'leave_days', 'deducted_salary', 'other_deduction', 'incentive', 'net_payable_amount',
+                  'bank_name', 'account_type', 'ifsc_code', 'account_number']

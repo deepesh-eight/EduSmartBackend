@@ -32,7 +32,8 @@ urlpatterns = [
 
         # Teacher related API'S
         path('teacher/list/', TeacherList.as_view(), name='teacher_list'),
-        path('teacher/fee/detail/<int:pk>/', TeacherFeeDetailView.as_view(), name='teacher_fee_detail'),
+        path('teacher/salary/detail/<int:pk>/', TeacherSalaryDetailView.as_view(), name='teacher_salary_detail'),
+        path('teacher/salary/update/<int:pk>/', TeacherSalaryUpdateView.as_view(), name='teacher_salary_update'),
 
         # Non-teaching-staff related API'S
         path('staff/list/', StaffList.as_view(), name='staff_list'),

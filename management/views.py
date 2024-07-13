@@ -6,7 +6,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from authentication.models import StaffUser, TimeTable, TeacherUser, StudentUser
+from authentication.models import StaffUser, TimeTable, TeacherUser, StudentUser, User
 from authentication.permissions import IsInSameSchool, IsStaffUser
 from constants import UserLoginMessage, UserResponseMessage, TimeTableMessage, ReportCardMesssage, month_mapping, \
     SalaryMessage, FeeMessage
@@ -15,7 +15,7 @@ from management.serializers import ManagementProfileSerializer, TimeTableSeriali
     ExamReportCardSerializer, StudentReportCardSerializer, AddSalarySerializer, SalaryDetailSerializer, \
     SalaryUpdateSerializer, AddFeeSerializer, FeeListSerializer, FeeUpdateSerializer, FeeDetailSerializer, \
     StudentListsSerializer, StudentFilterListSerializer, StudentDetailSerializer, TeacherFeeDetailSerializer, \
-    TeacherListsSerializer, StaffListsSerializer
+    TeacherListsSerializer, StaffListsSerializer, TeacherUserSalaryUpdateSerializer
 from pagination import CustomPagination
 from student.models import ExmaReportCard
 from superadmin.models import SchoolProfile
@@ -828,7 +828,7 @@ class TeacherList(APIView):
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
 
-class TeacherFeeDetailView(APIView):
+class TeacherSalaryDetailView(APIView):
     """
     This class is used to fetch the detail of teacher .
     """
@@ -896,4 +896,49 @@ class StaffList(APIView):
                 message=e.args[0],
                 data={}
             )
-            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)\
+
+
+
+class TeacherSalaryUpdateView(APIView):
+    """
+    This class is used to update the detail of the teacher's fee detail.
+    """
+    permission_classes = [IsStaffUser, IsInSameSchool]
+
+    def patch(self, request, pk):
+        try:
+            teacher_user = TeacherUser.objects.get(id=pk)
+            data = Salary.objects.get(name=teacher_user.user.id, school_id=request.user.school_id)
+            serializer = TeacherUserSalaryUpdateSerializer(data, data=request.data, partial=True)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                response_data = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=SalaryMessage.SALARY_UPDATED_SUCCESSFULLY,
+                    data=serializer.data
+                )
+                return Response(response_data, status=status.HTTP_200_OK)
+            else:
+                response_data = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=serializer.errors,
+                    data={}
+                )
+                return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+        except TeacherUser.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=UserResponseMessage.USER_NOT_FOUND,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
