@@ -1125,3 +1125,139 @@ class TeacherUserSalaryUpdateSerializer(serializers.ModelSerializer):
         model = Salary
         fields = ['master_days', 'total_working_days', 'leave_days', 'deducted_salary', 'other_deduction', 'incentive', 'net_payable_amount',
                   'bank_name', 'account_type', 'ifsc_code', 'account_number']
+
+
+class StaffFeeDetailSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+    department = serializers.SerializerMethodField()
+    institute_name = serializers.SerializerMethodField()
+    pan_no = serializers.SerializerMethodField()
+    master_days = serializers.SerializerMethodField()
+    total_working_days = serializers.SerializerMethodField()
+    leave_days = serializers.SerializerMethodField()
+    attendance = serializers.SerializerMethodField()
+    designation = serializers.SerializerMethodField()
+    account_type = serializers.SerializerMethodField()
+    bank_name = serializers.SerializerMethodField()
+    ifsc_code = serializers.SerializerMethodField()
+    account_number = serializers.SerializerMethodField()
+    total_salary = serializers.SerializerMethodField()
+    professional_tax = serializers.SerializerMethodField()
+    basic_salary = serializers.SerializerMethodField()
+    hra = serializers.SerializerMethodField()
+    tds = serializers.SerializerMethodField()
+    other_deduction = serializers.SerializerMethodField()
+    other_allowances = serializers.SerializerMethodField()
+    in_hand_salary = serializers.SerializerMethodField()
+    total_deduction = serializers.SerializerMethodField()
+    class Meta:
+        model = StaffUser
+        fields = ['id', 'institute_name', 'name', 'department', 'joining_date', 'pan_no', 'master_days', 'total_working_days',
+                  'leave_days', 'attendance', 'designation', 'account_type', 'bank_name', 'ifsc_code', 'account_number', 'total_salary',
+                  'professional_tax', 'basic_salary', 'hra', 'tds', 'other_deduction', 'other_allowances', 'in_hand_salary',
+                  'total_deduction']
+
+    def get_name(self, obj):
+        return f'{obj.first_name} {obj.last_name}'
+
+    def get_institute_name(self, obj):
+        teaching_staff = StaffUser.objects.get(user=obj.user)
+        user = User.objects.get(id=teaching_staff.user.id)
+        school = SchoolProfile.objects.get(school_id=user.school_id)
+        return f"{school.school_name} {school.city} {school.state}"
+
+    def get_department(self, obj):
+        department = Salary.objects.get(name=obj.user)
+        return department.department
+
+    def get_pan_no(self, obj):
+        teaching_staff = Salary.objects.get(name=obj.user)
+        return teaching_staff.pan_no
+
+    def get_master_days(self, obj):
+        teaching_staff = Salary.objects.get(name=obj.user)
+        return teaching_staff.master_days
+
+    def get_total_working_days(self, obj):
+        teaching_staff = Salary.objects.get(name=obj.user)
+        return teaching_staff.total_working_days
+
+    def get_leave_days(self, obj):
+        teaching_staff = Salary.objects.get(name=obj.user)
+        return teaching_staff.leave_days
+
+    def get_attendance(self, obj):
+        current_date = datetime.now()
+        year = current_date.year
+        month = current_date.month
+        start_date = current_date.replace(day=1)
+        end_date = current_date.replace(day=monthrange(current_date.year, current_date.month)[1])
+
+        attendance = StaffAttendence.objects.filter(staff=obj, date__range=(start_date, end_date), mark_attendence='P')
+        data = []
+
+        if attendance:
+            for teacher_attendance in attendance:
+                data.append(teacher_attendance.mark_attendence)
+            return f'{len(data)}/{monthrange(year, month)[1]}'
+        return None
+
+    def get_designation(self, obj):
+        teaching_staff = Salary.objects.get(name=obj.user)
+        return teaching_staff.designation
+
+    def get_bank_name(self, obj):
+        teaching_staff = Salary.objects.get(name=obj.user)
+        return teaching_staff.bank_name
+
+    def get_account_type(self, obj):
+        teaching_staff = Salary.objects.get(name=obj.user)
+        return teaching_staff.account_type
+
+    def get_ifsc_code(self, obj):
+        teaching_staff = Salary.objects.get(name=obj.user)
+        return teaching_staff.ifsc_code
+
+    def get_account_number(self, obj):
+        teaching_staff = Salary.objects.get(name=obj.user)
+        return teaching_staff.account_number
+
+    def get_total_salary(self, obj):
+        teaching_staff = Salary.objects.get(name=obj.user)
+        return teaching_staff.total_salary
+
+    def get_professional_tax(self, obj):
+        teaching_staff = Salary.objects.get(name=obj.user)
+        return teaching_staff.professional_tax
+
+    def get_basic_salary(self, obj):
+        teaching_staff = Salary.objects.get(name=obj.user)
+        return teaching_staff.basic_salary
+
+    def get_hra(self, obj):
+        teaching_staff = Salary.objects.get(name=obj.user)
+        return teaching_staff.hra
+
+    def get_tds(self, obj):
+        teaching_staff = Salary.objects.get(name=obj.user)
+        return teaching_staff.tds
+
+    def get_other_deduction(self, obj):
+        teaching_staff = Salary.objects.get(name=obj.user)
+        return teaching_staff.other_deduction
+
+    def get_other_allowances(self, obj):
+        teaching_staff = Salary.objects.get(name=obj.user)
+        return teaching_staff.other_allowances
+
+    def get_incentive(self, obj):
+        teaching_staff = Salary.objects.get(name=obj.user)
+        return teaching_staff.incentive
+
+    def get_in_hand_salary(self, obj):
+        teaching_staff = Salary.objects.get(name=obj.user)
+        return teaching_staff.in_hand_salary
+
+    def get_total_deduction(self, obj):
+        teaching_staff = Salary.objects.get(name=obj.user)
+        return teaching_staff.deducted_salary+teaching_staff.other_deduction

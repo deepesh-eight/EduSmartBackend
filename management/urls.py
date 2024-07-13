@@ -39,4 +39,5 @@ urlpatterns = [
         # Non-teaching-staff related API'S
         path('staff/list/', StaffList.as_view(), name='staff_list'),
         path('staff/salary/update/<int:pk>/', StaffSalaryUpdateView.as_view(), name='staff_salary_update'),
+        path('staff/salary/detail/<int:pk>/', StaffSalaryDetailView.as_view(), name='staff_salary_detail'),
         ]
