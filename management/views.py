@@ -986,3 +986,27 @@ class StaffSalaryUpdateView(APIView):
                 data={}
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UserListView(APIView):
+    """
+    This class is used to fetch list of the teaching and Non-teaching-staff list.
+    """
+    permission_classes = [IsStaffUser, IsInSameSchool]
+
+    def get(self, request):
+        try:
+            data = User.objects.filter(school_id=request.user.school_id, is_active=True, user_type__in=['teacher', 'non-teaching']).values('id', 'name')
+            response = create_response_data(
+                status=status.HTTP_200_OK,
+                message=UserResponseMessage.USER_LIST_MESSAGE,
+                data=data
+            )
+            return Response(response, status=status.HTTP_200_OK)
+        except Exception as e:
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
