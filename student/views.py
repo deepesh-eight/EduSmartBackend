@@ -329,14 +329,16 @@ class ClassStudentListView(APIView):
                 for section in sections:
                     # Fetch teacher info for the class and section
                     teacher_info = TeacherUser.objects.filter(class_subject_section_details__0__class=class_name, class_subject_section_details__0__section=section,
-                                                              user__school_id=request.user.school_id).values('full_name')
+                                                              user__school_id=request.user.school_id, user__is_active=True).values('full_name', 'class_subject_section_details__0__curriculum')
 
-                    # Append teacher info
-                    class_teacher_info.append({
-                        'class_name': class_name,
-                        'section': section,
-                        'teachers': [teacher['full_name'] for teacher in teacher_info]
-                    })
+                    for teacher in teacher_info:
+                        # Append teacher info
+                        class_teacher_info.append({
+                            'curriculum': teacher['class_subject_section_details__0__curriculum'],
+                            'class_name': class_name,
+                            'section': section,
+                            'teachers': teacher['full_name']
+                        })
 
                     # Count students for the class and section
                     student_count = StudentUser.objects.filter(class_enrolled=class_name, section=section, user__school_id=request.user.school_id).count()
@@ -361,6 +363,7 @@ class ClassStudentListView(APIView):
             response_data = []
             for teacher_info, student_info, attendance_info in zip(class_teacher_info, class_student_count, class_attendance_info):
                 response_data.append({
+                    'curriculum': teacher_info['curriculum'],
                     'class_name': teacher_info['class_name'],
                     'section': teacher_info['section'],
                     'class_teacher': teacher_info['teachers'],
