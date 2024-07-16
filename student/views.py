@@ -826,9 +826,10 @@ class StudentReportCardListView(APIView):
         try:
             user = request.user
             student_data = StudentUser.objects.get(user__school_id=user.school_id, user__id=user.id)
+            name = f"{student_data.name}-{student_data.roll_no}"
             report_card = ExmaReportCard.objects.filter(school_id=user.school_id, curriculum=student_data.curriculum,
                                                   class_name=student_data.class_enrolled,
-                                                  class_section=student_data.section, status=1).last()
+                                                  class_section=student_data.section, student_name=name, status=1).last()
             serializer = StudentReportCardListSerializer(report_card)
             response_data = create_response_data(
                 status=status.HTTP_200_OK,
@@ -836,6 +837,13 @@ class StudentReportCardListView(APIView):
                 data=serializer.data
             )
             return Response(response_data, status=status.HTTP_200_OK)
+        except ExmaReportCard.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=ReportCardMesssage.REPORT_CARD_NOT_EXIST,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             response_data = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
@@ -854,6 +862,8 @@ class StudentReportCardFilterListView(APIView):
     def get(self, request):
         try:
             user = request.user
+            student_data = StudentUser.objects.get(user__school_id=user.school_id, user__id=user.id)
+            name = f"{student_data.name}-{student_data.roll_no}"
             curriculum = request.query_params.get('curriculum', None)
             select_class = request.query_params.get('select_class', None)
             select_section = request.query_params.get('select_section', None)
@@ -862,7 +872,7 @@ class StudentReportCardFilterListView(APIView):
             # student_data = StudentUser.objects.get(user__school_id=user.school_id, user__id=user.id)
             report_card = ExmaReportCard.objects.get(school_id=user.school_id, curriculum=curriculum,
                                                   class_name=select_class,
-                                                  class_section=select_section, status=1, exam_type=select_exam, exam_month__startswith=select_month)
+                                                  class_section=select_section, student_name=name, status=1, exam_type=select_exam, exam_month__startswith=select_month)
             serializer = StudentReportCardListSerializer(report_card)
             response_data = create_response_data(
                 status=status.HTTP_200_OK,
@@ -870,6 +880,13 @@ class StudentReportCardFilterListView(APIView):
                 data=serializer.data
             )
             return Response(response_data, status=status.HTTP_200_OK)
+        except ExmaReportCard.DoesNotExist:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=ReportCardMesssage.REPORT_CARD_NOT_EXIST,
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             response_data = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,

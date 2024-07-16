@@ -437,13 +437,13 @@ class StudentReportCardListSerializer(serializers.ModelSerializer):
 
     def get_father_name(self, obj):
         student = obj.student_name
-        roll_no = re.sub(r'\D', '', student)
+        roll_no = student.split('-')[1]
         father_name = StudentUser.objects.get(roll_no=roll_no)
         return father_name.father_name
 
     def get_mother_name(self, obj):
         student = obj.student_name
-        roll_no = re.sub(r'\D', '', student)
+        roll_no = student.split('-')[1]
         father_name = StudentUser.objects.get(roll_no=roll_no)
         return father_name.mother_name
 
@@ -457,7 +457,7 @@ class StudentReportCardListSerializer(serializers.ModelSerializer):
 
     def get_student_id(self, obj):
         student = obj.student_name
-        roll_no = re.sub(r'\D', '', student)
+        roll_no = student.split('-')[1]
         student_id = StudentUser.objects.get(roll_no=roll_no)
         return student_id.id
 
