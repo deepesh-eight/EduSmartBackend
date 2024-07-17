@@ -363,19 +363,19 @@ class StudentReportCardView(APIView):
                                                  role="Payroll Management")
             student_name = request.query_params.get('student_name')
             curriculum = request.query_params.get('curriculum', None)
-            class_name = request.query_params.get('class', None)
+            class_name = request.query_params.get('class_name', None)
             section = request.query_params.get('section', None)
             exam_type = request.query_params.get('exam_type', None)
             exam_month = request.query_params.get('exam_month', None)
             exam_year = request.query_params.get('exam_year', None)
             report_card = ExmaReportCard.objects.filter(status=1, school_id=request.user.school_id)
-            if student_name:
-                report_card = report_card.filter(student_name=student_name, updated_at__year=current_date.year)
-
             if student_name and curriculum and class_name and section and exam_type and exam_year:
                 month_number = month_mapping.get(exam_month)
                 report_card = report_card.annotate(month=ExtractMonth('exam_month')).filter(student_name=student_name, curriculum=curriculum, class_name=class_name, class_section=section,
                                                             updated_at__year=exam_year, exam_type=exam_type, month=month_number)
+
+            elif student_name:
+                report_card = report_card.filter(student_name=student_name, updated_at__year=current_date.year)
 
             serializer = StudentReportCardSerializer(report_card, many=True)
             response = create_response_data(
