@@ -40,4 +40,9 @@ urlpatterns = [
         path('staff/list/', StaffList.as_view(), name='staff_list'),
         path('staff/salary/update/<int:pk>/', StaffSalaryUpdateView.as_view(), name='staff_salary_update'),
         path('staff/salary/detail/<int:pk>/', StaffSalaryDetailView.as_view(), name='staff_salary_detail'),
+
+        # Attendance related APIs
+        path('teacher/attendance/update/<int:pk>/', TeacherAttendanceUpdateView.as_view(), name='teacher_attendance_update'),
+        path('staff/attendance/update/<int:pk>/', StaffAttendanceUpdateView.as_view(), name='staff_attendance_update'),
+        path('student/attendance/update/<int:pk>/', StudentAttendanceUpdateView.as_view(), name='student_attendance_update'),
         ]

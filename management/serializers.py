@@ -7,9 +7,10 @@ from rest_framework import serializers
 from EduSmart import settings
 from authentication.models import StaffUser, Certificate, TimeTable, TeacherUser, StudentUser, User, TeacherAttendence, \
     StaffAttendence
+from constants import ATTENDENCE_CHOICE
 from curriculum.models import Curriculum
 from management.models import Salary, SalaryFormat, Fee, FeeFormat, DueFeeDetail
-from student.models import ExmaReportCard
+from student.models import ExmaReportCard, StudentAttendence
 from superadmin.models import SchoolProfile
 from teacher.serializers import CertificateSerializer
 
@@ -1261,3 +1262,24 @@ class StaffFeeDetailSerializer(serializers.ModelSerializer):
     def get_total_deduction(self, obj):
         teaching_staff = Salary.objects.get(name=obj.user)
         return teaching_staff.deducted_salary+teaching_staff.other_deduction
+
+
+class TeacherAttendanceUpdateSerializer(serializers.ModelSerializer):
+    mark_attendence = serializers.ChoiceField(choices=ATTENDENCE_CHOICE, required=True)
+    class Meta:
+        model = TeacherAttendence
+        fields = ['date', 'mark_attendence']
+
+
+class StaffAttendanceUpdateSerializer(serializers.ModelSerializer):
+    mark_attendence = serializers.ChoiceField(choices=ATTENDENCE_CHOICE, required=True)
+    class Meta:
+        model = StaffAttendence
+        fields = ['date', 'mark_attendence']
+
+
+class StudentAttendanceUpdateSerializer(serializers.ModelSerializer):
+    mark_attendence = serializers.ChoiceField(choices=ATTENDENCE_CHOICE, required=True)
+    class Meta:
+        model = StudentAttendence
+        fields = ['date', 'mark_attendence']

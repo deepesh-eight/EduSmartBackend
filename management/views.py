@@ -6,18 +6,20 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from authentication.models import StaffUser, TimeTable, TeacherUser, StudentUser, User
+from authentication.models import StaffUser, TimeTable, TeacherUser, StudentUser, User, TeacherAttendence, \
+    StaffAttendence
 from authentication.permissions import IsInSameSchool, IsStaffUser
 from constants import UserLoginMessage, UserResponseMessage, TimeTableMessage, ReportCardMesssage, month_mapping, \
-    SalaryMessage, FeeMessage
+    SalaryMessage, FeeMessage, AttendenceMarkedMessage
 from management.models import Salary, Fee
 from management.serializers import ManagementProfileSerializer, TimeTableSerializer, TimeTableDetailViewSerializer, \
     ExamReportCardSerializer, StudentReportCardSerializer, AddSalarySerializer, SalaryDetailSerializer, \
     SalaryUpdateSerializer, AddFeeSerializer, FeeListSerializer, FeeUpdateSerializer, FeeDetailSerializer, \
     StudentListsSerializer, StudentFilterListSerializer, StudentDetailSerializer, TeacherFeeDetailSerializer, \
-    TeacherListsSerializer, StaffListsSerializer, TeacherUserSalaryUpdateSerializer, StaffFeeDetailSerializer
+    TeacherListsSerializer, StaffListsSerializer, TeacherUserSalaryUpdateSerializer, StaffFeeDetailSerializer, \
+    TeacherAttendanceUpdateSerializer, StaffAttendanceUpdateSerializer, StudentAttendanceUpdateSerializer
 from pagination import CustomPagination
-from student.models import ExmaReportCard
+from student.models import ExmaReportCard, StudentAttendence
 from superadmin.models import SchoolProfile
 from utils import create_response_data
 
@@ -1037,6 +1039,198 @@ class StaffSalaryDetailView(APIView):
             )
             return Response(response, status=status.HTTP_404_NOT_FOUND)
 
+        except Exception as e:
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TeacherAttendanceUpdateView(APIView):
+    """
+    This class is used to update the detail of the teacher attendance.
+    """
+    permission_classes = [IsStaffUser, IsInSameSchool]
+
+    def patch(self, request, pk):
+        try:
+            teacher = TeacherUser.objects.get(id=pk, user__school_id=request.user.school_id)
+            date = request.data.get('date')
+            mark_attendence = request.data.get('mark_attendence')
+            if not date or not mark_attendence:
+                response= (
+                    create_response_data(
+                        status=status.HTTP_400_BAD_REQUEST,
+                        message="Date and mark_attendence are required.",
+                        data={}
+                    )
+                )
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                attendance_record = TeacherAttendence.objects.get(teacher=teacher, date=date)
+            except TeacherAttendence.DoesNotExist:
+                response= (
+                    create_response_data(
+                        status=status.HTTP_404_NOT_FOUND,
+                        message="Attendance record not found for the specified date.",
+                        data={}
+                    )
+                )
+                return Response(response, status=status.HTTP_404_NOT_FOUND)
+
+            serializer = TeacherAttendanceUpdateSerializer(attendance_record, data={'mark_attendence': mark_attendence}, partial=True)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                response = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=AttendenceMarkedMessage.ATTENDANCE_UPDATED_SUCCESSFULLY,
+                    data={}
+                )
+                return Response(response, status=status.HTTP_200_OK)
+            else:
+                response = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=serializer.errors,
+                    data={}
+                )
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        except TeacherUser.DoesNotExist:
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=UserLoginMessage.USER_DOES_NOT_EXISTS,
+                data={}
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+
+class StaffAttendanceUpdateView(APIView):
+    """
+    This class is used to update the detail of the staff attendance.
+    """
+    permission_classes = [IsStaffUser, IsInSameSchool]
+
+    def patch(self, request, pk):
+        try:
+            staff = StaffUser.objects.get(id=pk, user__school_id=request.user.school_id)
+            date = request.data.get('date')
+            mark_attendence = request.data.get('mark_attendence')
+            if not date or not mark_attendence:
+                response= (
+                    create_response_data(
+                        status=status.HTTP_400_BAD_REQUEST,
+                        message="Date and mark_attendence are required.",
+                        data={}
+                    )
+                )
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                attendance_record = StaffAttendence.objects.get(staff=staff, date=date)
+            except StaffAttendence.DoesNotExist:
+                response= (
+                    create_response_data(
+                        status=status.HTTP_404_NOT_FOUND,
+                        message="Attendance record not found for the specified date.",
+                        data={}
+                    )
+                )
+                return Response(response, status=status.HTTP_404_NOT_FOUND)
+
+            serializer = StaffAttendanceUpdateSerializer(attendance_record, data={'mark_attendence': mark_attendence}, partial=True)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                response = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=AttendenceMarkedMessage.ATTENDANCE_UPDATED_SUCCESSFULLY,
+                    data={}
+                )
+                return Response(response, status=status.HTTP_200_OK)
+            else:
+                response = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=serializer.errors,
+                    data={}
+                )
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        except StaffUser.DoesNotExist:
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=UserLoginMessage.USER_DOES_NOT_EXISTS,
+                data={}
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+
+class StudentAttendanceUpdateView(APIView):
+    """
+    This class is used to update the detail of the student attendance.
+    """
+    permission_classes = [IsStaffUser, IsInSameSchool]
+
+    def patch(self, request, pk):
+        try:
+            student = StudentUser.objects.get(id=pk, user__school_id=request.user.school_id)
+            date = request.data.get('date')
+            mark_attendence = request.data.get('mark_attendence')
+            if not date or not mark_attendence:
+                response= (
+                    create_response_data(
+                        status=status.HTTP_400_BAD_REQUEST,
+                        message="Date and mark_attendence are required.",
+                        data={}
+                    )
+                )
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                attendance_record = StudentAttendence.objects.get(student=student, date=date)
+            except StudentAttendence.DoesNotExist:
+                response= (
+                    create_response_data(
+                        status=status.HTTP_404_NOT_FOUND,
+                        message="Attendance record not found for the specified date.",
+                        data={}
+                    )
+                )
+                return Response(response, status=status.HTTP_404_NOT_FOUND)
+
+            serializer = StudentAttendanceUpdateSerializer(attendance_record, data={'mark_attendence': mark_attendence}, partial=True)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                response = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message=AttendenceMarkedMessage.ATTENDANCE_UPDATED_SUCCESSFULLY,
+                    data={}
+                )
+                return Response(response, status=status.HTTP_200_OK)
+            else:
+                response = create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=serializer.errors,
+                    data={}
+                )
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        except StudentUser.DoesNotExist:
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=UserLoginMessage.USER_DOES_NOT_EXISTS,
+                data={}
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             response = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
