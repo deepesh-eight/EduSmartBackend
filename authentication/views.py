@@ -3,6 +3,7 @@ import datetime
 import json
 import re
 
+from django.core.mail import send_mail
 from django.db import IntegrityError
 from django.db.models import Q
 from django.utils import timezone
@@ -307,6 +308,14 @@ class NonTeachingStaffCreateView(APIView):
                     password = generate_random_password()
                     user.set_password(password)
                     user.save()
+
+                    # Send the password to the user's email
+                    subject = 'Your Account Password'
+                    message = f'Your account has been created. Your password is: {password}'
+                    from_email = settings.DEFAULT_FROM_EMAIL
+                    recipient_list = [email]
+                    send_mail(subject, message, from_email, recipient_list)
+
                     user_staff = StaffUser.objects.create(
                         user=user, first_name=first_name, last_name=last_name, gender=gender, image=image, dob=dob, blood_group=blood_group,
                         religion=religion, role=role, address=address,
