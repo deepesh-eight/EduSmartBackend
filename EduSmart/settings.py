@@ -174,19 +174,19 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'developerphp45@gmail.com'
 EMAIL_HOST_PASSWORD = 'idthakdtcijdmduu'
 DEFAULT_FROM_EMAIL = 'developerphp45@gmail.com'
-
-
-# Azure Storage settings
-AZURE_ACCOUNT_NAME = 'edublobstoragecontainer'
-AZURE_ACCOUNT_KEY = os.getenv('AZURE_ACCOUNT_KEY')
-
-# Containers
-AZURE_IMAGE_CONTAINER = 'image'
-AZURE_FILE_CONTAINER = 'file'
-AZURE_BOOK_CONTAINER = 'book'
-
-DEFAULT_FILE_STORAGE = 'EduSmart.storage_backends.AzureMediaStorage'
-
-# Media settings
-MEDIA_URL = f'https://{AZURE_ACCOUNT_NAME}.blob.core.windows.net/{AZURE_IMAGE_CONTAINER}/'
-MEDIA_ROOT = ''
+#
+#
+# # Azure Storage settings
+# AZURE_ACCOUNT_NAME = 'edublobstoragecontainer'
+# AZURE_ACCOUNT_KEY = os.getenv('AZURE_ACCOUNT_KEY')
+#
+# # Containers
+# AZURE_IMAGE_CONTAINER = 'image'
+# AZURE_FILE_CONTAINER = 'file'
+# AZURE_BOOK_CONTAINER = 'book'
+#
+# DEFAULT_FILE_STORAGE = 'EduSmart.storage_backends.AzureMediaStorage'
+#
+# # Media settings
+# MEDIA_URL = f'https://{AZURE_ACCOUNT_NAME}.blob.core.windows.net/{AZURE_IMAGE_CONTAINER}/'
+# MEDIA_ROOT = ''

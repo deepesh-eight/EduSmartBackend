@@ -6,8 +6,8 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
 
-from EduSmart.settings import AZURE_IMAGE_CONTAINER
-from storage_backends import AzureMediaStorage
+# from EduSmart.settings import AZURE_IMAGE_CONTAINER
+# from storage_backends import AzureMediaStorage
 
 
 class UserManager(BaseUserManager):
@@ -130,7 +130,7 @@ class TeacherUser(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     full_name = models.CharField(max_length=255, null=True, blank=True)
     dob = models.DateField(null=True, blank=True)
-    image = models.ImageField(upload_to='', storage=AzureMediaStorage(azure_container=AZURE_IMAGE_CONTAINER), blank=True)
+    image = models.ImageField(upload_to='', blank=True)
     gender = models.CharField(max_length=50)
     joining_date = models.DateField(auto_now_add=True, null=True, blank=True)
     religion = models.CharField(max_length=50)
