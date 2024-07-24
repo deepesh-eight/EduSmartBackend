@@ -1,5 +1,7 @@
 from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
+
+from EduSmart import storage_backends
 from authentication.models import StaffUser
 
 class Route(models.Model):
@@ -22,7 +24,7 @@ class Stop(models.Model):
     
 class Bus(models.Model):
     school_id = models.CharField(max_length=255, null=True, blank=True)
-    bus_image = models.ImageField(upload_to='buses/', blank=True)
+    bus_image = models.ImageField(upload_to='', blank=True, storage=storage_backends.AzureMediaStorage(azure_container='image'))
     bus_number = models.CharField(max_length=20, unique=True)
     driver_name = models.ForeignKey(StaffUser, related_name='driver', on_delete=models.CASCADE)
     operator_name = models.ForeignKey(StaffUser, related_name='operator',on_delete=models.CASCADE, blank=True, null=True)

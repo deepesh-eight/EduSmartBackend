@@ -57,7 +57,7 @@ class BusDetailSerializer(serializers.ModelSerializer):
     operator_gender = serializers.SerializerMethodField()
     operator_no = serializers.SerializerMethodField()
     operator_email = serializers.SerializerMethodField()
-    bus_image = serializers.SerializerMethodField()
+    # bus_image = serializers.SerializerMethodField()
     bus_route_name = serializers.SerializerMethodField()
     main_route = serializers.SerializerMethodField()
     alternate_route_name = serializers.SerializerMethodField()
@@ -128,13 +128,13 @@ class BusDetailSerializer(serializers.ModelSerializer):
         else:
             None
 
-    def get_bus_image(self, obj):
-        if obj.bus_image:
-            if obj.bus_image.name.startswith(settings.base_url + settings.MEDIA_URL):
-                return str(obj.bus_image)
-            else:
-                return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.bus_image)}'
-        return None
+    # def get_bus_image(self, obj):
+    #     if obj.bus_image:
+    #         if obj.bus_image.name.startswith(settings.base_url + settings.MEDIA_URL):
+    #             return str(obj.bus_image)
+    #         else:
+    #             return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.bus_image)}'
+    #     return None
 
     def get_bus_route_name(self, obj):
         route = Route.objects.get(id=obj.bus_route.id)
