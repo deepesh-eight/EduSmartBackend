@@ -6,6 +6,9 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
 
+from EduSmart import storage_backends
+
+
 # from EduSmart.settings import AZURE_IMAGE_CONTAINER
 # from storage_backends import AzureMediaStorage
 
@@ -130,7 +133,7 @@ class TeacherUser(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     full_name = models.CharField(max_length=255, null=True, blank=True)
     dob = models.DateField(null=True, blank=True)
-    image = models.ImageField(upload_to='', blank=True)
+    image = models.ImageField(upload_to='', blank=True, storage=storage_backends.AzureMediaStorage(azure_container='image'))
     gender = models.CharField(max_length=50)
     joining_date = models.DateField(auto_now_add=True, null=True, blank=True)
     religion = models.CharField(max_length=50)
@@ -152,7 +155,7 @@ class StaffUser(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     first_name = models.CharField(255)
     last_name = models.CharField(255)
-    image = models.ImageField(upload_to='staff_images/', blank=True)
+    image = models.ImageField(upload_to='', blank=True, storage=storage_backends.AzureMediaStorage(azure_container='image'))
     gender = models.CharField(max_length=50)
     dob = models.DateField(default=datetime.date.today)
     blood_group = models.CharField(max_length=50, blank=True, null=True)
@@ -170,14 +173,14 @@ class StaffUser(models.Model):
 
 class Certificate(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='certificates')
-    certificate_file = models.FileField(upload_to='certificate/')
+    certificate_file = models.FileField(upload_to='', storage=storage_backends.AzureMediaStorage(azure_container='file'))
 
 
 class StudentUser(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
     dob = models.DateField(default=datetime.date.today)
-    image = models.ImageField(upload_to='student_images/', blank=True)
+    image = models.ImageField(upload_to='', blank=True, storage=storage_backends.AzureMediaStorage(azure_container='image'))
     father_name = models.CharField(max_length=150, null=True, blank=True)
     father_phone_number = PhoneNumberField(blank=True, null=True)
     mother_name = models.CharField(max_length=150,null=True, blank=True)

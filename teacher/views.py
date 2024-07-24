@@ -17,7 +17,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from EduSmart import settings
 from authentication.models import User, Class, TeacherUser, StudentUser, Certificate, TeachersSchedule, \
     TeacherAttendence, StaffUser, Availability, StaffAttendence
-from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsTeacherUser, IsInSameSchool
+from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsTeacherUser, IsInSameSchool, \
+    IsAdminOrIsStaffAndInSameSchool
 from authentication.serializers import UserLoginSerializer
 from authentication.views import NonTeachingStaffDetailView
 from constants import UserLoginMessage, UserResponseMessage, ScheduleMessage, AttendenceMarkedMessage, \
@@ -139,7 +140,7 @@ class FetchTeacherDetailView(APIView):
     """
     This class is created to fetch the detail of the teacher.
     """
-    permission_classes = [IsAdminUser, IsInSameSchool]
+    permission_classes = [IsAdminOrIsStaffAndInSameSchool]
 
     def get(self, request, pk):
         try:
@@ -159,20 +160,27 @@ class FetchTeacherDetailView(APIView):
                     data={}
                 )
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
+        except TeacherUser.DoesNotExist:
             response_data = create_response_data(
                 status=status.HTTP_404_NOT_FOUND,
                 message=UserResponseMessage.USER_DOES_NOT_EXISTS,
                 data={}
             )
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
 
 class TeacherListView(APIView):
     """
     This class is created to fetch the list of the teacher's.
     """
-    permission_classes = [IsAdminUser, IsInSameSchool]
+    permission_classes = [IsAdminOrIsStaffAndInSameSchool]
     pagination_class = CustomPagination
 
     def get(self, request):
@@ -292,7 +300,7 @@ class TeacherUpdateProfileView(APIView):
                 return Response(response, status=status.HTTP_200_OK)
             else:
                 response = create_response_data(
-                    status=status.HTTP_200_OK,
+                    status=status.HTTP_400_BAD_REQUEST,
                     message=serializer.errors,
                     data=serializer.errors
                 )
@@ -664,7 +672,7 @@ class FetchAttendanceDetailView(APIView):
     """
     This class is created to fetch the detail of the teacher attendance.
     """
-    permission_classes = [IsAdminUser, IsInSameSchool]
+    permission_classes = [IsAdminOrIsStaffAndInSameSchool]
 
     def get(self, request, pk):
         try:
@@ -735,7 +743,7 @@ class FetchAttendanceListView(APIView):
     """
     This class is created to fetch the list of the teacher's attendance.
     """
-    permission_classes = [IsAdminUser, IsInSameSchool]
+    permission_classes = [IsAdminOrIsStaffAndInSameSchool]
     pagination_class = CustomPagination
 
     def get(self, request):
@@ -1018,7 +1026,7 @@ class AttedanceFilterListView(APIView):
     """
     This class is used to add filter in the list of teacher attendance.
     """
-    permission_classes = [IsAdminUser, IsInSameSchool]
+    permission_classes = [IsAdminOrIsStaffAndInSameSchool]
     pagination_class = CustomPagination
 
     def get(self, request):

@@ -10,7 +10,7 @@ from rest_framework import status, permissions, generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsManagementUser, IsPayRollManagementUser, \
-    IsBoardingUser, IsInSameSchool, IsTeacherUser
+    IsBoardingUser, IsInSameSchool, IsTeacherUser, IsAdminOrIsStaffAndInSameSchool
 from utils import create_response_data, create_response_list_data
 from constants import BusMessages
 
@@ -53,7 +53,7 @@ class CreateBusView(APIView):
         return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
     
 class BusListView(generics.ListAPIView):
-    permission_classes = [IsAdminUser, IsInSameSchool]
+    permission_classes = [IsAdminOrIsStaffAndInSameSchool]
     pagination_class = CustomPagination
 
     def get(self, request):
@@ -115,7 +115,7 @@ class BusDetailView(APIView):
     """
     This class is used to fetch the detail of the bus.
     """
-    permission_classes = [IsAdminUser, IsInSameSchool]
+    permission_classes = [IsAdminOrIsStaffAndInSameSchool]
 
     def get(self, request,pk):
         try:
@@ -147,7 +147,7 @@ class BusRouteListView(APIView):
     """
     This class is used to fetch list of the bus route.
     """
-    permission_classes = [IsAdminUser, IsInSameSchool]
+    permission_classes = [IsAdminOrIsStaffAndInSameSchool]
     pagination_class = CustomPagination
 
     def get(self, request):
@@ -188,7 +188,7 @@ class BusRouteDetailView(APIView):
     This class is used to fetch detail of the bus route.
     """
 
-    permission_classes = [IsAdminUser, IsInSameSchool]
+    permission_classes = [IsAdminOrIsStaffAndInSameSchool]
 
     def get(self, request, pk):
         try:

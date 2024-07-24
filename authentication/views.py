@@ -21,7 +21,7 @@ from authentication.models import User, AddressDetails, ErrorLogging, Certificat
     TeacherUser, StudentUser, TeachersSchedule, DayReview, TeacherAttendence, Notification, TimeTable, EventsCalender, \
     ClassEvent, ClassEventImage, EventImage
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsManagementUser, IsPayRollManagementUser, \
-    IsBoardingUser, IsInSameSchool, IsTeacherUser
+    IsBoardingUser, IsInSameSchool, IsTeacherUser, IsAdminOrIsStaffAndInSameSchool
 from authentication.serializers import UserSignupSerializer, UsersListSerializer, UpdateProfileSerializer, \
     UserLoginSerializer, NonTeachingStaffSerializers, NonTeachingStaffListSerializers, \
     NonTeachingStaffDetailSerializers, NonTeachingStaffProfileSerializers, StaffAttendanceSerializer, \
@@ -376,7 +376,7 @@ class NonTeachingStaffListView(APIView):
     """
     This class is created to fetch the list of the non teaching staff.
     """
-    permission_classes = [IsAdminUser, IsInSameSchool]
+    permission_classes = [IsAdminOrIsStaffAndInSameSchool]
     pagination_class = CustomPagination
 
     def get(self, request):
@@ -421,7 +421,7 @@ class NonTeachingStaffDetailView(APIView):
     """
     This class is created to fetch the detail of the non teaching staff.
     """
-    permission_classes = [IsAdminUser, IsInSameSchool]
+    permission_classes = [IsAdminOrIsStaffAndInSameSchool]
 
     def get(self, request, pk):
         try:
@@ -441,13 +441,20 @@ class NonTeachingStaffDetailView(APIView):
                     data={}
                 )
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
+        except StaffUser.DoesNotExist:
             response_data = create_response_data(
                 status=status.HTTP_404_NOT_FOUND,
                 message=UserResponseMessage.USER_DOES_NOT_EXISTS,
                 data={}
             )
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
 
 class NonTeachingStaffDeleteView(APIView):
@@ -580,7 +587,7 @@ class FetchAttendanceDetailView(APIView):
     """
     This class is created to fetch the detail of the teacher attendance.
     """
-    permission_classes = [IsAdminUser, IsInSameSchool]
+    permission_classes = [IsAdminOrIsStaffAndInSameSchool]
 
     def get(self, request, pk):
         try:
@@ -649,7 +656,7 @@ class FetchAttendanceListView(APIView):
     """
     This class is created to fetch the list of the teacher's attendance.
     """
-    permission_classes = [IsAdminUser, IsInSameSchool]
+    permission_classes = [IsAdminOrIsStaffAndInSameSchool]
     pagination_class = CustomPagination
 
     def get(self, request):
@@ -2039,7 +2046,7 @@ class EventCreateView(APIView):
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
     
 class GetAllEvents(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminOrIsStaffAndInSameSchool]
 
     def get(self, request):
         start_date = request.query_params.get('start_date')
@@ -2086,7 +2093,7 @@ class StaffAttedanceFilterListView(APIView):
     """
     This class is used to add filter in the list of non teaching staff attendance.
     """
-    permission_classes = [IsAdminUser, IsInSameSchool]
+    permission_classes = [IsAdminOrIsStaffAndInSameSchool]
     pagination_class = CustomPagination
 
     def get(self, request):
@@ -2550,7 +2557,7 @@ class CalendarListView(APIView):
     """
     This class is used to fetch the list of the academic calendar.
     """
-    permission_classes = [IsAdminUser, IsInSameSchool]
+    permission_classes = [IsAdminOrIsStaffAndInSameSchool]
 
     def get(self, request):
         try:
@@ -2578,7 +2585,7 @@ class EventListView(APIView):
     """
     This class is used to fetch the list of the academic calendar.
     """
-    permission_classes = [IsAdminUser, IsInSameSchool]
+    permission_classes = [IsAdminOrIsStaffAndInSameSchool]
     pagination_class = CustomPagination
 
     def get(self, request):

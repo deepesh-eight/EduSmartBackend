@@ -22,7 +22,7 @@ class StudentUserSignupSerializer(serializers.Serializer):
         choices=USER_TYPE_CHOICES
     )
     dob = serializers.DateField(required=True)
-    image = serializers.ImageField(required=False, default='')
+    image = serializers.ImageField(required=True)
     father_name = serializers.CharField(required=False, default='')
     father_phone_number = serializers.CharField(
         validators=[
@@ -67,7 +67,7 @@ class StudentUserSignupSerializer(serializers.Serializer):
 
 
 class StudentDetailSerializer(serializers.ModelSerializer):
-    image = serializers.SerializerMethodField()
+    # image = serializers.SerializerMethodField()
     email = serializers.SerializerMethodField()
     curriculum = serializers.SerializerMethodField()
     subjects = serializers.SerializerMethodField()
@@ -88,13 +88,13 @@ class StudentDetailSerializer(serializers.ModelSerializer):
     def get_curriculum(self,obj):
         return obj.curriculum if hasattr(obj, 'curriculum') else None
 
-    def get_image(self, obj):
-        if obj.image:
-            if obj.image.name.startswith(settings.base_url + settings.MEDIA_URL):
-                return str(obj.image)
-            else:
-                return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.image)}'
-        return None
+    # def get_image(self, obj):
+    #     if obj.image:
+    #         if obj.image.name.startswith(settings.base_url + settings.MEDIA_URL):
+    #             return str(obj.image)
+    #         else:
+    #             return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.image)}'
+    #     return None
 
     def get_email(self, obj):
         return obj.user.email if hasattr(obj, 'user') else None
@@ -217,10 +217,20 @@ class studentProfileSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         user_data = validated_data.pop('user', {})
         validated_data.pop('email', None)
+        # validated_data.pop('image', None)
         user = instance.user
         for attr, value in user_data.items():
             setattr(user, attr, value)
         user.save()
+
+        # Handle image separately to avoid re-assigning the URL
+        image_data = validated_data.pop('image', None)
+        if image_data:
+            if hasattr(image_data, 'content_type') or ('blob.core.windows.net' not in image_data):
+                instance.image = image_data
+            else:
+                # If the image_data is a URL, don't update the instance.image
+                pass
 
         # curriculum_data = validated_data.pop('curriculum', None)
         # if curriculum_data is not None:

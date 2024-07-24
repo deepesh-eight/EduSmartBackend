@@ -16,7 +16,8 @@ from rest_framework.views import APIView
 from EduSmart import settings
 from authentication.models import User, Class, AddressDetails, StudentUser, TeacherUser, TimeTable, ClassEvent, \
     DayReview, TeachersSchedule, Availability
-from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsStudentUser, IsTeacherUser, IsInSameSchool
+from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsStudentUser, IsTeacherUser, IsInSameSchool, \
+    IsAdminOrIsStaffAndInSameSchool
 from authentication.serializers import ClassEventDetailSerializer
 from bus.models import Bus, Route
 from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage, CurriculumMessage, \
@@ -164,7 +165,7 @@ class FetchStudentDetailView(APIView):
     """
     This class is created to fetch the detail of the student.
     """
-    permission_classes = [IsAdminUser, IsInSameSchool]
+    permission_classes = [IsAdminOrIsStaffAndInSameSchool]
 
     def get(self, request, pk):
         try:
@@ -204,7 +205,7 @@ class StudentListView(APIView):
     """
     This class is created to fetch the list of the student's.
     """
-    permission_classes = [IsAdminUser,IsInSameSchool]
+    permission_classes = [IsAdminOrIsStaffAndInSameSchool]
     pagination_class = CustomPagination
 
     def get(self, request):
@@ -402,7 +403,7 @@ class FetchAttendanceDetailView(APIView):
     """
     This class is created to fetch the detail of the student attendance.
     """
-    permission_classes = [IsAdminUser, IsInSameSchool]
+    permission_classes = [IsAdminOrIsStaffAndInSameSchool]
 
     def get(self, request, pk):
         try:
@@ -471,7 +472,7 @@ class FetchAttendanceListView(APIView):
     """
     This class is created to fetch the list of the student attendance according to class.
     """
-    permission_classes = [IsAdminUser, IsInSameSchool]
+    permission_classes = [IsAdminOrIsStaffAndInSameSchool]
     pagination_class = CustomPagination
 
     def get(self, request):
@@ -525,7 +526,7 @@ class FetchAttendanceFilterListView(APIView):
     """
     This class is created to fetch the list of the student attendance according to filter value.
     """
-    permission_classes = [IsAdminUser, IsInSameSchool]
+    permission_classes = [IsAdminOrIsStaffAndInSameSchool]
     pagination_class = CustomPagination
 
     def get(self, request):

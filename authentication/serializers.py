@@ -212,7 +212,7 @@ class NonTeachingStaffListSerializers(serializers.ModelSerializer):
 class NonTeachingStaffDetailSerializers(serializers.ModelSerializer):
     email = serializers.EmailField(source='user.email')
     phone = serializers.SerializerMethodField()
-    image = serializers.SerializerMethodField()
+    # image = serializers.SerializerMethodField()
     certificates = serializers.SerializerMethodField()
 
     class Meta:
@@ -229,13 +229,13 @@ class NonTeachingStaffDetailSerializers(serializers.ModelSerializer):
     def get_email(self, obj):
         return obj.user.email if hasattr(obj, 'user') else None
 
-    def get_image(self, obj):
-        if obj.image:
-            if obj.image.name.startswith(settings.base_url + settings.MEDIA_URL):
-                return str(obj.image)
-            else:
-                return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.image)}'
-        return None
+    # def get_image(self, obj):
+    #     if obj.image:
+    #         if obj.image.name.startswith(settings.base_url + settings.MEDIA_URL):
+    #             return str(obj.image)
+    #         else:
+    #             return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.image)}'
+    #     return None
 
 
     def get_certificates(self, obj):
@@ -277,10 +277,20 @@ class NonTeachingStaffProfileSerializers(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         user_data = validated_data.pop('user', {})
         validated_data.pop('email', None)
+        validated_data.pop('image', None)
         user = instance.user
         for attr, value in user_data.items():
             setattr(user, attr, value)
         user.save()
+
+        # Handle image separately to avoid re-assigning the URL
+        image_data = validated_data.pop('image', None)
+        if image_data:
+            if hasattr(image_data, 'content_type') or ('blob.core.windows.net' not in image_data):
+                instance.image = image_data
+            else:
+                # If the image_data is a URL, don't update the instance.image
+                pass
 
         return super().update(instance, validated_data)
 

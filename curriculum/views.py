@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from EduSmart import settings
-from authentication.permissions import IsAdminUser, IsInSameSchool
+from authentication.permissions import IsAdminUser, IsInSameSchool, IsAdminOrIsStaffAndInSameSchool
 from constants import CurriculumMessage
 from curriculum.models import Curriculum, CurriculumPDF
 from curriculum.serializers import CurriculumSerializer, CurriculumDetailSerializer, CurriculumUploadSerializer, \
@@ -110,7 +110,7 @@ class CurriculumUploadView(APIView):
 
 
 class CurriculumlistView(APIView):
-    permission_classes = [IsAdminUser, IsInSameSchool]
+    permission_classes = [IsAdminOrIsStaffAndInSameSchool]
     pagination_class = CustomPagination
     """
     This class is created to fetch the list of the curriculum.
@@ -182,7 +182,7 @@ class CurriculumDeleteView(APIView):
 
 
 class CurriculumFetchView(APIView):
-    permission_classes = [IsAdminUser, IsInSameSchool]
+    permission_classes = [IsAdminOrIsStaffAndInSameSchool]
     """
     This class is created to fetch the detail of the curruiculum.
     """

@@ -101,3 +101,15 @@ class IsBoardingUser(permissions.BasePermission):
 class IsStaffUser(permissions.BasePermission):
     def has_permission(self, request, view):
         return is_staff_user(request.user)
+
+
+class IsAdminOrIsStaffAndInSameSchool(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+
+        is_admin_or_staff = is_admin_user(request.user) or is_staff_user(request.user)
+
+        is_in_same_school = IsInSameSchool
+
+        return is_in_same_school and (is_admin_or_staff or request.user.is_staff)

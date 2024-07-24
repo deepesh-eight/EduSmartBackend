@@ -38,22 +38,22 @@ class SchoolCreateSerializer(serializers.Serializer):
 
 
 class SchoolProfileSerializer(serializers.ModelSerializer):
-    logo = serializers.SerializerMethodField()
+    # logo = serializers.SerializerMethodField()
     email = serializers.SerializerMethodField()
     principle_name = serializers.SerializerMethodField()
-    contract = serializers.SerializerMethodField()
+    # contract = serializers.SerializerMethodField()
     class Meta:
         model = SchoolProfile
         fields = ['id', 'school_id', 'logo', 'school_name', 'address', 'city', 'state', 'established_year', 'school_type',
                   'principle_name', 'contact_no', 'email', 'school_website', 'description', 'contract']
 
-    def get_logo(self, obj):
-        if obj.logo:
-            if obj.logo.name.startswith(settings.base_url + settings.MEDIA_URL):
-                return str(obj.logo)
-            else:
-                return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.logo)}'
-        return None
+    # def get_logo(self, obj):
+    #     if obj.logo:
+    #         if obj.logo.name.startswith(settings.base_url + settings.MEDIA_URL):
+    #             return str(obj.logo)
+    #         else:
+    #             return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.logo)}'
+    #     return None
 
     def get_principle_name(self, obj):
         return obj.user.name
@@ -61,13 +61,13 @@ class SchoolProfileSerializer(serializers.ModelSerializer):
     def get_email(self, obj):
         return obj.user.email
 
-    def get_contract(self, obj):
-        if obj.contract:
-            if obj.contract.name.startswith(settings.base_url + settings.MEDIA_URL):
-                return str(obj.contract)
-            else:
-                return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.contract)}'
-        return None
+    # def get_contract(self, obj):
+    #     if obj.contract:
+    #         if obj.contract.name.startswith(settings.base_url + settings.MEDIA_URL):
+    #             return str(obj.contract)
+    #         else:
+    #             return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.contract)}'
+    #     return None
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):

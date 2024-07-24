@@ -19,19 +19,19 @@ from superadmin.models import Announcement
 
 
 class CertificateSerializer(serializers.ModelSerializer):
-    certificate_file = serializers.SerializerMethodField()
+    # certificate_file = serializers.SerializerMethodField()
     certificate_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Certificate
         fields = ['id', 'certificate_file', 'certificate_name']
 
-    def get_certificate_file(self, obj):
-        # Assuming 'image' field stores the file path or URL
-        if obj.certificate_file:
-            # Assuming media URL is configured in settings
-            return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.certificate_file)}'
-        return None
+    # def get_certificate_file(self, obj):
+    #     # Assuming 'image' field stores the file path or URL
+    #     if obj.certificate_file:
+    #         # Assuming media URL is configured in settings
+    #         return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.certificate_file)}'
+    #     return None
 
     def get_certificate_name(self, obj):
         if obj.certificate_file:
@@ -101,7 +101,7 @@ class TeacherUserSignupSerializer(serializers.Serializer):
 class TeacherDetailSerializer(serializers.ModelSerializer):
     email = serializers.SerializerMethodField()
     phone = serializers.SerializerMethodField()
-    image = serializers.SerializerMethodField()
+    # image = serializers.SerializerMethodField()
     certificates = serializers.SerializerMethodField()
     class_teacher = serializers.SerializerMethodField()
 
@@ -122,13 +122,13 @@ class TeacherDetailSerializer(serializers.ModelSerializer):
             return str(phone_number)
         return None
 
-    def get_image(self, obj):
-        if obj.image:
-            if obj.image.name.startswith(settings.base_url + settings.MEDIA_URL):
-                return str(obj.image)
-            else:
-                return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.image)}'
-        return None
+    # def get_image(self, obj):
+    #     if obj.image:
+    #         if obj.image.name.startswith(settings.base_url + settings.MEDIA_URL):
+    #             return str(obj.image)
+    #         else:
+    #             return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.image)}'
+    #     return None
 
     def get_certificates(self, obj):
         # Fetch and serialize certificates associated with the user
@@ -224,10 +224,20 @@ class TeacherProfileSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         user_data = validated_data.pop('user', {})
         validated_data.pop('email', None)
+        validated_data.pop('image', None)
         user = instance.user
         for attr, value in user_data.items():
             setattr(user, attr, value)
         user.save()
+
+        # Handle image separately to avoid re-assigning the URL
+        image_data = validated_data.pop('image', None)
+        if image_data:
+            if hasattr(image_data, 'content_type') or ('blob.core.windows.net' not in image_data):
+                instance.image = image_data
+            else:
+                # If the image_data is a URL, don't update the instance.image
+                pass
 
         return super().update(instance, validated_data)
 

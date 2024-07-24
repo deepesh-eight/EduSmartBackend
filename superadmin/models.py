@@ -2,6 +2,7 @@ from django.contrib.auth.hashers import make_password
 from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
 
+from EduSmart import storage_backends
 from authentication.models import User
 
 
@@ -10,7 +11,7 @@ from authentication.models import User
 
 class SchoolProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
-    logo = models.ImageField(upload_to='', blank=True)
+    logo = models.ImageField(upload_to='', blank=True, storage=storage_backends.AzureMediaStorage(azure_container='image'))
     school_name = models.CharField(max_length=255, null=True, blank=True)
     address = models.TextField(null=True, blank=True)
     city = models.CharField(max_length=200,null=True, blank=True)
@@ -22,7 +23,7 @@ class SchoolProfile(models.Model):
     email = models.EmailField(unique=True, null=True, blank=True)
     school_website = models.CharField(max_length=255, null=True, blank=True)
     school_id = models.CharField(max_length=200, null=True, blank=True)
-    contract = models.FileField(upload_to='contract/', null=True, blank=True)
+    contract = models.FileField(upload_to='', null=True, blank=True, storage=storage_backends.AzureMediaStorage(azure_container='file'))
     description = models.TextField(null=True, blank=True)
 
 
