@@ -270,7 +270,7 @@ class EventsCalender(models.Model):
     is_event_calendar = models.BooleanField(default=True)  # event = True, academic calendar = False
     title = models.CharField(max_length=255)
     description = models.TextField()
-    event_image = models.ImageField(upload_to='', blank=True)
+    event_image = models.ImageField(upload_to='', blank=True, storage=storage_backends.AzureMediaStorage(azure_container='image'))
     start_time = models.TimeField(null=True)
     end_time = models.TimeField(null=True)
     start_date = models.DateField(null=True)
@@ -281,7 +281,7 @@ class EventsCalender(models.Model):
 
 class EventImage(models.Model):
     event = models.ForeignKey(EventsCalender, on_delete=models.CASCADE)
-    event_image = models.FileField(upload_to='event_image/')
+    event_image = models.FileField(upload_to='', storage=storage_backends.AzureMediaStorage(azure_container='image'))
 
 class DayReview(models.Model):
     school_id = models.CharField(max_length=255, null=True, blank=True)
@@ -338,7 +338,7 @@ class ClassEvent(models.Model):
 
 class ClassEventImage(models.Model):
     class_event = models.ForeignKey(ClassEvent, on_delete=models.CASCADE, related_name='class_event_image')
-    event_image = models.FileField(upload_to='class_event_image/')
+    event_image = models.FileField(upload_to='', storage=storage_backends.AzureMediaStorage(azure_container='image'))
 
 
 class Availability(models.Model):
