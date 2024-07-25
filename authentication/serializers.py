@@ -571,12 +571,9 @@ class EventListSerializer(serializers.ModelSerializer):
             return "Upcoming Event"
 
     def get_event_image(self, obj):
-        if obj.event_image:
-            if obj.event_image.name.startswith(settings.base_url + settings.MEDIA_URL):
-                return str(obj.event_image)
-            else:
-                return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.event_image)}'
-        return None
+        event_image = EventImage.objects.filter(event=obj.id)
+        event_image_list = EventImageSerializer(event_image, many=True)
+        return event_image_list.data
 
     def get_start_time(self, obj):
         if obj.start_date:
