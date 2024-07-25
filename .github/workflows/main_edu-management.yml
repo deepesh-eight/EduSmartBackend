@@ -70,6 +70,8 @@ jobs:
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_7268D26088BB4490AD23B87707DDE0BF }}
 
       - name: 'Deploy to Azure Web App'
+        env:
+          AZURE_ACCOUNT_KEY: ${{ secrets.AZURE_ACCOUNT_KEY }}
         uses: azure/webapps-deploy@v2
         id: deploy-to-webapp
         with:
