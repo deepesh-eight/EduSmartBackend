@@ -1,5 +1,8 @@
 from django.db import models
 
+from EduSmart import storage_backends
+
+
 # Create your models here.
 
 
@@ -12,7 +15,7 @@ class Curriculum(models.Model):
     school_id = models.CharField(max_length=255, null=True, blank=True)
     curriculum_name = models.CharField(max_length=255)
     select_class = models.CharField(max_length=255, blank=True, null=True)
-    syllabus = models.FileField(upload_to='syllabus/', null=True, blank=True)
+    syllabus = models.FileField(upload_to='', null=True, blank=True, storage=storage_backends.AzureMediaStorage(azure_container='file'))
     discription = models.TextField(null=True, blank=True)
     curriculum_type = models.CharField(max_length=255, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)

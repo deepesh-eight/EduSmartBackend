@@ -987,20 +987,20 @@ class StudyMaterialUploadSerializer(serializers.ModelSerializer):
 
 
 class StudyMaterialListSerializer(serializers.ModelSerializer):
-    upload_content = serializers.SerializerMethodField()
+    # upload_content = serializers.SerializerMethodField()
     teacher = serializers.SerializerMethodField()
     upload_date = serializers.SerializerMethodField()
     class Meta:
         model = StudentMaterial
         fields = ['id', 'class_name', 'section', 'subject', 'curriculum', 'upload_link', 'title', 'discription', 'upload_content', 'content_type', 'teacher', 'upload_date']
 
-    def get_upload_content(self, obj):
-        if obj.upload_content:
-            if obj.upload_content.name.startswith(settings.base_url + settings.MEDIA_URL):
-                return str(obj.upload_content)
-            else:
-                return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.upload_content)}'
-        return None
+    # def get_upload_content(self, obj):
+    #     if obj.upload_content:
+    #         if obj.upload_content.name.startswith(settings.base_url + settings.MEDIA_URL):
+    #             return str(obj.upload_content)
+    #         else:
+    #             return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.upload_content)}'
+    #     return None
 
     def get_teacher(self, obj):
         teacher = TeacherUser.objects.get(id=obj.teacher_id)
@@ -1013,18 +1013,18 @@ class StudyMaterialListSerializer(serializers.ModelSerializer):
         return obj.updated_at.date()
 
 class StudyMaterialDetailSerializer(serializers.ModelSerializer):
-    upload_content = serializers.SerializerMethodField()
+    # upload_content = serializers.SerializerMethodField()
     class Meta:
         model = StudentMaterial
         fields = ['id', 'class_name', 'section', 'subject', 'curriculum', 'upload_link', 'title', 'discription', 'upload_content', 'content_type']
 
-    def get_upload_content(self, obj):
-        if obj.upload_content:
-            if obj.upload_content.name.startswith(settings.base_url + settings.MEDIA_URL):
-                return str(obj.upload_content)
-            else:
-                return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.upload_content)}'
-        return None
+    # def get_upload_content(self, obj):
+    #     if obj.upload_content:
+    #         if obj.upload_content.name.startswith(settings.base_url + settings.MEDIA_URL):
+    #             return str(obj.upload_content)
+    #         else:
+    #             return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.upload_content)}'
+    #     return None
 
 
 class StudyMaterialUpdateSerializer(serializers.ModelSerializer):

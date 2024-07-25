@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 
+from EduSmart import storage_backends
 from authentication.models import StudentUser, TeacherUser
 
 
@@ -56,7 +57,7 @@ class StudentMaterial(models.Model):
     upload_link = models.URLField(max_length=500)
     title = models.CharField(max_length=255)
     discription = models.TextField()
-    upload_content = models.FileField(upload_to='study_material/')
+    upload_content = models.FileField(upload_to='', storage=storage_backends.AzureMediaStorage(azure_container='file'))
     created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, blank=True, null=True)
 
