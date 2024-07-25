@@ -604,9 +604,10 @@ class ConnectWithTeacherSerializer(serializers.Serializer):
 
 class ChatHistorySerializer(serializers.ModelSerializer):
     teacher_name = serializers.SerializerMethodField()
+    teacher_id = serializers.SerializerMethodField()
     class Meta:
         model = ConnectWithTeacher
-        fields = ['id', 'teacher_name', 'class_name', 'section', 'subject']
+        fields = ['id', 'teacher_id', 'teacher_name', 'class_name', 'section', 'subject']
 
     def get_teacher_name(self, obj):
         teacher_name = TeacherUser.objects.get(id=obj.teacher.id)
@@ -615,6 +616,12 @@ class ChatHistorySerializer(serializers.ModelSerializer):
         else:
             None
 
+    def get_teacher_id(self, obj):
+        teacher_name = TeacherUser.objects.get(id=obj.teacher.id)
+        if teacher_name:
+            return teacher_name.id
+        else:
+            None
 
 class StudentUserAttendanceListSerializer(serializers.ModelSerializer):
     day = serializers.SerializerMethodField()

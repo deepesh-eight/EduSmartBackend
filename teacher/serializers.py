@@ -1121,15 +1121,23 @@ class ChatRequestMessageSerializer(serializers.ModelSerializer):
 
 class TeacherChatHistorySerializer(serializers.ModelSerializer):
     student_name = serializers.SerializerMethodField()
+    student_id = serializers.SerializerMethodField()
 
     class Meta:
         model = ConnectWithTeacher
-        fields = ['id', 'student_name', 'class_name', 'section']
+        fields = ['id', 'student_id', 'student_name', 'class_name', 'section']
 
     def get_student_name(self, obj):
         student = StudentUser.objects.get(id=obj.student.id)
         if student:
             return student.name
+        else:
+            None
+
+    def get_student_id(self, obj):
+        student = StudentUser.objects.get(id=obj.student.id)
+        if student:
+            return student.id
         else:
             None
 
