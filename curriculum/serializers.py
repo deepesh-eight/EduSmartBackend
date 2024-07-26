@@ -99,7 +99,7 @@ class CurriculumUploadSerializer(serializers.Serializer):
 
 
 class CurriculumDetailSerializer(serializers.ModelSerializer):
-    syllabus = serializers.SerializerMethodField()
+    # syllabus = serializers.SerializerMethodField()
     primary_subject = serializers.SerializerMethodField()
     optional_subject = serializers.SerializerMethodField()
 
@@ -107,13 +107,13 @@ class CurriculumDetailSerializer(serializers.ModelSerializer):
         model = Curriculum
         fields = ['id', 'curriculum_name', 'select_class', 'primary_subject', 'optional_subject', 'syllabus', 'discription', 'curriculum_type']
 
-    def get_syllabus(self, obj):
-        if obj.syllabus:
-            if obj.syllabus.name.startswith(settings.base_url + settings.MEDIA_URL):
-                return str(obj.syllabus)
-            else:
-                return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.syllabus)}'
-        return None
+    # def get_syllabus(self, obj):
+    #     if obj.syllabus:
+    #         if obj.syllabus.name.startswith(settings.base_url + settings.MEDIA_URL):
+    #             return str(obj.syllabus)
+    #         else:
+    #             return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.syllabus)}'
+    #     return None
 
     def get_primary_subject(self, obj):
         primary_subject = Subjects.objects.filter(curriculum_id=obj.id)

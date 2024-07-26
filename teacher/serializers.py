@@ -538,7 +538,7 @@ class CertificateUserProfileSerializer(serializers.ModelSerializer):
 class TeacherUserProfileSerializer(serializers.ModelSerializer):
     email = serializers.SerializerMethodField()
     phone = serializers.SerializerMethodField()
-    image = serializers.SerializerMethodField()
+    # image = serializers.SerializerMethodField()
     certificates = serializers.SerializerMethodField()
     class_teacher = serializers.SerializerMethodField()
     age = serializers.SerializerMethodField()
@@ -561,13 +561,13 @@ class TeacherUserProfileSerializer(serializers.ModelSerializer):
             return str(phone_number)
         return None
 
-    def get_image(self, obj):
-        if obj.image:
-            if obj.image.name.startswith(settings.base_url + settings.MEDIA_URL):
-                return str(obj.image)
-            else:
-                return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.image)}'
-        return None
+    # def get_image(self, obj):
+    #     if obj.image:
+    #         if obj.image.name.startswith(settings.base_url + settings.MEDIA_URL):
+    #             return str(obj.image)
+    #         else:
+    #             return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.image)}'
+    #     return None
 
     def get_certificates(self, obj):
         # Fetch and serialize certificates associated with the user

@@ -707,7 +707,7 @@ class StudentInfoListSerializer(serializers.ModelSerializer):
         fields = ['id', 'name']
 
 class StudentInfoDetailSerializer(serializers.ModelSerializer):
-    image = serializers.SerializerMethodField()
+    # image = serializers.SerializerMethodField()
     email = serializers.SerializerMethodField()
     curriculum = serializers.SerializerMethodField()
     subjects = serializers.SerializerMethodField()
@@ -730,13 +730,13 @@ class StudentInfoDetailSerializer(serializers.ModelSerializer):
     def get_curriculum(self, obj):
         return obj.curriculum if hasattr(obj, 'curriculum') else None
 
-    def get_image(self, obj):
-        if obj.image:
-            if obj.image.name.startswith(settings.base_url + settings.MEDIA_URL):
-                return str(obj.image)
-            else:
-                return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.image)}'
-        return None
+    # def get_image(self, obj):
+    #     if obj.image:
+    #         if obj.image.name.startswith(settings.base_url + settings.MEDIA_URL):
+    #             return str(obj.image)
+    #         else:
+    #             return f'{settings.base_url}{settings.MEDIA_URL}{str(obj.image)}'
+    #     return None
 
     def get_email(self, obj):
         return obj.user.email if hasattr(obj, 'user') else None
