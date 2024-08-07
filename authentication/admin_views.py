@@ -44,6 +44,14 @@ class AdminStaffLoginView(APIView):
                     data={}
                 )
                 return Response(response, status=status.HTTP_400_BAD_REQUEST)
+            role = None
+            if user.user_type in ['non-teaching', 'management', 'payrollmanagement']:
+                try:
+                    staff_user = StaffUser.objects.get(user=user)
+                    role = staff_user.role
+                except StaffUser.DoesNotExist:
+                    role = None
+
             refresh = RefreshToken.for_user(user)
             response_data = create_response_data(
                 status=status.HTTP_201_CREATED,
@@ -55,7 +63,8 @@ class AdminStaffLoginView(APIView):
                     'name': user.name,
                     'email': user.email,
                     'phone': str(user.phone),
-                    'user_type': user.user_type
+                    'user_type': user.user_type,
+                    'role': role
                 }
             )
             return Response(response_data, status=status.HTTP_201_CREATED)

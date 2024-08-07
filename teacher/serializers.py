@@ -108,7 +108,7 @@ class TeacherDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = TeacherUser
         fields = ['id', 'full_name', 'gender', 'dob', 'blood_group', 'phone', 'address', 'email', 'religion',
-                  'role', 'joining_date', 'experience', 'ctc', 'class_subject_section_details', 'image', 'certificates', 'highest_qualification', 'class_teacher']
+                  'role', 'joining_date', 'experience', 'ctc', 'class_subject_section_details', 'image', 'certificates', 'highest_qualification', 'class_teacher','fcm_token']
 
     def get_name(self, obj):
         return obj.user.name if hasattr(obj, 'user') else None
@@ -150,7 +150,7 @@ class TeacherListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TeacherUser
-        fields = ['id', 'full_name', 'phone', 'email', 'class_subject_section_details', 'image', 'highest_qualification']
+        fields = ['id', 'full_name', 'phone', 'email', 'class_subject_section_details', 'image', 'highest_qualification','fcm_token']
 
     def get_phone(self, obj):
         phone_number = obj.user.phone

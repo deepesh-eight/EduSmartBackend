@@ -145,6 +145,7 @@ class TeacherUser(models.Model):
     experience = models.IntegerField(null=True,blank=True)
     class_subject_section_details = models.JSONField(blank=True, null=True)
     highest_qualification = models.CharField(max_length=255)
+    fcm_token = models.CharField(max_length=255, blank=True, null=True)
     # certificate = models.FileField(upload_to='', blank=True, null=True)
 
     def __str__(self) -> str:
@@ -357,3 +358,7 @@ class InquiryForm(models.Model):
     description = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+
+
+

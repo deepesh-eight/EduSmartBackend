@@ -1,4 +1,6 @@
 import datetime
+import requests
+from django.conf import settings
 
 from django.contrib.auth import get_user_model
 
@@ -118,4 +120,29 @@ def get_staff_monthly_absent(obj):
     year = today.year
     monthly_absent = StaffAttendence.objects.filter(
         staff=staff.staff, date__year=year, date__month=month, mark_attendence='A').count()
-    return monthly_absent
+    return monthly_absent;
+
+# def send_push_notification(device_tokens, title, body):
+#     """Send a push notification via Firebase Cloud Messaging."""
+#     headers = {
+#         'Authorization': f'key={settings.FIREBASE_SERVER_KEY}',
+#         'Content-Type': 'application/json',
+#     }
+#
+#     data = {
+#         'notification': {
+#             'title': title,
+#             'body': body,
+#         },
+#         'registration_ids': device_tokens,  # Use 'registration_ids' for multiple tokens
+#     }
+#
+#     response = requests.post(
+#         'https://fcm.googleapis.com/fcm/send',
+#         headers=headers,
+#         json=data,
+#     )
+#
+#     return response.status_code, response.json()
+
+

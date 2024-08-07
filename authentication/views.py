@@ -2,6 +2,7 @@ import calendar
 import datetime
 import json
 import re
+import logging
 
 from django.core.mail import send_mail
 from django.db import IntegrityError
@@ -53,6 +54,7 @@ from teacher.serializers import TeacherDetailSerializer, TeacherProfileSerialize
 from utils import create_response_data, create_response_list_data, get_staff_total_attendance, \
     get_staff_monthly_attendance, get_staff_total_absent, get_staff_monthly_absent, generate_random_password
 
+logger = logging.getLogger('myapp')
 
 class UserCreateView(APIView):
     permission_classes = [IsSuperAdminUser | IsAdminUser]
@@ -241,6 +243,8 @@ class LoginView(APIView):
 
         try:
             user = User.objects.get(email=email)
+
+
         except User.DoesNotExist:
             resposne = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
@@ -255,6 +259,14 @@ class LoginView(APIView):
                 data={}
             )
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+        role = None
+        if user.user_type in ['non-teaching', 'management', 'payrollmanagement']:
+            staff_user = StaffUser.objects.filter(user=user).first()
+            if staff_user:
+                role = staff_user.role
+
+
         refresh = RefreshToken.for_user(user)
         response_data = create_response_data(
             status=status.HTTP_201_CREATED,
@@ -266,7 +278,8 @@ class LoginView(APIView):
                 'name': user.name,
                 'email': user.email,
                 'phone': str(user.phone),
-                'is_email_verified': user.is_email_verified
+                'is_email_verified': user.is_email_verified,
+                'role': role
             }
         )
         return Response(response_data, status=status.HTTP_201_CREATED)

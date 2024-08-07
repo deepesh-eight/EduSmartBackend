@@ -1,6 +1,7 @@
 __pycache__/
 .env
 local_settings.py
+notificationpackage/firebase_credentials.json
 
 # Virtual environment
 .venv/

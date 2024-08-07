@@ -13,6 +13,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
+from notificationpackage.firebase import send_push_notification
 
 from EduSmart import settings
 from authentication.models import User, Class, TeacherUser, StudentUser, Certificate, TeachersSchedule, \
@@ -35,8 +36,10 @@ from teacher.serializers import TeacherUserSignupSerializer, TeacherDetailSerial
     ChatRequestMessageSerializer, TeacherChatHistorySerializer, AvailabilityGetSerializer, StudyMaterialListSerializer, \
     StudyMaterialDetailSerializer, TeacherListBySectionSerializer, TeacherAttendanceCreateSerializer, \
     StaffAttendanceCreateSerializer, StaffListBySectionSerializer
-from utils import create_response_data, create_response_list_data, generate_random_password,get_teacher_total_attendance, \
+from utils import create_response_data, create_response_list_data, generate_random_password, \
+    get_teacher_total_attendance, \
     get_teacher_monthly_attendance, get_teacher_total_absent, get_teacher_monthly_absent
+
 
 
 # Create your views here.
@@ -379,9 +382,7 @@ class UserLoginView(APIView):
 
 class TeacherScheduleCreateView(APIView):
     permission_classes = [IsAdminUser, IsInSameSchool]
-    """
-    This class is used to create schedule for teacher's.
-    """
+
     def post(self, request):
         try:
             serializer = ScheduleCreateSerializer(data=request.data)
@@ -389,40 +390,73 @@ class TeacherScheduleCreateView(APIView):
             start_date = serializer.validated_data['start_date']
             end_date = serializer.validated_data.get('end_date', '')
             schedule_data = serializer.validated_data['schedule_data']
-            teacher = serializer.validated_data['teacher']
+            teacher_id = serializer.validated_data['teacher']
 
-            try:
-                teacher = TeacherUser.objects.get(id=teacher, user__school_id=request.user.school_id)
-            except TeacherUser.DoesNotExist:
-                response = create_response_data(
+            teacher = get_object_or_404(TeacherUser, id=teacher_id, user__school_id=request.user.school_id)
+
+            schedule = TeachersSchedule.objects.create(
+                teacher=teacher,
+                start_date=start_date,
+                end_date=end_date,
+                schedule_data=schedule_data,
+                school_id=request.user.school_id
+            )
+
+            if teacher.fcm_token:
+                try:
+                    success_count, failure_count = send_push_notification(
+                        [teacher.fcm_token],
+                        "New Schedule Created",
+                        f"A new schedule has been created for you from {start_date} to {end_date}."
+                    )
+                    print(f"Notification sent: {success_count} successful, {failure_count} failed.")
+                except Exception as e:
+                    print(f"Error sending notification: {e}")
+                    response_data = create_response_data(
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        message="Failed to send notification.",
+                        data={}
+                    )
+                    return Response(response_data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            else:
+                print("No FCM token found for the teacher.")
+                response_data = create_response_data(
                     status=status.HTTP_400_BAD_REQUEST,
-                    message="Teacher with id {} does not exist.".format(teacher),
+                    message="FCM token is not available for the teacher.",
                     data={}
                 )
-                return Response(response, status=status.HTTP_400_BAD_REQUEST)
-            schedule_data = TeachersSchedule.objects.create(
-                teacher=teacher, start_date=start_date, end_date=end_date, schedule_data=schedule_data, school_id=request.user.school_id)
+                return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
             response_data = create_response_data(
-                    status=status.HTTP_201_CREATED,
-                    message=ScheduleMessage.SCHEDULE_CREATED_SUCCESSFULLY,
-                    data={},
-                )
+                status=status.HTTP_201_CREATED,
+                message="Schedule created successfully.",
+                data={},
+            )
             return Response(response_data, status=status.HTTP_201_CREATED)
+
         except KeyError as e:
             response_data = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
-                message=e.args[0],
-                data={},
-            )
-            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
-        except ValidationError as er:
-            response_data = create_response_data(
-                status=status.HTTP_400_BAD_REQUEST,
-                message=er.args[0],
+                message=f"KeyError: {e.args[0]}",
                 data={},
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
+        except ValidationError as er:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=f"ValidationError: {er.args[0]}",
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                message=f"An unexpected error occurred: {e}",
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class TeacherScheduleDetailView(APIView):
     """
