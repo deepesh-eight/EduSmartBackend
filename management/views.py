@@ -39,7 +39,7 @@ class ManagementProfileView(APIView):
             staff = StaffUser.objects.get(user=user, user__school_id=user.school_id)
 
             # Set a breakpoint for debugging if needed
-
+            # breakpoint()
 
             # Check role and user type
             if (staff.role == "Payroll Management" or staff.role == "Management") and user.user_type == "non-teaching":
@@ -1117,7 +1117,6 @@ class TeacherSalaryDetailView(APIView):
         try:
             user = request.user
             staff = StaffUser.objects.get(user=user)
-            breakpoint()
 
             # Check role and user type
             if (staff.role == "Payroll Management" or staff.role == "Management") and user.user_type == "non-teaching":
