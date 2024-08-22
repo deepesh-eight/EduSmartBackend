@@ -3,7 +3,7 @@ from firebase_admin import credentials, messaging
 import os
 
 # Define the path to the credentials JSON file
-cred_path = os.path.join(os.path.dirname(__file__), 'firebase_credentials.json')
+cred_path = os.path.join(os.path.dirname(__file__), 'firebase_credential.json')
 
 # Check if the Firebase app is already initialized
 if not firebase_admin._apps:
@@ -24,6 +24,9 @@ def send_push_notification(tokens, title, message):
 
         # Send the message
         response = messaging.send_multicast(multicast_message)
+
+        # Print the full response
+        print(f"Notification sent successfully: {response}")
 
         # Collect results
         success_count = 0

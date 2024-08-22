@@ -1,7 +1,5 @@
 import calendar
-import datetime
 import json
-
 from django.core.mail import send_mail
 from django.db import IntegrityError
 from django.db.models import Q
@@ -14,7 +12,10 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from notificationpackage.firebase import send_push_notification
-
+from firebase_admin import auth, messaging
+import threading  # For running tasks asynchronously
+from django.utils import timezone
+from datetime import datetime, timedelta
 from EduSmart import settings
 from authentication.models import User, Class, TeacherUser, StudentUser, Certificate, TeachersSchedule, \
     TeacherAttendence, StaffUser, Availability, StaffAttendence
@@ -394,6 +395,7 @@ class TeacherScheduleCreateView(APIView):
 
             teacher = get_object_or_404(TeacherUser, id=teacher_id, user__school_id=request.user.school_id)
 
+            # Create the schedule
             schedule = TeachersSchedule.objects.create(
                 teacher=teacher,
                 start_date=start_date,
@@ -402,22 +404,40 @@ class TeacherScheduleCreateView(APIView):
                 school_id=request.user.school_id
             )
 
+            # Send push notification if FCM token exists
             if teacher.fcm_token:
+                notification_title = "New Schedule Created"
+                notification_message = f"A new schedule has been created for you from {start_date} to {end_date}."
+
+                print(f"Notification to send: Title: {notification_title}, Message: {notification_message}")
+
                 try:
+                    # Attempt to send the push notification
                     success_count, failure_count = send_push_notification(
                         [teacher.fcm_token],
-                        "New Schedule Created",
-                        f"A new schedule has been created for you from {start_date} to {end_date}."
+                        notification_title,
+                        notification_message
                     )
                     print(f"Notification sent: {success_count} successful, {failure_count} failed.")
+
+                except messaging.FirebaseError as fe:
+                    print(f"FirebaseError: {fe}")
+                    response_data = create_response_data(
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        message="Failed to send notification due to Firebase error.",
+                        data={}
+                    )
+                    return Response(response_data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
                 except Exception as e:
                     print(f"Error sending notification: {e}")
                     response_data = create_response_data(
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                        message="Failed to send notification.",
+                        message=f"Failed to send notification: {str(e)}",
                         data={}
                     )
                     return Response(response_data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
             else:
                 print("No FCM token found for the teacher.")
                 response_data = create_response_data(
@@ -427,6 +447,7 @@ class TeacherScheduleCreateView(APIView):
                 )
                 return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
+            # Respond with success if everything went well
             response_data = create_response_data(
                 status=status.HTTP_201_CREATED,
                 message="Schedule created successfully.",
@@ -575,56 +596,144 @@ class TeacherScheduleDeleteView(APIView):
 
 
 class TeacherScheduleUpdateView(APIView):
-    """
-    This class is used to update the teacher schedule.
-    """
-    permission_classes = [IsAdminUser, IsInSameSchool]
+    permission_classes = [IsAdminUser]
 
     def patch(self, request, pk):
         try:
             teacher_id = int(request.data.get('teacher'))
-            teacher = TeacherUser.objects.get(id=teacher_id, user__school_id=request.user.school_id)
+            teacher = get_object_or_404(TeacherUser, id=teacher_id, user__school_id=request.user.school_id)
+
             schedule_data_details = request.data.get('schedule_data')
-            # schedule_data_str = json.loads(schedule_data_details)
+            print(f"Received schedule_data: {schedule_data_details}")
+
+            if isinstance(schedule_data_details, str):
+                try:
+                    schedule_data_details = json.loads(schedule_data_details)
+                except ValueError as e:
+                    raise ValidationError("Invalid JSON format for schedule_data.")
+
+            if isinstance(schedule_data_details, list):
+                if len(schedule_data_details) > 0 and isinstance(schedule_data_details[0], dict):
+                    schedule_data = schedule_data_details[0]
+                else:
+                    raise ValidationError("schedule_data list is empty or contains non-dict elements.")
+            elif isinstance(schedule_data_details, dict):
+                schedule_data = schedule_data_details
+            else:
+                raise ValidationError("schedule_data is neither a dictionary nor a list.")
+
             data = {
                 'start_date': request.data.get('start_date'),
                 'end_date': request.data.get('end_date'),
                 'teacher': teacher.id,
-                'schedule_data': schedule_data_details
+                'schedule_data': schedule_data
             }
-            staff = TeachersSchedule.objects.get(id=pk, school_id=request.user.school_id)
-            serializer = ScheduleUpdateSerializer(staff, data=data, partial=True)
+
+            schedule = get_object_or_404(TeachersSchedule, id=pk, school_id=request.user.school_id)
+            serializer = ScheduleUpdateSerializer(schedule, data=data, partial=True)
+
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
-                response = create_response_data(
-                    status=status.HTTP_200_OK,
-                    message=ScheduleMessage.SCHEDULE_UPDATED_SUCCESSFULLY,
-                    data={}
+
+                start_date = serializer.validated_data['start_date']
+                print(f"Start Date: {start_date}")
+
+                class_timing_str = schedule_data.get('class_timing', '00:00PM')
+                print(f"Class Timing: {class_timing_str}")
+
+                try:
+                    class_time = datetime.strptime(class_timing_str, '%I:%M%p').time()
+                except ValueError:
+                    raise ValidationError("Invalid class_timing format. Expected format is 'HH:MMAM/PM'.")
+
+                # Combine date and time and make it timezone-aware
+                class_datetime = timezone.make_aware(datetime.combine(start_date, class_time))
+                print(f"Class DateTime: {class_datetime}")
+
+                # Calculate notification time (15 mins before class start)
+                notification_time = class_datetime - timedelta(minutes=15)
+                print(f"Notification Time (15 mins before class_timing): {notification_time}")
+
+                notification_title = "Upcoming Schedule Reminder"
+                notification_message = f"Your class starts at {class_timing_str}. Please be prepared."
+                print(f"Notification Title: {notification_title}")
+                print(f"Notification Message: {notification_message}")
+
+                if teacher.fcm_token:
+                    def send_delayed_notification(notification_time):
+                        try:
+                            current_time = timezone.now()
+                            print(f"Current Local Time: {current_time}")
+
+                            delay = (notification_time - current_time).total_seconds()
+                            print(f"Calculated Delay: {delay} seconds")
+
+                            if delay > 0:
+                                threading.Timer(delay,
+                                                lambda: send_push_notification([teacher.fcm_token], notification_title,
+                                                                               notification_message)).start()
+                            else:
+                                print("Notification time has already passed.")
+
+                        except Exception as e:
+                            print(f"Error in send_delayed_notification: {e}")
+
+                    threading.Thread(target=send_delayed_notification, args=(notification_time,)).start()
+                else:
+                    return Response(
+                        create_response_data(
+                            status=status.HTTP_400_BAD_REQUEST,
+                            message="FCM token is not available for the teacher.",
+                            data={}
+                        ),
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+                return Response(
+                    create_response_data(
+                        status=status.HTTP_200_OK,
+                        message=ScheduleMessage.SCHEDULE_UPDATED_SUCCESSFULLY,
+                        data={}
+                    ),
+                    status=status.HTTP_200_OK
                 )
-                return Response(response, status=status.HTTP_200_OK)
-            else:
-                response = create_response_data(
-                    status=status.HTTP_200_OK,
-                    message=serializer.errors,
-                    data=serializer.errors
-                )
-                return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
         except TeachersSchedule.DoesNotExist:
-            response_data = create_response_data(
-                status=status.HTTP_404_NOT_FOUND,
-                message=ScheduleMessage.SCHEDULE_NOT_FOUND,
-                data={}
+            return Response(
+                create_response_data(
+                    status=status.HTTP_404_NOT_FOUND,
+                    message=ScheduleMessage.SCHEDULE_NOT_FOUND,
+                    data={}
+                ),
+                status=status.HTTP_404_NOT_FOUND
             )
-            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
         except TeacherUser.DoesNotExist:
-            response_data = create_response_data(
-                status=status.HTTP_404_NOT_FOUND,
-                message=ScheduleMessage.USER_DOES_NOT_EXISTS,
-                data={}
+            return Response(
+                create_response_data(
+                    status=status.HTTP_404_NOT_FOUND,
+                    message=ScheduleMessage.USER_DOES_NOT_EXISTS,
+                    data={}
+                ),
+                status=status.HTTP_404_NOT_FOUND
             )
-            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
-
-
+        except ValidationError as ve:
+            return Response(
+                create_response_data(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=f"ValidationError: {ve}",
+                    data={}
+                ),
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            return Response(
+                create_response_data(
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    message=f"An unexpected error occurred: {str(e)}",
+                    data={}
+                ),
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 class TeacherScheduleRenewView(APIView):
     """
     This class is used to renew the teacher schedule.

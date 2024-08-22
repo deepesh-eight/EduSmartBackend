@@ -399,29 +399,62 @@ class MixedField(serializers.Field):
         return value
 
 
+# class ScheduleUpdateSerializer(serializers.ModelSerializer):
+#     start_date = serializers.DateField(required=False)
+#     end_date = serializers.DateField(required=False)
+#     teacher = serializers.CharField(required=False)
+#     schedule_data = MixedField(required=False)
+#
+#     class Meta:
+#         model = TeachersSchedule
+#         fields = ['start_date', 'end_date', 'teacher', 'schedule_data']
+#
+#     def validate(self, data):
+#         start_date = data.get('start_date')
+#         end_date = data.get('end_date')
+#         if start_date and end_date and end_date < start_date:
+#             raise serializers.ValidationError("End date cannot be less than start date.")
+#         return data
+#
+#     def update(self, instance, validated_data):
+#         # Update the instance with the validated data
+#         instance.start_date = validated_data.get('start_date', instance.start_date)
+#         instance.end_date = validated_data.get('end_date', instance.end_date)
+#
+#         # Fetch the TeacherUser instance based on the provided ID
+#         teacher_id = validated_data.get('teacher')
+#         if teacher_id:
+#             try:
+#                 teacher_instance = TeacherUser.objects.get(id=teacher_id)
+#                 instance.teacher = teacher_instance
+#             except TeacherUser.DoesNotExist:
+#                 raise serializers.ValidationError("TeacherUser with ID {} does not exist.".format(teacher_id))
+#
+#         instance.schedule_data = validated_data.get('schedule_data', instance.schedule_data)
+#         instance.save()  # Save the instance after updating
+#         return instance  # Return the updated instance
+
 class ScheduleUpdateSerializer(serializers.ModelSerializer):
     start_date = serializers.DateField(required=False)
     end_date = serializers.DateField(required=False)
     teacher = serializers.CharField(required=False)
-    schedule_data = MixedField(required=False)
+    schedule_data = serializers.JSONField(required=False)  # Use JSONField for structured data
 
     class Meta:
         model = TeachersSchedule
         fields = ['start_date', 'end_date', 'teacher', 'schedule_data']
 
-    def validate(self, data):
-        start_date = data.get('start_date')
-        end_date = data.get('end_date')
-        if start_date and end_date and end_date < start_date:
-            raise serializers.ValidationError("End date cannot be less than start date.")
-        return data
+    def validate_schedule_data(self, value):
+        # Ensure schedule_data is either a dictionary or a list
+        if not isinstance(value, (dict, list)):
+            raise serializers.ValidationError("Invalid format for schedule_data. Must be a list or dictionary.")
+        return value
 
     def update(self, instance, validated_data):
-        # Update the instance with the validated data
+        # Update fields with validated data
         instance.start_date = validated_data.get('start_date', instance.start_date)
         instance.end_date = validated_data.get('end_date', instance.end_date)
 
-        # Fetch the TeacherUser instance based on the provided ID
         teacher_id = validated_data.get('teacher')
         if teacher_id:
             try:
@@ -432,7 +465,8 @@ class ScheduleUpdateSerializer(serializers.ModelSerializer):
 
         instance.schedule_data = validated_data.get('schedule_data', instance.schedule_data)
         instance.save()  # Save the instance after updating
-        return instance  # Return the updated instance
+        return instance
+
 
 
 class TeacherAttendanceSerializer(serializers.ModelSerializer):

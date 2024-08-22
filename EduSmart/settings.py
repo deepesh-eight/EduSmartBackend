@@ -28,8 +28,9 @@ SECRET_KEY = 'django-insecure-b^&%diqg(h(@4rs^9bhm*9horj^!gkt8)2a@ze%q10a5xwzq6j
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['edu-management.azurewebsites.net']
-# ALLOWED_HOSTS = ['127.0.0.1']
+# ALLOWED_HOSTS = ['edu-management.azurewebsites.net']
+
+ALLOWED_HOSTS = ['127.0.0.1']
 base_url = 'https://edu-management.azurewebsites.net'
 # Application definition
 
@@ -133,13 +134,20 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Kolkata'
 
 USE_I18N = True
-
 USE_L10N = True
-
 USE_TZ = True
+
+
+# TIME_ZONE = 'UTC'
+#
+# USE_I18N = True
+#
+# USE_L10N = True
+#
+# USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/

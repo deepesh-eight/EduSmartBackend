@@ -783,3 +783,8 @@ class InquirySerializer(serializers.ModelSerializer):
     class Meta:
         model = InquiryForm
         fields = ['name', 'phone_number', 'e_mail', 'description']
+
+class FCMTokenSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TeacherUser
+        fields = ['fcm_token']
