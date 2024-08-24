@@ -344,6 +344,7 @@ class ScheduleListSerializer(serializers.ModelSerializer):
     class_duration = serializers.SerializerMethodField()
     total_classes = serializers.SerializerMethodField()
     teacher_id = serializers.SerializerMethodField()
+
     class Meta:
         model = TeachersSchedule
         fields = ['id', 'teacher_id', 'teacher', 'role', 'class_duration', 'total_classes']
@@ -351,7 +352,7 @@ class ScheduleListSerializer(serializers.ModelSerializer):
     def get_teacher_role(self, teacher_name):
         try:
             teacher = TeacherUser.objects.get(user__email=teacher_name)
-            return teacher.role  # Assuming 'role' is the field you want to retrieve
+            return teacher.role
         except TeacherUser.DoesNotExist:
             return None
 
@@ -359,11 +360,11 @@ class ScheduleListSerializer(serializers.ModelSerializer):
         teacher_data = TeacherUser.objects.get(id=obj.teacher_id)
         return teacher_data.user.email
 
-    def get_teacher_id(self,obj):
+    def get_teacher_id(self, obj):
         teacher_data = TeacherUser.objects.get(id=obj.teacher_id)
         return teacher_data.id
 
-    def get_teacher(self,obj):
+    def get_teacher(self, obj):
         teacher_data = TeacherUser.objects.get(id=obj.teacher_id)
         return teacher_data.full_name
 
@@ -377,7 +378,9 @@ class ScheduleListSerializer(serializers.ModelSerializer):
 
     def get_class_duration(self, obj):
         schedule_data = obj.schedule_data
-        return schedule_data[0]['class_duration'] if schedule_data else 0
+        if schedule_data and isinstance(schedule_data, list) and len(schedule_data) > 0:
+            return schedule_data[0].get('class_duration', 0)
+        return 0
 
 class MixedField(serializers.Field):
     """
@@ -466,6 +469,11 @@ class ScheduleUpdateSerializer(serializers.ModelSerializer):
         instance.schedule_data = validated_data.get('schedule_data', instance.schedule_data)
         instance.save()  # Save the instance after updating
         return instance
+
+class FCMTokenSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TeacherUser
+        fields = ['fcm_token']
 
 
 
@@ -764,6 +772,10 @@ class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
         fields = ['title', 'description', 'date_time', 'sender', 'type', 'is_read', 'reciver_id', 'class_id']
+        extra_kwargs = {
+            'description': {'required': False},
+        }
+
 
 
 class NotificationListSerializer(serializers.ModelSerializer):

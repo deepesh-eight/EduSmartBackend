@@ -1098,22 +1098,37 @@ class FetchTeacherAttendanceView(APIView):
 
 class NotificationCreateView(APIView):
     """
-    This class is used to create notification.
+    This class is used to create notifications.
     """
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
         try:
+            # Print the request data for debugging
+            print(f"Received request data: {request.data}")
+
+            # Convert 'is_read' field if needed
+            if 'is_read' in request.data:
+                request.data['is_read'] = str(request.data['is_read'])
+
             serializer = NotificationSerializer(data=request.data)
+
+            # Check if serializer is valid and print errors if any
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
+                # Print the serialized data for debugging
+                print(f"Serializer data: {serializer.data}")
+
                 response_data = create_response_data(
                     status=status.HTTP_201_CREATED,
                     message=NotificationMessage.NOTIFICATION_CREATED_SUCCESSFULLY,
-                    data={},
+                    data=serializer.data,
                 )
                 return Response(response_data, status=status.HTTP_201_CREATED)
             else:
+                # Print serializer errors for debugging
+                print(f"Serializer validation errors: {serializer.errors}")
+
                 response_data = create_response_data(
                     status=status.HTTP_400_BAD_REQUEST,
                     message=serializer.errors,
@@ -1121,9 +1136,12 @@ class NotificationCreateView(APIView):
                 )
                 return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
+            # Print the exception details for debugging
+            print(f"Exception occurred: {e}")
+
             response_data = create_response_data(
                 status=status.HTTP_400_BAD_REQUEST,
-                message=e.args[0],
+                message=f"An unexpected error occurred: {e}",
                 data={}
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
@@ -3095,6 +3113,8 @@ class EventDashboardListView(APIView):
                 data={},
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 
 class InquiryCreateView(APIView):

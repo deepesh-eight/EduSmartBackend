@@ -1,5 +1,7 @@
 import calendar
 import json
+import requests
+from django.urls import reverse
 from django.core.mail import send_mail
 from django.db import IntegrityError
 from django.db.models import Q
@@ -36,7 +38,7 @@ from teacher.serializers import TeacherUserSignupSerializer, TeacherDetailSerial
     TeacherAttendanceFilterListSerializer, AvailabilityCreateSerializer, \
     ChatRequestMessageSerializer, TeacherChatHistorySerializer, AvailabilityGetSerializer, StudyMaterialListSerializer, \
     StudyMaterialDetailSerializer, TeacherListBySectionSerializer, TeacherAttendanceCreateSerializer, \
-    StaffAttendanceCreateSerializer, StaffListBySectionSerializer
+    StaffAttendanceCreateSerializer, StaffListBySectionSerializer, FCMTokenSerializer
 from utils import create_response_data, create_response_list_data, generate_random_password, \
     get_teacher_total_attendance, \
     get_teacher_monthly_attendance, get_teacher_total_absent, get_teacher_monthly_absent
@@ -404,72 +406,40 @@ class TeacherScheduleCreateView(APIView):
                 school_id=request.user.school_id
             )
 
-            # Send push notification if FCM token exists
+            # Send push notification using FCM token (if exists)
             if teacher.fcm_token:
-                notification_title = "New Schedule Created"
+                notification_title = "New Schedule Created11111"
                 notification_message = f"A new schedule has been created for you from {start_date} to {end_date}."
+                send_push_notification([teacher.fcm_token], notification_title, notification_message)
 
-                print(f"Notification to send: Title: {notification_title}, Message: {notification_message}")
+            # Prepare and print payload for debugging
+            notification_url = request.build_absolute_uri(reverse('notification_create'))
+            payload = {
+                'title': "New Schedule Created",
+                'description': f"Your schedule from {start_date} to {end_date} has been created.",
+                'reciver_id': teacher.user.id,
+                'type': "Schedule",
+                "is_read": "0"
+            }
+            print(f"Payload being sent: {payload}")
 
-                try:
-                    # Attempt to send the push notification
-                    success_count, failure_count = send_push_notification(
-                        [teacher.fcm_token],
-                        notification_title,
-                        notification_message
-                    )
-                    print(f"Notification sent: {success_count} successful, {failure_count} failed.")
+            print(f"Notification API URL: {notification_url}")  # Debugging
 
-                except messaging.FirebaseError as fe:
-                    print(f"FirebaseError: {fe}")
-                    response_data = create_response_data(
-                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                        message="Failed to send notification due to Firebase error.",
-                        data={}
-                    )
-                    return Response(response_data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            # Send notification to custom Notification API
+            try:
+                response = requests.post(notification_url, json=payload)
+                response.raise_for_status()
+                print(f"Notification API Response Status Code: {response.status_code}")  # Debugging
+                print(f"Notification API Response Text: {response.text}")  # Debugging
+            except requests.exceptions.RequestException as e:
+                print(f"Error sending notification: {e}")
 
-                except Exception as e:
-                    print(f"Error sending notification: {e}")
-                    response_data = create_response_data(
-                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                        message=f"Failed to send notification: {str(e)}",
-                        data={}
-                    )
-                    return Response(response_data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-            else:
-                print("No FCM token found for the teacher.")
-                response_data = create_response_data(
-                    status=status.HTTP_400_BAD_REQUEST,
-                    message="FCM token is not available for the teacher.",
-                    data={}
-                )
-                return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
-
-            # Respond with success if everything went well
             response_data = create_response_data(
                 status=status.HTTP_201_CREATED,
                 message="Schedule created successfully.",
                 data={},
             )
             return Response(response_data, status=status.HTTP_201_CREATED)
-
-        except KeyError as e:
-            response_data = create_response_data(
-                status=status.HTTP_400_BAD_REQUEST,
-                message=f"KeyError: {e.args[0]}",
-                data={},
-            )
-            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
-
-        except ValidationError as er:
-            response_data = create_response_data(
-                status=status.HTTP_400_BAD_REQUEST,
-                message=f"ValidationError: {er.args[0]}",
-                data={},
-            )
-            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
         except Exception as e:
             response_data = create_response_data(
@@ -478,6 +448,7 @@ class TeacherScheduleCreateView(APIView):
                 data={},
             )
             return Response(response_data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 class TeacherScheduleDetailView(APIView):
     """
@@ -543,12 +514,12 @@ class TeacherScheduleListView(APIView):
             paginator = self.pagination_class()
             paginated_queryset = paginator.paginate_queryset(queryset, request)
 
-            serializers = ScheduleListSerializer(paginated_queryset, many=True)
+            serializer = ScheduleListSerializer(paginated_queryset, many=True)
             response_data = {
                 'status': status.HTTP_200_OK,
-                'count': len(serializers.data),
+                'count': len(serializer.data),
                 'message': ScheduleMessage.SCHEDULE_LIST_MESSAGE,
-                'data': serializers.data,
+                'data': serializer.data,
                 'pagination': {
                     'page_size': paginator.page_size,
                     'next': paginator.get_next_link(),
@@ -567,6 +538,7 @@ class TeacherScheduleListView(APIView):
             data=serializer.data,
         )
         return Response(response, status=status.HTTP_200_OK)
+
 
 
 class TeacherScheduleDeleteView(APIView):
@@ -689,6 +661,19 @@ class TeacherScheduleUpdateView(APIView):
                         status=status.HTTP_400_BAD_REQUEST
                     )
 
+                # Send notification to your custom Notification API
+                notification_url = request.build_absolute_uri(reverse('notification_create'))
+                payload = {
+                    'receiver': teacher.user.id,
+                    'title': notification_title,
+                    'message': notification_message
+                }
+                try:
+                    response = requests.post(notification_url, json=payload)
+                    response.raise_for_status()
+                except requests.exceptions.RequestException as e:
+                    print(f"Error sending notification to API: {e}")
+
                 return Response(
                     create_response_data(
                         status=status.HTTP_200_OK,
@@ -776,7 +761,58 @@ class TeacherScheduleRenewView(APIView):
                 message=ScheduleMessage.USER_DOES_NOT_EXISTS,
                 data={}
             )
-            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND);
+
+class FCMTokenUpdateView(APIView):
+    permission_classes = [IsTeacherUser, IsInSameSchool]
+
+    def post(self, request):
+        try:
+            serializer = FCMTokenSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            teacher_id = request.user.id
+            fcm_token = serializer.validated_data['fcm_token']
+
+            # Get the teacher user instance
+            teacher = get_object_or_404(TeacherUser, user_id=teacher_id)
+
+            # Update the FCM token
+            teacher.fcm_token = fcm_token
+            teacher.save()
+
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message="FCM token updated successfully.",
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        except KeyError as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=f"KeyError: {e.args[0]}",
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+        except ValidationError as er:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=f"ValidationError: {er.args[0]}",
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                message=f"An unexpected error occurred: {e}",
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
 
 
 class TeacherAttendanceCreateView(APIView):

@@ -21,6 +21,7 @@ urlpatterns = [
         path('schedule/class/list/', TeachersClassListView.as_view(), name='schedule_class_list'),
         path('schedule/section/list/', TeachersSectionListView.as_view(), name='schedule_section_list'),
         path('schedule/subject/list/', TeachersSubjectListView.as_view(), name='schedule_subject_list'),
+        path('update-fcm-token/', FCMTokenUpdateView.as_view(), name='update_fcm_token'),
 
         #Teacher attendence API's
         path('user/login/', UserLoginView.as_view(), name='user_login'),
