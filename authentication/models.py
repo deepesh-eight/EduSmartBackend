@@ -63,6 +63,7 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractUser):
+    DoesNotExist = None
     USER_TYPE_CHOICES = [
         ('admin', 'Admin'),
         ('management', 'Management'),

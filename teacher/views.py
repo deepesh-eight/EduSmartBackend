@@ -22,7 +22,7 @@ from EduSmart import settings
 from authentication.models import User, Class, TeacherUser, StudentUser, Certificate, TeachersSchedule, \
     TeacherAttendence, StaffUser, Availability, StaffAttendence
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsTeacherUser, IsInSameSchool, \
-    IsAdminOrIsStaffAndInSameSchool
+    IsAdminOrIsStaffAndInSameSchool, IsAuthenticatedUser, IsAuthenticatedTeacherUser
 from authentication.serializers import UserLoginSerializer
 from authentication.views import NonTeachingStaffDetailView
 from constants import UserLoginMessage, UserResponseMessage, ScheduleMessage, AttendenceMarkedMessage, \
@@ -42,7 +42,6 @@ from teacher.serializers import TeacherUserSignupSerializer, TeacherDetailSerial
 from utils import create_response_data, create_response_list_data, generate_random_password, \
     get_teacher_total_attendance, \
     get_teacher_monthly_attendance, get_teacher_total_absent, get_teacher_monthly_absent
-
 
 
 # Create your views here.
@@ -190,7 +189,8 @@ class TeacherListView(APIView):
     pagination_class = CustomPagination
 
     def get(self, request):
-        queryset = TeacherUser.objects.filter(user__is_active=True, user__school_id=request.user.school_id).order_by("-id")
+        queryset = TeacherUser.objects.filter(user__is_active=True, user__school_id=request.user.school_id).order_by(
+            "-id")
         if request.query_params:
             name = request.query_params.get('full_name', None)
             page = request.query_params.get('page_size', None)
@@ -327,11 +327,91 @@ class TeacherUpdateProfileView(APIView):
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
 
+class TeacherSelfUpdateProfileView(APIView):
+    # Use the custom permission to ensure only authenticated teachers can update their profile
+    permission_classes = [IsAuthenticatedTeacherUser]
+
+    def patch(self, request):
+        try:
+            # Fetch the teacher profile associated with the logged-in user
+            teacher = TeacherUser.objects.get(user=request.user)
+
+            # Debugging: Print the user ID for verification
+            print(f"Logged-in User ID: {request.user.id}, Teacher's User ID: {teacher.user.id}")
+
+            # Handle certificate files
+            files_data = []
+            certificate_files = request.data.getlist('certificate_files', [])
+
+            for file in certificate_files:
+                files_data.append(file)
+
+            # Parsing and handling `class_subject_section_details`
+            class_subject_section_details = request.data.get('class_subject_section_details')
+            class_subject_section_details_str = json.loads(
+                class_subject_section_details) if class_subject_section_details else []
+
+            # Data preparation for serializer
+            data = {
+                'email': request.data.get('email'),
+                'phone': request.data.get('phone'),
+                'full_name': request.data.get('full_name'),
+                'dob': request.data.get('dob'),
+                'image': request.data.get('image'),
+                'gender': request.data.get('gender'),
+                'joining_date': request.data.get('joining_date'),
+                'religion': request.data.get('religion'),
+                'blood_group': request.data.get('blood_group'),
+                'ctc': request.data.get('ctc'),
+                'experience': request.data.get('experience'),
+                'role': request.data.get('role'),
+                'address': request.data.get('address'),
+                'class_subject_section_details': class_subject_section_details_str,
+                'highest_qualification': request.data.get('highest_qualification'),
+                'certificate_files': files_data
+            }
+
+            # Serializer for updating the teacher profile
+            serializer = TeacherProfileSerializer(teacher, data=data, partial=True)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+
+                # Handle certificate files separately
+                if files_data:
+                    teacher.user.certificates.all().delete()  # Delete existing certificates
+                    for cert_file_data in files_data:
+                        Certificate.objects.create(user=teacher.user, certificate_file=cert_file_data)
+
+                response = {
+                    "status": status.HTTP_200_OK,
+                    "message": "Profile updated successfully.",
+                    "data": {}
+                }
+                return Response(response, status=status.HTTP_200_OK)
+            else:
+                response = {
+                    "status": status.HTTP_400_BAD_REQUEST,
+                    "message": serializer.errors,
+                    "data": serializer.errors
+                }
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+        except TeacherUser.DoesNotExist:
+            return Response({"detail": "Teacher profile not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        except IntegrityError:
+            return Response({"detail": "Email already exists."}, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
 class UserLoginView(APIView):
     permission_classes = [permissions.AllowAny, ]
     """
     This class is used to login user.
     """
+
     def post(self, request):
         try:
             serializer = UserLoginSerializer(data=request.data)
@@ -360,7 +440,7 @@ class UserLoginView(APIView):
             except TokenError as e:
                 response = create_response_data(
                     status=status.HTTP_401_UNAUTHORIZED,
-                    message= UserResponseMessage.TOKEN_HAS_EXPIRED,
+                    message=UserResponseMessage.TOKEN_HAS_EXPIRED,
                     data={}
                 )
                 return Response(response, status=status.HTTP_401_UNAUTHORIZED)
@@ -538,7 +618,6 @@ class TeacherScheduleListView(APIView):
             data=serializer.data,
         )
         return Response(response, status=status.HTTP_200_OK)
-
 
 
 class TeacherScheduleDeleteView(APIView):
@@ -719,6 +798,8 @@ class TeacherScheduleUpdateView(APIView):
                 ),
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
 class TeacherScheduleRenewView(APIView):
     """
     This class is used to renew the teacher schedule.
@@ -762,6 +843,7 @@ class TeacherScheduleRenewView(APIView):
                 data={}
             )
             return Response(response_data, status=status.HTTP_404_NOT_FOUND);
+
 
 class FCMTokenUpdateView(APIView):
     permission_classes = [IsTeacherUser, IsInSameSchool]
@@ -812,14 +894,12 @@ class FCMTokenUpdateView(APIView):
             return Response(response_data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-
-
-
 class TeacherAttendanceCreateView(APIView):
     permission_classes = [IsAdminUser, IsInSameSchool]
     """
     This class is used to create attendance of teacher's.
     """
+
     def post(self, request):
         try:
             serializer = TeacherAttendanceSerializer(data=request.data)
@@ -856,7 +936,8 @@ class FetchAttendanceDetailView(APIView):
     def get(self, request, pk):
         try:
             teacher = TeacherUser.objects.get(id=pk, user__school_id=request.user.school_id)
-            data = TeacherAttendence.objects.filter(teacher_id=pk, teacher__user__school_id=request.user.school_id).order_by('-date')
+            data = TeacherAttendence.objects.filter(teacher_id=pk,
+                                                    teacher__user__school_id=request.user.school_id).order_by('-date')
 
             filter_type = request.query_params.get('filter_type', None)
             if filter_type:
@@ -892,8 +973,10 @@ class FetchAttendanceDetailView(APIView):
                         "teacher_name": teacher.full_name,
                         "teacher_id": teacher.id,
                         "class_teacher": f"{teacher.class_subject_section_details[0].get('class')} class" if teacher.role == 'class teacher' else None,
-                        "class_section": teacher.class_subject_section_details[0].get('section') if teacher.role == 'class teacher' else None,
-                        "subject": teacher.class_subject_section_details[0].get('subject') if teacher.role == 'class teacher' else None,
+                        "class_section": teacher.class_subject_section_details[0].get(
+                            'section') if teacher.role == 'class teacher' else None,
+                        "subject": teacher.class_subject_section_details[0].get(
+                            'subject') if teacher.role == 'class teacher' else None,
                         "total_attendance": get_teacher_total_attendance(data),
                         "monthly_attendance": get_teacher_monthly_attendance(data),
                         "total_absent": get_teacher_total_absent(data),
@@ -973,7 +1056,8 @@ class SectionListView(APIView):
         try:
             curriculum = request.query_params.get("curriculum")
             classes = request.query_params.get("class_name")
-            section_list = StudentUser.objects.filter(user__school_id=request.user.school_id, curriculum=curriculum, class_enrolled=classes)
+            section_list = StudentUser.objects.filter(user__school_id=request.user.school_id, curriculum=curriculum,
+                                                      class_enrolled=classes)
             serializer = SectionListSerializer(section_list, many=True)
             class_names = [item['section'] for item in serializer.data]
             response_data = create_response_data(
@@ -1001,7 +1085,8 @@ class SubjectListView(APIView):
         try:
             curriculum = request.query_params.get("curriculum")
             classes = request.query_params.get("class_name")
-            subjects = Curriculum.objects.get(school_id=request.user.school_id, curriculum_name=curriculum, select_class=classes)
+            subjects = Curriculum.objects.get(school_id=request.user.school_id, curriculum_name=curriculum,
+                                              select_class=classes)
             subject = Subjects.objects.filter(curriculum_id=subjects.id)
             serializer = SubjectListSerializer(subject, many=True)
             primary_subject = [item['primary_subject'] for item in serializer.data]
@@ -1035,7 +1120,8 @@ class TeachersListView(APIView):
 
     def get(self, request):
         try:
-            teacher_list = TeacherUser.objects.filter(user__is_active=True, user__school_id=request.user.school_id).values('id', 'full_name')
+            teacher_list = TeacherUser.objects.filter(user__is_active=True,
+                                                      user__school_id=request.user.school_id).values('id', 'full_name')
             data = [{"id": teacher['id'], "teacher_name": teacher['full_name']} for teacher in teacher_list]
 
             response_data = create_response_data(
@@ -1062,7 +1148,8 @@ class TeachersCurriculumListView(APIView):
     def get(self, request):
         try:
             teacher_name = request.query_params.get('teacher_name')
-            teacher_list = TeacherUser.objects.get(user__is_active=True, user__school_id=request.user.school_id, id=teacher_name)
+            teacher_list = TeacherUser.objects.get(user__is_active=True, user__school_id=request.user.school_id,
+                                                   id=teacher_name)
             # data = {
             #     "curriculum": [teacher['curriculum'] for teacher in teacher_list.class_subject_section_details]
             # }
@@ -1100,7 +1187,8 @@ class TeachersClassListView(APIView):
         try:
             teacher_name = request.query_params.get('teacher_name')
             teacher_curriculum = request.query_params.get('curriculum')
-            teacher_list = TeacherUser.objects.get(user__is_active=True, user__school_id=request.user.school_id, id=teacher_name)
+            teacher_list = TeacherUser.objects.get(user__is_active=True, user__school_id=request.user.school_id,
+                                                   id=teacher_name)
             class_set = set()
             for teacher in teacher_list.class_subject_section_details:
                 if teacher['curriculum'] == teacher_curriculum:
@@ -1137,7 +1225,8 @@ class TeachersSectionListView(APIView):
             teacher_name = request.query_params.get('teacher_name')
             teacher_curriculum = request.query_params.get('curriculum')
             teacher_class = request.query_params.get('class')
-            teacher_list = TeacherUser.objects.get(user__is_active=True, user__school_id=request.user.school_id, id=teacher_name)
+            teacher_list = TeacherUser.objects.get(user__is_active=True, user__school_id=request.user.school_id,
+                                                   id=teacher_name)
             section_set = set()
             for teacher in teacher_list.class_subject_section_details:
                 if teacher['class'] == teacher_class and teacher['curriculum'] == teacher_curriculum:
@@ -1175,10 +1264,12 @@ class TeachersSubjectListView(APIView):
             teacher_curriculum = request.query_params.get('curriculum')
             teacher_class = request.query_params.get('class')
             teacher_section = request.query_params.get('section')
-            teacher_list = TeacherUser.objects.get(user__is_active=True, user__school_id=request.user.school_id, id=teacher_name)
+            teacher_list = TeacherUser.objects.get(user__is_active=True, user__school_id=request.user.school_id,
+                                                   id=teacher_name)
             subject_set = set()
             for teacher in teacher_list.class_subject_section_details:
-                if teacher['class'] == teacher_class and teacher['curriculum'] == teacher_curriculum and teacher['section'] == teacher_section:
+                if teacher['class'] == teacher_class and teacher['curriculum'] == teacher_curriculum and teacher[
+                    'section'] == teacher_section:
                     subject_set.add(teacher['subject'])
 
             distinct_subject = list(subject_set)
@@ -1211,7 +1302,8 @@ class AttedanceFilterListView(APIView):
     def get(self, request):
         try:
             teacher = TeacherUser.objects.filter(user__school_id=request.user.school_id)
-            attendance_data = TeacherAttendence.objects.filter(teacher__in=teacher, teacher__user__school_id=request.user.school_id)
+            attendance_data = TeacherAttendence.objects.filter(teacher__in=teacher,
+                                                               teacher__user__school_id=request.user.school_id)
 
             date = request.query_params.get('date', None)
             mark_attendence = request.query_params.get('mark_attendence', None)
@@ -1279,7 +1371,7 @@ class AvailabilityCreateView(APIView):
                 )
                 return Response(response_data, status=status.HTTP_201_CREATED)
             else:
-                response_data= create_response_data(
+                response_data = create_response_data(
                     status=status.HTTP_400_BAD_REQUEST,
                     message=serializer.errors,
                     data={}
@@ -1304,7 +1396,7 @@ class AvailabilityUpdateView(APIView):
         try:
             user = request.user
             teacher = TeacherUser.objects.get(user__school_id=user.school_id, user=user.id)
-            availability_data = Availability.objects.get(school_id=user.school_id,teacher=teacher.id)
+            availability_data = Availability.objects.get(school_id=user.school_id, teacher=teacher.id)
             serializer = AvailabilityCreateSerializer(availability_data, data=request.data, partial=True)
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
@@ -1381,8 +1473,9 @@ class StudentChatRequestView(APIView):
 
     def get(self, request):
         try:
-            teacher = TeacherUser.objects.get(user__school_id= request.user.school_id, user=request.user.id)
-            chat_data = ConnectWithTeacher.objects.filter(school_id= request.user.school_id, teacher=teacher.id, status__in=[0, 1]).order_by('-id')
+            teacher = TeacherUser.objects.get(user__school_id=request.user.school_id, user=request.user.id)
+            chat_data = ConnectWithTeacher.objects.filter(school_id=request.user.school_id, teacher=teacher.id,
+                                                          status__in=[0, 1]).order_by('-id')
             serializer = ChatRequestMessageSerializer(chat_data, many=True)
             response_data = create_response_data(
                 status=status.HTTP_200_OK,
@@ -1497,9 +1590,10 @@ class StudyMaterialView(APIView):
             if self.request.query_params:
                 search = self.request.query_params.get('search', None)
                 if search is not None:
-                    data = data.filter(Q(content_type__icontains=search) | Q(subject__icontains=search) | Q(curriculum__icontains=search) | Q
-                    (class_name__icontains=search) | Q(section__icontains=search) | Q(title__icontains=search) | Q(discription__icontains=search))
-
+                    data = data.filter(Q(content_type__icontains=search) | Q(subject__icontains=search) | Q(
+                        curriculum__icontains=search) | Q
+                                       (class_name__icontains=search) | Q(section__icontains=search) | Q(
+                        title__icontains=search) | Q(discription__icontains=search))
 
             # Paginate the queryset
             paginator = self.pagination_class()
@@ -1635,7 +1729,8 @@ class TeacherUpdateView(APIView):
                 'phone': request.data.get('phone'),
                 'full_name': request.data.get('full_name'),
                 'dob': request.data.get('dob'),
-                'image': request.data.get('image') if 'image' in request.data and request.data.get('image') else str(teacher.image),
+                'image': request.data.get('image') if 'image' in request.data and request.data.get('image') else str(
+                    teacher.image),
                 'gender': request.data.get('gender'),
                 'joining_date': request.data.get('joining_date'),
                 'religion': request.data.get('religion'),

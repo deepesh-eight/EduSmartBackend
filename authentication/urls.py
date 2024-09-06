@@ -2,6 +2,8 @@ from django.urls import path
 
 from .admin_views import *
 from .views import *
+from django.contrib.auth import views as auth_views
+from .views import CustomPasswordResetAPIView
 
 urlpatterns = [
     path('users/create/', UserCreateView.as_view(), name='user_create'),
@@ -14,12 +16,12 @@ urlpatterns = [
     # Admin Panel APIS
     path('staff/login/', AdminStaffLoginView.as_view(), name='staff_login'),
     path('staff/create/', AdminStaffCreateView.as_view(), name='staff_create'),
-
     path('staff/get-profile/', StaffProfileView.as_view(), name='staff_profile'),
     path('staff/get-profile/<int:pk>/', GetStaffView.as_view(), name='get_staff'),
     path('staff/update-profile/<int:pk>/', StaffUpdateProfileView.as_view(), name='staff_update_profile'),
     path('staff/delete/<int:pk>/', AdminStaffDeleteView.as_view(), name='staff_delete'),
     path('user/list/', UserListView.as_view(), name='user_list'),
+    path('change-password/', ChangePasswordAPIView.as_view(), name='change-password'),
 
     # Non teaching staff APIS
     path('non-teaching-staff/create/', NonTeachingStaffCreateView.as_view(), name='staff_create'),
@@ -32,7 +34,7 @@ urlpatterns = [
     # Non-teaching staff attendence API's
     path('attendance/create/', AttendanceCreateView.as_view(), name='attendance_create'),
     path('attendance/detail/<int:pk>/', FetchAttendanceDetailView.as_view(), name='fetch_attendance_detail'),
-    path('attendance/list/',  FetchAttendanceListView.as_view(), name='fetch_attendance_list'),
+    path('attendance/list/', FetchAttendanceListView.as_view(), name='fetch_attendance_list'),
     path('attendance/filter/list/', StaffAttedanceFilterListView.as_view(), name='staff_attendance_filter_list'),
 
     # Notification
@@ -56,7 +58,6 @@ urlpatterns = [
     path('curriculum/class/list/', TeacherCurriculumCListView.as_view(), name='teacher_class_list'),
     path('curriculum/section/list/', TeacherCurriculumSectionListView.as_view(), name='teacher_section_list'),
     path('curriculum/subject/list/', TeacherCurriculumSubjectListView.as_view(), name='teacher_subject_list'),
-
 
     # Mobile App teacher day & review
     path('teacher/day/review/', TeacherDayReviewView.as_view(), name='teacher_day_review'),
@@ -121,7 +122,6 @@ urlpatterns = [
     path('exam/schedule/list/', ExamScheduleListView.as_view(), name='exam_schedule_list'),
     path('exam/schedule/detail/', ExamScheduleDetailView.as_view(), name='exam_schedule_detail'),
 
-
     # Mobile Event API
     path('teacher/event/list/', TeacherEventListView.as_view(), name='teacher_event_list'),
     path('teacher/event/detail/<int:pk>/', TeacherEventDetailView.as_view(), name='teacher_event_detail'),
@@ -136,5 +136,12 @@ urlpatterns = [
     path('student/remark/', StudentRemorkView.as_view(), name='student_remark'),
 
     # Inquiry Related API'S
-    path('inquiry/', InquiryCreateView.as_view(), name='inquiry_create')
+    path('inquiry/', InquiryCreateView.as_view(), name='inquiry_create'),
+
+    # Password reset views
+    path('password_reset/', CustomPasswordResetAPIView.as_view(), name='password_reset_api'),
+
+    # Password reset confirmation views (built-in Django views)
+    path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
+    path('reset/done/', auth_views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
 ]

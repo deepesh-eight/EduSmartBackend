@@ -16,6 +16,11 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import AuthenticationFailed, TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils.dateparse import parse_date
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
+from django.contrib.auth.tokens import default_token_generator
+from django.urls import reverse
+from django.conf import settings
 
 from EduSmart import settings
 from authentication.models import User, AddressDetails, ErrorLogging, Certificate, StaffUser, StaffAttendence, \
@@ -55,6 +60,7 @@ from utils import create_response_data, create_response_list_data, get_staff_tot
     get_staff_monthly_attendance, get_staff_total_absent, get_staff_monthly_absent, generate_random_password
 
 logger = logging.getLogger('myapp')
+
 
 class UserCreateView(APIView):
     permission_classes = [IsSuperAdminUser | IsAdminUser]
@@ -139,7 +145,8 @@ class FetchUserDetailView(APIView):
             )
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
 
-#IsAdminUser
+
+# IsAdminUser
 class UsersList(APIView):
     permission_classes = [IsAdminUser]
     pagination_class = CustomPagination
@@ -229,6 +236,7 @@ class UserUpdateProfileView(APIView):
             )
             return Response(response_data, status=status.HTTP_200_OK)
 
+
 class LoginView(APIView):
     permission_classes = [permissions.AllowAny, ]
     """
@@ -265,7 +273,6 @@ class LoginView(APIView):
             staff_user = StaffUser.objects.filter(user=user).first()
             if staff_user:
                 role = staff_user.role
-
 
         refresh = RefreshToken.for_user(user)
         response_data = create_response_data(
@@ -330,9 +337,11 @@ class NonTeachingStaffCreateView(APIView):
                     send_mail(subject, message, from_email, recipient_list)
 
                     user_staff = StaffUser.objects.create(
-                        user=user, first_name=first_name, last_name=last_name, gender=gender, image=image, dob=dob, blood_group=blood_group,
+                        user=user, first_name=first_name, last_name=last_name, gender=gender, image=image, dob=dob,
+                        blood_group=blood_group,
                         religion=religion, role=role, address=address,
-                        joining_date=joining_date, ctc=ctc, experience=experience, highest_qualification=highest_qualification
+                        joining_date=joining_date, ctc=ctc, experience=experience,
+                        highest_qualification=highest_qualification
                     )
                     for cert_file in certificates:
                         Certificate.objects.create(user=user, certificate_file=cert_file)
@@ -393,7 +402,8 @@ class NonTeachingStaffListView(APIView):
     pagination_class = CustomPagination
 
     def get(self, request):
-        queryset = StaffUser.objects.filter(user__is_active=True, user__school_id=request.user.school_id).order_by("-id")
+        queryset = StaffUser.objects.filter(user__is_active=True, user__school_id=request.user.school_id).order_by(
+            "-id")
         if request.query_params:
             name = request.query_params.get('first_name', None)
             page = request.query_params.get('page_size', None)
@@ -520,7 +530,8 @@ class NonTeachingStaffUpdateView(APIView):
                 'first_name': request.data.get('first_name'),
                 'last_name': request.data.get('last_name'),
                 'dob': request.data.get('dob'),
-                'image': request.data.get('image') if 'image' in request.data and request.data.get('image') else str(staff_data.image),
+                'image': request.data.get('image') if 'image' in request.data and request.data.get('image') else str(
+                    staff_data.image),
                 'gender': request.data.get('gender'),
                 'joining_date': request.data.get('joining_date'),
                 'religion': request.data.get('religion'),
@@ -569,6 +580,7 @@ class AttendanceCreateView(APIView):
     """
     This class is used to marked non-teaching staff attendance.
     """
+
     def post(self, request):
         try:
             serializer = StaffAttendanceSerializer(data=request.data)
@@ -605,7 +617,8 @@ class FetchAttendanceDetailView(APIView):
     def get(self, request, pk):
         try:
             staff = StaffUser.objects.get(id=pk, user__school_id=request.user.school_id)
-            data = StaffAttendence.objects.filter(staff_id=pk, staff__user__school_id=request.user.school_id).order_by('-date')
+            data = StaffAttendence.objects.filter(staff_id=pk, staff__user__school_id=request.user.school_id).order_by(
+                '-date')
 
             filter_type = request.query_params.get('filter_type', None)
             if filter_type:
@@ -746,7 +759,7 @@ class UserProfileView(APIView):
                 staff_user = StaffUser.objects.get(user=user)
                 user_detail = NonTeachingStaffDetailSerializers(staff_user)
             # Fetch unread notifications for the user
-            notifications = Notification.objects.filter(reciver_id=user.id, is_read__in=[0,1])
+            notifications = Notification.objects.filter(reciver_id=user.id, is_read__in=[0, 1])
             # Serialize notifications
             notification_serializer = NotificationSerializer(notifications, many=True)
         except (StudentUser.DoesNotExist, TeacherUser.DoesNotExist, StaffUser.DoesNotExist):
@@ -777,7 +790,8 @@ class TeacherUserScheduleView(APIView):
             if user.user_type == 'teacher':
                 today = datetime.date.today()
                 teacher = TeacherUser.objects.get(user=user.id, user__school_id=request.user.school_id)
-                data = TeachersSchedule.objects.filter(teacher=teacher.id, school_id=request.user.school_id, end_date__gte=today)
+                data = TeachersSchedule.objects.filter(teacher=teacher.id, school_id=request.user.school_id,
+                                                       end_date__gte=today)
                 if data:
                     serializer = TeacherUserScheduleSerializer(data[0])
                     response_data = create_response_data(
@@ -817,7 +831,8 @@ class TeacherCurriculumListView(APIView):
 
     def get(self, request):
         try:
-            data = Curriculum.objects.filter(school_id=request.user.school_id).values_list('curriculum_name',flat=True).distinct()
+            data = Curriculum.objects.filter(school_id=request.user.school_id).values_list('curriculum_name',
+                                                                                           flat=True).distinct()
             curriculum = list(data)
             curriculum_list = {
                 "curriculum_name": curriculum
@@ -908,12 +923,12 @@ class TeacherCurriculumSubjectListView(APIView):
             curriculum = request.query_params.get("curriculum")
             classes = request.query_params.get("class_name")
             subjects = Curriculum.objects.get(school_id=request.user.school_id, curriculum_name=curriculum,
-                                                 select_class=classes)
+                                              select_class=classes)
             subject = Subjects.objects.filter(curriculum_id=subjects)
             serializer = CurriculumSubjectsListerializer(subject, many=True)
             primary_subject = [item['primary_subject'] for item in serializer.data]
             optional_subject = [item['optional_subject'] for item in serializer.data]
-            subject_list = primary_subject+optional_subject
+            subject_list = primary_subject + optional_subject
             subjects = [subjects.title() for subjects in subject_list]
             # flat_subjects = [subject for sublist in subject_list for subject in sublist]
             data = {
@@ -933,6 +948,7 @@ class TeacherCurriculumSubjectListView(APIView):
                 data={}
             )
             return Response(response_data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 class TeacherDayReviewView(APIView):
     """
@@ -981,10 +997,10 @@ class TeacherDayReviewDetailView(APIView):
             data = DayReview.objects.get(id=pk, school_id=request.user.school_id)
             serializer = DayReviewDetailSerializer(data)
             response_data = create_response_data(
-                        status=status.HTTP_201_CREATED,
-                        message=DayReviewMessage.DAY_REVIEW_FETCHED_SUCCESSFULLY,
-                        data=serializer.data,
-                    )
+                status=status.HTTP_201_CREATED,
+                message=DayReviewMessage.DAY_REVIEW_FETCHED_SUCCESSFULLY,
+                data=serializer.data,
+            )
             return Response(response_data, status=status.HTTP_200_OK)
         except DayReview.DoesNotExist:
             resposne = create_response_data(
@@ -1076,9 +1092,11 @@ class FetchTeacherAttendanceView(APIView):
                 _, last_day = calendar.monthrange(current_year, month)
                 start_date = datetime.date(current_year, month, 1)
                 end_date = datetime.date(current_year, month, last_day)
-                data = TeacherAttendence.objects.filter(teacher_id=teacher.id, date__range=[start_date, end_date], teacher__user__school_id=request.user.school_id)
+                data = TeacherAttendence.objects.filter(teacher_id=teacher.id, date__range=[start_date, end_date],
+                                                        teacher__user__school_id=request.user.school_id)
             else:
-                data = TeacherAttendence.objects.filter(teacher_id=teacher.id, teacher__user__school_id=request.user.school_id)
+                data = TeacherAttendence.objects.filter(teacher_id=teacher.id,
+                                                        teacher__user__school_id=request.user.school_id)
             serializer = TeacherUserAttendanceListSerializer(data, many=True)
 
             response_data = create_response_data(
@@ -1158,10 +1176,10 @@ class NotificationListView(APIView):
         data.update(is_read=1)
         serializer = NotificationListSerializer(data, many=True)
         response_data = create_response_data(
-                status=status.HTTP_201_CREATED,
-                message=NotificationMessage.NOTIFICATION_FETCHED_SUCCESSFULLY,
-                data=serializer.data,
-            )
+            status=status.HTTP_201_CREATED,
+            message=NotificationMessage.NOTIFICATION_FETCHED_SUCCESSFULLY,
+            data=serializer.data,
+        )
         return Response(response_data, status=status.HTTP_200_OK)
 
 
@@ -1324,26 +1342,28 @@ class UndeclaredTimetableView(APIView):
         try:
             # data = TimeTable.objects.filter(status=0, school_id=request.user.school_id).order_by('-id')
             teacher = TeacherUser.objects.get(user__school_id=request.user.school_id, user=request.user.id)
-            data = TimeTable. objects.filter(status=0, school_id=request.user.school_id,class_name=teacher.class_subject_section_details[0].get("class"),
+            data = TimeTable.objects.filter(status=0, school_id=request.user.school_id,
+                                            class_name=teacher.class_subject_section_details[0].get("class"),
                                             curriculum=teacher.class_subject_section_details[0].get("curriculum"),
-                                            class_section=teacher.class_subject_section_details[0].get("section")).order_by('-id')
+                                            class_section=teacher.class_subject_section_details[0].get(
+                                                "section")).order_by('-id')
 
             paginator = self.pagination_class()
             paginated_queryset = paginator.paginate_queryset(data, request)
 
             serializer = TimeTableListSerializer(paginated_queryset, many=True)
             response_data = {
-                    "status": status.HTTP_200_OK,
-                    'count': len(serializer.data),
-                    "message": TimeTableMessage.UNDECLARED_TIMETABLE_FETCHED_SUCCESSFULLY,
-                    "data": serializer.data,
-                    'pagination': {
-                        'page_size': paginator.page_size,
-                        'next': paginator.get_next_link(),
-                        'previous': paginator.get_previous_link(),
-                        'total_pages': paginator.page.paginator.num_pages,
-                        'current_page': paginator.page.number,
-                    }
+                "status": status.HTTP_200_OK,
+                'count': len(serializer.data),
+                "message": TimeTableMessage.UNDECLARED_TIMETABLE_FETCHED_SUCCESSFULLY,
+                "data": serializer.data,
+                'pagination': {
+                    'page_size': paginator.page_size,
+                    'next': paginator.get_next_link(),
+                    'previous': paginator.get_previous_link(),
+                    'total_pages': paginator.page.paginator.num_pages,
+                    'current_page': paginator.page.number,
+                }
             }
             return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
@@ -1375,7 +1395,8 @@ class DeclaredTimetableView(APIView):
                 if curriculum and class_name:
                     data = data.filter(curriculum__icontains=curriculum, class_name__icontains=class_name)
                 if curriculum and class_name and section:
-                    data = data.filter(curriculum__icontains=curriculum, class_name__icontains=class_name, class_section__icontains=section)
+                    data = data.filter(curriculum__icontains=curriculum, class_name__icontains=class_name,
+                                       class_section__icontains=section)
             # Paginate the queryset
             paginator = self.pagination_class()
             paginated_queryset = paginator.paginate_queryset(data, request)
@@ -1415,10 +1436,10 @@ class TimetableDetailView(APIView):
             data = TimeTable.objects.get(id=pk, school_id=request.user.school_id)
             serializer = TimeTableDetailSerializer(data)
             response_data = create_response_data(
-                        status=status.HTTP_200_OK,
-                        message=TimeTableMessage.TIMETABLE_FETCHED_SUCCESSFULLY,
-                        data=serializer.data,
-                    )
+                status=status.HTTP_200_OK,
+                message=TimeTableMessage.TIMETABLE_FETCHED_SUCCESSFULLY,
+                data=serializer.data,
+            )
             return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
             response_data = create_response_data(
@@ -1515,10 +1536,10 @@ class DeclareTimetableView(APIView):
             data = TimeTable.objects.filter(status=0, school_id=request.user.school_id)
             data.update(status=1)
             response_data = create_response_data(
-                    status=status.HTTP_200_OK,
-                    message=TimeTableMessage.TIMETABLE_DECLARE_SUCCESSFULLY,
-                    data={},
-                )
+                status=status.HTTP_200_OK,
+                message=TimeTableMessage.TIMETABLE_DECLARE_SUCCESSFULLY,
+                data={},
+            )
             return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
             response_data = create_response_data(
@@ -1582,10 +1603,10 @@ class DeclareExamReportView(APIView):
             data = ExmaReportCard.objects.filter(status=0, school_id=request.user.school_id)
             data.update(status=1)
             response_data = create_response_data(
-                    status=status.HTTP_200_OK,
-                    message=ReportCardMesssage.REPORT_CARD_DECLARE_SUCCESSFULLY,
-                    data={},
-                )
+                status=status.HTTP_200_OK,
+                message=ReportCardMesssage.REPORT_CARD_DECLARE_SUCCESSFULLY,
+                data={},
+            )
             return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
             response_data = create_response_data(
@@ -1607,10 +1628,10 @@ class DeclaredExamReportListView(APIView):
             data = ExmaReportCard.objects.filter(status=1, school_id=request.user.school_id).order_by('-id')
             serializer = ExamReportListSerializer(data, many=True)
             response_data = create_response_data(
-                    status=status.HTTP_200_OK,
-                    message=ReportCardMesssage.DECLARED_REPORT_CARD_FETCHED_SUCCESSFULLY,
-                    data=serializer.data,
-                )
+                status=status.HTTP_200_OK,
+                message=ReportCardMesssage.DECLARED_REPORT_CARD_FETCHED_SUCCESSFULLY,
+                data=serializer.data,
+            )
             return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
             response_data = create_response_data(
@@ -1630,15 +1651,17 @@ class UndeclaredExamReportListView(APIView):
     def get(self, request):
         try:
             teacher = TeacherUser.objects.get(user__school_id=request.user.school_id, user=request.user.id)
-            data = ExmaReportCard.objects.filter(status=0, school_id=request.user.school_id, class_name=teacher.class_subject_section_details[0].get("class"),
-                                            curriculum=teacher.class_subject_section_details[0].get("curriculum"),
-                                            class_section=teacher.class_subject_section_details[0].get("section")).order_by('-id')
+            data = ExmaReportCard.objects.filter(status=0, school_id=request.user.school_id,
+                                                 class_name=teacher.class_subject_section_details[0].get("class"),
+                                                 curriculum=teacher.class_subject_section_details[0].get("curriculum"),
+                                                 class_section=teacher.class_subject_section_details[0].get(
+                                                     "section")).order_by('-id')
             serializer = ExamReportListSerializer(data, many=True)
             response_data = create_response_data(
-                    status=status.HTTP_200_OK,
-                    message=ReportCardMesssage.UNDECLARED_REPORT_CARD_FETCHED_SUCCESSFULLY,
-                    data=serializer.data,
-                )
+                status=status.HTTP_200_OK,
+                message=ReportCardMesssage.UNDECLARED_REPORT_CARD_FETCHED_SUCCESSFULLY,
+                data=serializer.data,
+            )
             return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
             response_data = create_response_data(
@@ -1685,10 +1708,10 @@ class ExamReportCardDetailView(APIView):
             data = ExmaReportCard.objects.get(id=pk, school_id=request.user.school_id)
             serializer = ExamReportCardViewSerializer(data)
             response_data = create_response_data(
-                        status=status.HTTP_200_OK,
-                        message=ReportCardMesssage.REPORT_CARD_FETCHED_SUCCESSFULLY,
-                        data=serializer.data,
-                    )
+                status=status.HTTP_200_OK,
+                message=ReportCardMesssage.REPORT_CARD_FETCHED_SUCCESSFULLY,
+                data=serializer.data,
+            )
             return Response(response_data, status=status.HTTP_200_OK)
         except ExmaReportCard.DoesNotExist:
             response_data = create_response_data(
@@ -1759,9 +1782,9 @@ class CreateZoomLinkView(APIView):
             if serializer.is_valid(raise_exception=True):
                 serializer.save(school_id=request.user.school_id)
                 response_data = create_response_data(
-                status=status.HTTP_201_CREATED,
-                message=ZoomLinkMessage.ZOOM_LINK_UPLOADED_SUCCESSFULLY,
-                data={}
+                    status=status.HTTP_201_CREATED,
+                    message=ZoomLinkMessage.ZOOM_LINK_UPLOADED_SUCCESSFULLY,
+                    data={}
                 )
                 return Response(response_data, status=status.HTTP_201_CREATED)
             else:
@@ -1793,15 +1816,16 @@ class ZoomLinkListView(APIView):
 
             current_date = current_date_time_ist.date()
             currunt_time_str = current_date_time_ist.time()
-            data = ZoomLink.objects.filter(school_id=request.user.school_id, date__gte=current_date, end_time__gt=currunt_time_str).order_by("date")
+            data = ZoomLink.objects.filter(school_id=request.user.school_id, date__gte=current_date,
+                                           end_time__gt=currunt_time_str).order_by("date")
 
             # sorted(data, key=lambda x: abs((x.date - current_date).days))
             serializer = ZoomLinkListSerializer(data, many=True)
             response_data = create_response_data(
-                    status=status.HTTP_200_OK,
-                    message=ZoomLinkMessage.ZOOM_LINK_FETCHED_SUCCESSFULLY,
-                    data=serializer.data
-                    )
+                status=status.HTTP_200_OK,
+                message=ZoomLinkMessage.ZOOM_LINK_FETCHED_SUCCESSFULLY,
+                data=serializer.data
+            )
             return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
             create_response_data(
@@ -1824,10 +1848,10 @@ class UploadStudyMaterialView(APIView):
             if serializer.is_valid(raise_exception=True):
                 serializer.save(school_id=request.user.school_id, teacher=teacher)
                 response_data = create_response_data(
-                        status=status.HTTP_201_CREATED,
-                        message=StudyMaterialMessage.STUDY_MATERIAL_UPLOADED_SUCCESSFULLY,
-                        data=serializer.data
-                        )
+                    status=status.HTTP_201_CREATED,
+                    message=StudyMaterialMessage.STUDY_MATERIAL_UPLOADED_SUCCESSFULLY,
+                    data=serializer.data
+                )
                 return Response(response_data, status=status.HTTP_201_CREATED)
             else:
                 response_data = create_response_data(
@@ -1862,14 +1886,18 @@ class StudyMaterialListView(APIView):
     def get(self, request):
         try:
             teacher = TeacherUser.objects.get(user__school_id=request.user.school_id, user=request.user)
-            data = StudentMaterial.objects.filter(school_id=request.user.school_id, curriculum=teacher.class_subject_section_details[0]['curriculum'],
-                                                  class_name=teacher.class_subject_section_details[0]['class'], section=teacher.class_subject_section_details[0]['section']).order_by('-id')
+            data = StudentMaterial.objects.filter(school_id=request.user.school_id,
+                                                  curriculum=teacher.class_subject_section_details[0]['curriculum'],
+                                                  class_name=teacher.class_subject_section_details[0]['class'],
+                                                  section=teacher.class_subject_section_details[0]['section']).order_by(
+                '-id')
             if self.request.query_params:
                 search = self.request.query_params.get('search', None)
                 if search is not None:
-                    data = data.filter(Q(content_type__icontains=search) | Q(subject__icontains=search) | Q(curriculum__icontains=search) | Q
-                    (class_name__icontains=search) | Q(section__icontains=search) | Q(title__icontains=search) | Q(discription__icontains=search))
-
+                    data = data.filter(Q(content_type__icontains=search) | Q(subject__icontains=search) | Q(
+                        curriculum__icontains=search) | Q
+                                       (class_name__icontains=search) | Q(section__icontains=search) | Q(
+                        title__icontains=search) | Q(discription__icontains=search))
 
             # Paginate the queryset
             paginator = self.pagination_class()
@@ -2024,6 +2052,7 @@ class StudyMaterialDeleteView(APIView):
             )
             return Response(response, status=status.HTTP_401_UNAUTHORIZED)
 
+
 class EventCreateView(APIView):
     permission_classes = [IsAdminUser, IsInSameSchool]
 
@@ -2042,7 +2071,8 @@ class EventCreateView(APIView):
             event_image = serializer.validated_data.get('event_image', [])
 
             event = EventsCalender.objects.create(
-                school_id=request.user.school_id, is_one_day_event=is_one_day_event, is_event_calendar=is_event_calendar, title=title,
+                school_id=request.user.school_id, is_one_day_event=is_one_day_event,
+                is_event_calendar=is_event_calendar, title=title,
                 description=description, start_time=start_time, end_time=end_time,
                 start_date=start_date, end_date=end_date
             )
@@ -2075,7 +2105,8 @@ class EventCreateView(APIView):
                 data={}
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
-    
+
+
 class GetAllEvents(APIView):
     permission_classes = [IsAdminOrIsStaffAndInSameSchool]
 
@@ -2104,7 +2135,8 @@ class GetAllEvents(APIView):
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
-        events = EventsCalender.objects.filter(start_date__gte=start_date, end_date__lte=end_date, school_id=request.user.school_id)
+        events = EventsCalender.objects.filter(start_date__gte=start_date, end_date__lte=end_date,
+                                               school_id=request.user.school_id)
 
         if is_one_day_event is not None:
             events = events.filter(is_one_day_event=is_one_day_event.lower() == 'true')
@@ -2130,7 +2162,8 @@ class StaffAttedanceFilterListView(APIView):
     def get(self, request):
         try:
             staff = StaffUser.objects.filter(user__school_id=request.user.school_id)
-            attendance_data = StaffAttendence.objects.filter(staff__in=staff, staff__user__school_id=request.user.school_id)
+            attendance_data = StaffAttendence.objects.filter(staff__in=staff,
+                                                             staff__user__school_id=request.user.school_id)
 
             date = request.query_params.get('date', None)
             mark_attendence = request.query_params.get('mark_attendence', None)
@@ -2175,19 +2208,23 @@ class StudentList(APIView):
     This class is used to fetch list of the student according to teacher class.
     """
     permission_classes = [IsTeacherUser, IsInSameSchool]
+
     def get(self, request):
         try:
             user = request.user
             teacher_data = TeacherUser.objects.get(user__name=user.name, user__school_id=request.user.school_id)
-            student_data = StudentUser.objects.filter(class_enrolled=teacher_data.class_subject_section_details[0].get("class"), section=teacher_data.class_subject_section_details[0].get("section"), user__school_id=request.user.school_id)
+            student_data = StudentUser.objects.filter(
+                class_enrolled=teacher_data.class_subject_section_details[0].get("class"),
+                section=teacher_data.class_subject_section_details[0].get("section"),
+                user__school_id=request.user.school_id)
             students_list = []
             for student in student_data:
                 students_list.append(f"{student.name}-{student.roll_no}")
             response_data = create_response_data(
-                                status=status.HTTP_200_OK,
-                                message=UserResponseMessage.USER_LIST_MESSAGE,
-                                data=students_list
-                                )
+                status=status.HTTP_200_OK,
+                message=UserResponseMessage.USER_LIST_MESSAGE,
+                data=students_list
+            )
             return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
             response_data = create_response_data(
@@ -2210,7 +2247,8 @@ class StudentSubjectListView(APIView):
             student_roll = student_name.split('-')[1]
             data = StudentUser.objects.get(user__school_id=request.user.school_id, roll_no=student_roll)
             curriculum = Curriculum.objects.get(curriculum_name=data.curriculum, select_class=data.class_enrolled)
-            primary_subject = Subjects.objects.filter(curriculum_id=curriculum.id).values_list('primary_subject', flat=True)
+            primary_subject = Subjects.objects.filter(curriculum_id=curriculum.id).values_list('primary_subject',
+                                                                                               flat=True)
             primary_subject_list = list(primary_subject)
 
             if isinstance(data.optional_subject, str):
@@ -2218,19 +2256,19 @@ class StudentSubjectListView(APIView):
             else:
                 optional_subject_list = data.optional_subject
 
-            subject_data = optional_subject_list+primary_subject_list
+            subject_data = optional_subject_list + primary_subject_list
             response_data = create_response_data(
-                                    status=status.HTTP_200_OK,
-                                    message=CurriculumMessage.SUBJECT_LIST_MESSAGE,
-                                    data=subject_data
-                                    )
+                status=status.HTTP_200_OK,
+                message=CurriculumMessage.SUBJECT_LIST_MESSAGE,
+                data=subject_data
+            )
             return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
             response_data = create_response_data(
-                                    status=status.HTTP_400_BAD_REQUEST,
-                                    message=e.args[0],
-                                    data={}
-                                    )
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={}
+            )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -2243,18 +2281,24 @@ class AdminBookContentList(APIView):
 
     def get(self, request):
         try:
-            content_data = Content.objects.filter(Q(school_id=self.request.user.school_id) | Q(school_id__isnull=True)).order_by('-id')
+            content_data = Content.objects.filter(
+                Q(school_id=self.request.user.school_id) | Q(school_id__isnull=True)).order_by('-id')
             if self.request.query_params:
                 content_type = self.request.query_params.get('content_type', None)
                 is_recommended = self.request.query_params.get('is_recommended', None)
                 search = self.request.query_params.get('search', None)
                 if search is not None:
-                    content_data = content_data.filter(Q(content_type__icontains=search) | Q(content_name__icontains=search) | Q(curriculum__icontains=search) | Q
-                    (classes__icontains=search) | Q(subject__icontains=search) | Q(supporting_detail__icontains=search) | Q(description__icontains=search) | Q(category__icontains=search) | Q(content_creator__icontains=search))
+                    content_data = content_data.filter(
+                        Q(content_type__icontains=search) | Q(content_name__icontains=search) | Q(
+                            curriculum__icontains=search) | Q
+                        (classes__icontains=search) | Q(subject__icontains=search) | Q(
+                            supporting_detail__icontains=search) | Q(description__icontains=search) | Q(
+                            category__icontains=search) | Q(content_creator__icontains=search))
                 if is_recommended == 'False' and content_type is not None:
                     content_data = content_data.filter(content_type=content_type)
                 if is_recommended == 'True':
-                    content_data = content_data.filter(is_recommended=is_recommended, school_id=self.request.user.school_id)
+                    content_data = content_data.filter(is_recommended=is_recommended,
+                                                       school_id=self.request.user.school_id)
 
                 paginator = self.pagination_class()
                 paginated_queryset = paginator.paginate_queryset(content_data, request)
@@ -2276,11 +2320,11 @@ class AdminBookContentList(APIView):
             else:
                 serializer = ContentListSerializer(content_data, many=True)
                 response_data = create_response_list_data(
-                        status=status.HTTP_200_OK,
-                        count=len(serializer.data),
-                        message=ContentMessages.CONTENT_FETCHED,
-                        data=serializer.data
-                    )
+                    status=status.HTTP_200_OK,
+                    count=len(serializer.data),
+                    message=ContentMessages.CONTENT_FETCHED,
+                    data=serializer.data
+                )
             return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
             response_data = create_response_data(
@@ -2302,10 +2346,10 @@ class AdminBookContentDetailView(APIView):
             data = Content.objects.get(Q(school_id=self.request.user.school_id) | Q(school_id__isnull=True), id=pk)
             serializer = ContentListSerializer(data)
             response_data = create_response_data(
-                        status=status.HTTP_200_OK,
-                        message=ContentMessages.CONTENT_FETCHED,
-                        data=serializer.data
-                    )
+                status=status.HTTP_200_OK,
+                message=ContentMessages.CONTENT_FETCHED,
+                data=serializer.data
+            )
             return Response(response_data, status=status.HTTP_200_OK)
         except Content.DoesNotExist:
             response_data = create_response_data(
@@ -2376,7 +2420,8 @@ class ClassEventCreate(APIView):
             event_image = serializer.validated_data.get('event_image', [])
 
             class_event = ClassEvent.objects.create(
-                school_id=request.user.school_id, curriculum=curriculum, select_class=select_class, section=section, date=date, start_time=start_time, end_time=end_time,
+                school_id=request.user.school_id, curriculum=curriculum, select_class=select_class, section=section,
+                date=date, start_time=start_time, end_time=end_time,
                 title=title, discription=discription
             )
             for image in event_image:
@@ -2424,7 +2469,8 @@ class ClassEventListView(APIView):
         try:
             current_date_time_ist = timezone.localtime(timezone.now(), pytz_timezone('Asia/Kolkata'))
             current_date = current_date_time_ist.date()
-            content_data = ClassEvent.objects.filter(school_id=request.user.school_id, date__gte=current_date).order_by('-id')
+            content_data = ClassEvent.objects.filter(school_id=request.user.school_id, date__gte=current_date).order_by(
+                '-id')
             date = request.query_params.get('date', None)
             if date is not None:
                 content_data = content_data.filter(date=date)
@@ -2433,7 +2479,7 @@ class ClassEventListView(APIView):
             paginated_queryset = paginator.paginate_queryset(content_data, request)
 
             serializer = ClassEventListSerializer(paginated_queryset, many=True)
-            response_data= {
+            response_data = {
                 'status': status.HTTP_200_OK,
                 'message': ClassEventMessage.CLASS_EVENT_LIST,
                 'count': len(serializer.data),
@@ -2464,7 +2510,7 @@ class ClassEventDetailView(APIView):
 
     def get(self, request, pk):
         try:
-            class_event = ClassEvent.objects.get(school_id= request.user.school_id, id=pk)
+            class_event = ClassEvent.objects.get(school_id=request.user.school_id, id=pk)
             serializer = ClassEventDetailSerializer(class_event)
             response_data = create_response_data(
                 status=status.HTTP_200_OK,
@@ -2512,7 +2558,7 @@ class ClassEventUpdateView(APIView):
                 'discription': request.data.get('discription'),
                 'event_image': files_data
             }
-            class_event = ClassEvent.objects.get(school_id= request.user.school_id, id=pk)
+            class_event = ClassEvent.objects.get(school_id=request.user.school_id, id=pk)
             # class_image = ClassEventImage.objects.get(class_event=class_event)
             serializer = ClassEventUpdateSerializer(class_event, data=data, partial=True)
             if serializer.is_valid(raise_exception=True):
@@ -2559,7 +2605,7 @@ class ClassEventDeleteView(APIView):
 
     def delete(self, request, pk):
         try:
-            class_event = ClassEvent.objects.get(school_id= request.user.school_id, id=pk)
+            class_event = ClassEvent.objects.get(school_id=request.user.school_id, id=pk)
             class_image = ClassEventImage.objects.filter(class_event=class_event).delete()
             class_event.delete()
             response_data = create_response_data(
@@ -2593,7 +2639,7 @@ class CalendarListView(APIView):
     def get(self, request):
         try:
             calendar = request.query_params.get('is_event_calendar', None)
-            calendar_data =  EventsCalender.objects.filter(school_id=request.user.school_id).order_by('-id')
+            calendar_data = EventsCalender.objects.filter(school_id=request.user.school_id).order_by('-id')
             if calendar is not None:
                 calendar_data = calendar_data.filter(is_event_calendar=calendar)
             serializer = AcademicCalendarSerializer(calendar_data, many=True)
@@ -2625,7 +2671,8 @@ class EventListView(APIView):
             current_date = current_date_time_ist.date()
 
             event = request.query_params.get('is_one_day_event', None)
-            event_data =  EventsCalender.objects.filter(school_id=request.user.school_id, start_date__gte=current_date).order_by('start_date')
+            event_data = EventsCalender.objects.filter(school_id=request.user.school_id,
+                                                       start_date__gte=current_date).order_by('start_date')
             if event is not None:
                 event_data = event_data.filter(is_one_day_event=event)
 
@@ -2811,7 +2858,8 @@ class TeacherCalendarListView(APIView):
 
             calendar = request.query_params.get('is_event_calendar', None)
             date = request.query_params.get('date', None)
-            calendar_data = EventsCalender.objects.filter(school_id=request.user.school_id, start_date__gte=current_date).order_by('start_date')
+            calendar_data = EventsCalender.objects.filter(school_id=request.user.school_id,
+                                                          start_date__gte=current_date).order_by('start_date')
             if calendar is not None:
                 calendar_data = calendar_data.filter(is_event_calendar=calendar)
 
@@ -2912,12 +2960,12 @@ class ExamScheduleListView(APIView):
                 'message': TimeTableMessage.TIMETABLE_FETCHED_SUCCESSFULLY,
                 'data': serializer.data,
                 'pagination': {
-                'page_size': paginator.page_size,
-                'next': paginator.get_next_link(),
-                'previous': paginator.get_previous_link(),
-                'total_pages': paginator.page.paginator.num_pages,
-                'current_page': paginator.page.number,
-            }
+                    'page_size': paginator.page_size,
+                    'next': paginator.get_next_link(),
+                    'previous': paginator.get_previous_link(),
+                    'total_pages': paginator.page.paginator.num_pages,
+                    'current_page': paginator.page.number,
+                }
             }
             return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
@@ -2945,7 +2993,8 @@ class ExamScheduleDetailView(APIView):
             exam_type = request.query_params.get('exam_type')
             exam_month = request.query_params.get('exam_month')
 
-            time_table = TimeTable.objects.filter(school_id=user.school_id, status=1, curriculum=curriculum, class_name=class_name, class_section=section, exam_type=exam_type)
+            time_table = TimeTable.objects.filter(school_id=user.school_id, status=1, curriculum=curriculum,
+                                                  class_name=class_name, class_section=section, exam_type=exam_type)
             if exam_month:
                 try:
                     month_name, year_str = exam_month.split(',')
@@ -2989,10 +3038,10 @@ class StudentInfoListView(APIView):
                                                       section=section, user__school_id=request.user.school_id)
             serializer = StudentInfoListSerializer(student_data, many=True)
             response_data = create_response_data(
-                                status=status.HTTP_200_OK,
-                                message=UserResponseMessage.USER_LIST_MESSAGE,
-                                data=serializer.data
-                                )
+                status=status.HTTP_200_OK,
+                message=UserResponseMessage.USER_LIST_MESSAGE,
+                data=serializer.data
+            )
             return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
             response_data = create_response_data(
@@ -3052,7 +3101,8 @@ class StudentRemorkView(APIView):
             student_id = StudentUser.objects.get(id=reciver_id)
             reciver_user = StudentUser.objects.get(id=reciver_id, user=student_id.user.id)
             user = User.objects.get(id=sender)
-            notification_create = Notification.objects.create(sender=user, title=title, description=description, reciver_id=reciver_user.user.id)
+            notification_create = Notification.objects.create(sender=user, title=title, description=description,
+                                                              reciver_id=reciver_user.user.id)
             response_data = {
                 'sender': notification_create.sender_id,
                 'title': notification_create.title,
@@ -3115,8 +3165,6 @@ class EventDashboardListView(APIView):
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
 
-
-
 class InquiryCreateView(APIView):
     """
     This class is used to create inquiry
@@ -3129,10 +3177,10 @@ class InquiryCreateView(APIView):
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
                 response = create_response_data(
-                        status=status.HTTP_201_CREATED,
-                        message=InquiryMessage.INQUIRY_SUBMITTED_SUCCESSFULLY,
-                        data=serializer.data,
-                    )
+                    status=status.HTTP_201_CREATED,
+                    message=InquiryMessage.INQUIRY_SUBMITTED_SUCCESSFULLY,
+                    data=serializer.data,
+                )
                 return Response(response, status=status.HTTP_201_CREATED)
             else:
                 response = create_response_data(
@@ -3172,7 +3220,8 @@ class StaffUpdateView(APIView):
                 'first_name': request.data.get('first_name'),
                 'last_name': request.data.get('last_name'),
                 'dob': request.data.get('dob'),
-                'image': request.data.get('image') if 'image' in request.data and request.data.get('image') else str(staff_data.image),
+                'image': request.data.get('image') if 'image' in request.data and request.data.get('image') else str(
+                    staff_data.image),
                 'gender': request.data.get('gender'),
                 'joining_date': request.data.get('joining_date'),
                 'religion': request.data.get('religion'),
@@ -3236,4 +3285,71 @@ class StaffUpdateView(APIView):
                 message=str(e),
                 data={}
             )
-            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+            return Response(response, status=status.HTTP_400_BAD_REQUEST);
+
+
+class ChangePasswordAPIView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def post(self, request, *args, **kwargs):
+        # Get the user by ID
+        user_id = request.data.get('user_id')
+        new_password = request.data.get('new_password')
+
+        if not user_id or not new_password:
+            return Response({"error": "user_id and new_password are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Set the new password
+        user.set_password(new_password)
+        user.save()
+
+        return Response({"message": "Password updated successfully."}, status=status.HTTP_200_OK)
+
+
+class CustomPasswordResetAPIView(APIView):
+    permission_classes = [permissions.AllowAny, ]
+    """
+    API view for handling password reset requests.
+    """
+
+    def post(self, request, *args, **kwargs):
+        """
+        Handle POST requests to reset a user's password.
+        """
+        email = request.data.get('email')  # Retrieve the email from the request data
+        if not email:
+            return Response({"error": "Email field is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check if the user with the given email exists
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response({"error": "This email address does not exist."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Generate password reset token and link
+        token = default_token_generator.make_token(user)  # Create a token for password reset
+        uid = urlsafe_base64_encode(force_bytes(user.pk))  # Encode the user's ID
+        reset_url = request.build_absolute_uri(
+            reverse('password_reset_confirm', kwargs={'uidb64': uid, 'token': token})
+        )  # Build the absolute URL for the password reset confirmation
+
+        # Send the password reset email
+        send_mail(
+            subject="Password Reset Request",
+            message=f"Click the link below to reset your password:\n\n{reset_url}",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[email],
+            fail_silently=False,  # Set to True to avoid errors if email fails to send
+        )
+
+        # Debugging print statements
+        print(f"Password reset email sent to: {email}")
+        print(f"User details: {user}")
+        print(f"Password reset URL: {reset_url}")
+
+        return Response({"success": "Password reset link has been sent to your email."}, status=status.HTTP_200_OK)

@@ -51,6 +51,19 @@ class IsAuthenticatedUser(permissions.BasePermission):
         return request.user.is_authenticated
 
 
+class IsAuthenticatedTeacherUser(permissions.BasePermission):
+    """
+    Custom permission to ensure that only authenticated teachers can update their own profile.
+    """
+
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and hasattr(request.user, 'teacheruser')
+
+    def has_object_permission(self, request, view, obj):
+        # Only allow the teacher to update their own profile
+        return request.user.id == obj.user.id
+
+
 class IsInSameSchool(permissions.BasePermission):
     def has_permission(self, request, view):
         if not IsAuthenticatedUser().has_permission(request, view):
