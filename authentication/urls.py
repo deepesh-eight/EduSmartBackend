@@ -137,6 +137,8 @@ urlpatterns = [
 
     # Inquiry Related API'S
     path('inquiry/', InquiryCreateView.as_view(), name='inquiry_create'),
+    path('inquiries/', InquiryListView.as_view(), name='inquiry_list'),
+    path('inquiry/<int:pk>/', InquiryDetailView.as_view(), name='inquiry_detail'),
 
     # Password reset views
     path('password_reset/', CustomPasswordResetAPIView.as_view(), name='password_reset_api'),

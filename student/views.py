@@ -22,9 +22,11 @@ from authentication.serializers import ClassEventDetailSerializer
 from bus.models import Bus, Route
 from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage, CurriculumMessage, \
     TimeTableMessage, ReportCardMesssage, StudyMaterialMessage, ZoomLinkMessage, ContentMessages, ClassEventMessage, \
-    ScheduleMessage, ChatMessage, TeacherAvailabilityMessage
+    ScheduleMessage, ChatMessage, TeacherAvailabilityMessage, FeeMessage
 from content.models import Content
 from curriculum.models import Curriculum, Subjects
+from management.models import Fee
+from management.serializers import FeeDetailSerializer
 from pagination import CustomPagination
 from student.models import StudentAttendence, ExmaReportCard, StudentMaterial, ZoomLink, ConnectWithTeacher
 from student.serializers import StudentUserSignupSerializer, StudentDetailSerializer, StudentListSerializer, \
@@ -313,7 +315,9 @@ class StudentUpdateProfileView(APIView):
 
 
 class ClassStudentListView(APIView):
-    permission_classes = [IsAdminUser, IsInSameSchool]
+    # permission_classes = [IsAdminUser, IsInSameSchool]
+
+    permission_classes = [IsAdminOrIsStaffAndInSameSchool]
     """
     This class is used to create attendance of student's.
     """
@@ -1609,3 +1613,43 @@ class JoinChatRequestView(APIView):
                 data={}
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class StudentFeeDetailView(APIView):
+    """
+    This class allows students to view their own fee details.
+    """
+    permission_classes = [IsStudentUser]
+
+    def get(self, request):
+        try:
+            # Get the logged-in user (who is a student)
+            student_user = StudentUser.objects.get(user=request.user)
+
+            # Fetch the fee details for the student
+            fee = Fee.objects.get(name=student_user)
+
+            # Serialize the fee data
+            serializer = FeeDetailSerializer(fee)
+            response = create_response_data(
+                status=status.HTTP_200_OK,
+                message=FeeMessage.FEE_DETAIL_FETCH_SUCCESSFULLY,
+                data=serializer.data
+            )
+            return Response(response, status=status.HTTP_200_OK)
+
+        except Fee.DoesNotExist:
+            response = create_response_data(
+                status=status.HTTP_404_NOT_FOUND,
+                message=FeeMessage.FEE_DETAIL_NOT_EXIST,
+                data={}
+            )
+            return Response(response, status=status.HTTP_404_NOT_FOUND)
+
+        except Exception as e:
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=str(e),
+                data={}
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)

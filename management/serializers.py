@@ -1,6 +1,7 @@
 import re
 from calendar import monthrange
 from datetime import datetime
+import logging
 
 from rest_framework import serializers
 
@@ -252,7 +253,7 @@ class StudentReportCardSerializer(serializers.ModelSerializer):
 class AddSalarySerializer(serializers.ModelSerializer):
     department = serializers.CharField(required=True)
     designation = serializers.CharField(required=True)
-    joining_date = serializers.DateField(required=True)
+    salary_month = serializers.IntegerField(required=True)
     pan_no = serializers.CharField(required=True)
     total_salary = serializers.DecimalField(max_digits=16, decimal_places=2, required=True)
     in_hand_salary = serializers.DecimalField(max_digits=16, decimal_places=2, required=True)
@@ -279,7 +280,7 @@ class AddSalarySerializer(serializers.ModelSerializer):
     class Meta:
         model = Salary
         fields = [
-            'department', 'designation', 'name', 'joining_date', 'pan_no',
+            'department', 'designation', 'name', 'salary_month', 'pan_no',
             'total_salary', 'in_hand_salary', 'basic_salary', 'hra',
             'other_allowances', 'deducted_salary', 'professional_tax', 'tds',
             'epf', 'other_deduction', 'incentive', 'net_payable_amount',
@@ -314,7 +315,6 @@ class AddSalarySerializer(serializers.ModelSerializer):
         return value
 
     def validate_ifsc_code(self, value):
-        # Regular expression to match IFSC format: four letters, seven digits
         pattern = re.compile(r'^[A-Z]{4}[0-9]{7}$')
         if not pattern.match(value):
             raise serializers.ValidationError("Invalid IFSC code format. It should be in the format ABCD0123456.")
@@ -631,7 +631,7 @@ class FeeUpdateSerializer(serializers.ModelSerializer):
                 field_name=name.strip() if amount else None,
                 field_amount=amount.strip() if amount else None
             )
-        for due_type, due_amount, last_due_date, late_fee in zip(due_type, due_amount, last_due_date,late_fee):
+        for due_type, due_amount, last_due_date, late_fee in zip(due_type, due_amount, last_due_date, late_fee):
             DueFeeDetail.objects.create(
                 fee_structure=instance,
                 due_type=due_type,
@@ -650,11 +650,14 @@ class FeeDetailSerializer(serializers.ModelSerializer):
     joining_date = serializers.SerializerMethodField()
     student_id = serializers.SerializerMethodField()
     institute_name = serializers.SerializerMethodField()
+
     class Meta:
         model = Fee
-        fields = ['curriculum', 'class_name', 'student_name', 'student_id', 'section', 'joining_date', 'curriculum', 'institute_name',
+        fields = ['curriculum', 'class_name', 'student_name', 'student_id', 'section', 'joining_date', 'curriculum',
+                  'institute_name',
                   'payment_type', 'instalment_amount', 'no_of_instalment', 'school_fee', 'total_fee',
-                  'bus_fee', 'canteen_fee', 'miscellaneous_fee', 'min_paid_amount', 'max_total_remain', 'fee_structure', 'due_fee_detail'
+                  'bus_fee', 'canteen_fee', 'miscellaneous_fee', 'min_paid_amount', 'max_total_remain', 'fee_structure',
+                  'due_fee_detail'
                   ]
 
     def get_student_name(self, obj):
@@ -739,7 +742,8 @@ class StudentListsSerializer(serializers.ModelSerializer):
             curriculum = obj.class_subject_section_details[0].get('curriculum')
             class_name = obj.class_subject_section_details[0].get('class')
             section = obj.class_subject_section_details[0].get('section')
-            return StudentUser.objects.filter(curriculum=curriculum, class_enrolled=class_name, section=section, user__is_active=True).count()
+            return StudentUser.objects.filter(curriculum=curriculum, class_enrolled=class_name, section=section,
+                                              user__is_active=True).count()
         return None
 
     def to_representation(self, instance):
@@ -760,6 +764,7 @@ class StudentFilterListSerializer(serializers.ModelSerializer):
     total_fee = serializers.SerializerMethodField()
     paid_fee = serializers.SerializerMethodField()
     due_fee = serializers.SerializerMethodField()
+
     class Meta:
         model = StudentUser
         fields = ['id', 'name', 'roll_no', 'admission_date', 'fee_type', 'total_fee', 'paid_fee', 'due_fee']
@@ -781,14 +786,14 @@ class StudentFilterListSerializer(serializers.ModelSerializer):
     def get_paid_fee(self, obj):
         try:
             fee_detail = Fee.objects.get(name=obj)
-            return fee_detail.total_fee # Here i need to add paid fee field
+            return fee_detail.total_fee  # Here i need to add paid fee field
         except Fee.DoesNotExist:
             return None
 
     def get_due_fee(self, obj):
         try:
             fee_detail = Fee.objects.get(name=obj)
-            return fee_detail.total_fee-10000 # In the place of 10000 we need to write paid_fee
+            return fee_detail.total_fee - 10000  # In the place of 10000 we need to write paid_fee
         except Fee.DoesNotExist:
             return None
 
@@ -813,11 +818,12 @@ class StudentDetailSerializer(serializers.ModelSerializer):
     # total_due_to_pay = serializers.SerializerMethodField()
     total_fee = serializers.SerializerMethodField()
 
-
     class Meta:
         model = StudentUser
-        fields = ['id', 'name', 'roll_no', 'curriculum', 'class_enrolled', 'section', 'admission_date', 'institute_name', 'fee_type',
-                  'due_type', 'school_fee', 'total_due_amount', 'bus_fee', 'monthly_instalment', 'no_of_instalment', 'canteen_fee',
+        fields = ['id', 'name', 'roll_no', 'curriculum', 'class_enrolled', 'section', 'admission_date',
+                  'institute_name', 'fee_type',
+                  'due_type', 'school_fee', 'total_due_amount', 'bus_fee', 'monthly_instalment', 'no_of_instalment',
+                  'canteen_fee',
                   'miscellaneous_fee', 'late_fee', 'total_fee']
 
     def get_institute_name(self, obj):
@@ -907,7 +913,6 @@ class StudentDetailSerializer(serializers.ModelSerializer):
         except Fee.DoesNotExist:
             return None
 
-
     def get_late_fee(self, obj):
         try:
             late_fee = []
@@ -921,13 +926,14 @@ class StudentDetailSerializer(serializers.ModelSerializer):
 
 
 class TeacherListsSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField()  # Include the TeacherUser ID
     mail = serializers.EmailField(source='user.email')
     phone = serializers.SerializerMethodField()
     attendance = serializers.SerializerMethodField()
+
     class Meta:
         model = TeacherUser
         fields = ['id', 'full_name', 'role', 'mail', 'phone', 'attendance']
-
 
     def get_phone(self, obj):
         phone_number = obj.user.phone
@@ -942,7 +948,8 @@ class TeacherListsSerializer(serializers.ModelSerializer):
         start_date = current_date.replace(day=1)
         end_date = current_date.replace(day=monthrange(current_date.year, current_date.month)[1])
 
-        attendance = TeacherAttendence.objects.filter(teacher=obj, date__range=(start_date, end_date), mark_attendence='P')
+        attendance = TeacherAttendence.objects.filter(teacher=obj, date__range=(start_date, end_date),
+                                                      mark_attendence='P')
         data = []
 
         if attendance:
@@ -974,11 +981,15 @@ class TeacherFeeDetailSerializer(serializers.ModelSerializer):
     other_allowances = serializers.SerializerMethodField()
     in_hand_salary = serializers.SerializerMethodField()
     total_deduction = serializers.SerializerMethodField()
+
     class Meta:
         model = TeacherUser
-        fields = ['id', 'institute_name', 'full_name', 'department', 'joining_date', 'pan_no', 'master_days', 'total_working_days',
-                  'leave_days', 'attendance', 'designation', 'account_type', 'bank_name', 'ifsc_code', 'account_number', 'total_salary',
-                  'professional_tax', 'basic_salary', 'hra', 'tds', 'other_deduction', 'other_allowances', 'in_hand_salary',
+        fields = ['id', 'institute_name', 'full_name', 'department', 'joining_date', 'pan_no', 'master_days',
+                  'total_working_days',
+                  'leave_days', 'attendance', 'designation', 'account_type', 'bank_name', 'ifsc_code', 'account_number',
+                  'total_salary',
+                  'professional_tax', 'basic_salary', 'hra', 'tds', 'other_deduction', 'other_allowances',
+                  'in_hand_salary',
                   'total_deduction']
 
     def get_institute_name(self, obj):
@@ -1014,7 +1025,8 @@ class TeacherFeeDetailSerializer(serializers.ModelSerializer):
         start_date = current_date.replace(day=1)
         end_date = current_date.replace(day=monthrange(current_date.year, current_date.month)[1])
 
-        attendance = TeacherAttendence.objects.filter(teacher=obj, date__range=(start_date, end_date), mark_attendence='P')
+        attendance = TeacherAttendence.objects.filter(teacher=obj, date__range=(start_date, end_date),
+                                                      mark_attendence='P')
         data = []
 
         if attendance:
@@ -1081,8 +1093,7 @@ class TeacherFeeDetailSerializer(serializers.ModelSerializer):
 
     def get_total_deduction(self, obj):
         teaching_staff = Salary.objects.get(name=obj.user)
-        return teaching_staff.deducted_salary+teaching_staff.other_deduction
-
+        return teaching_staff.deducted_salary + teaching_staff.other_deduction
 
 
 class StaffListsSerializer(serializers.ModelSerializer):
@@ -1090,13 +1101,14 @@ class StaffListsSerializer(serializers.ModelSerializer):
     phone = serializers.SerializerMethodField()
     attendance = serializers.SerializerMethodField()
     name = serializers.SerializerMethodField()
+
     class Meta:
         model = StaffUser
         fields = ['id', 'name', 'role', 'mail', 'phone', 'attendance']
 
-
     def get_name(self, obj):
         return f'{obj.first_name} {obj.last_name}'
+
     def get_phone(self, obj):
         phone_number = obj.user.phone
         if phone_number:
@@ -1121,10 +1133,10 @@ class StaffListsSerializer(serializers.ModelSerializer):
 
 
 class TeacherUserSalaryUpdateSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Salary
-        fields = ['master_days', 'total_working_days', 'leave_days', 'deducted_salary', 'other_deduction', 'incentive', 'net_payable_amount',
+        fields = ['master_days', 'total_working_days', 'leave_days', 'deducted_salary', 'other_deduction', 'incentive',
+                  'net_payable_amount',
                   'bank_name', 'account_type', 'ifsc_code', 'account_number']
 
 
@@ -1151,11 +1163,15 @@ class StaffFeeDetailSerializer(serializers.ModelSerializer):
     other_allowances = serializers.SerializerMethodField()
     in_hand_salary = serializers.SerializerMethodField()
     total_deduction = serializers.SerializerMethodField()
+
     class Meta:
         model = StaffUser
-        fields = ['id', 'institute_name', 'name', 'department', 'joining_date', 'pan_no', 'master_days', 'total_working_days',
-                  'leave_days', 'attendance', 'designation', 'account_type', 'bank_name', 'ifsc_code', 'account_number', 'total_salary',
-                  'professional_tax', 'basic_salary', 'hra', 'tds', 'other_deduction', 'other_allowances', 'in_hand_salary',
+        fields = ['id', 'institute_name', 'name', 'department', 'joining_date', 'pan_no', 'master_days',
+                  'total_working_days',
+                  'leave_days', 'attendance', 'designation', 'account_type', 'bank_name', 'ifsc_code', 'account_number',
+                  'total_salary',
+                  'professional_tax', 'basic_salary', 'hra', 'tds', 'other_deduction', 'other_allowances',
+                  'in_hand_salary',
                   'total_deduction']
 
     def get_name(self, obj):
@@ -1261,11 +1277,12 @@ class StaffFeeDetailSerializer(serializers.ModelSerializer):
 
     def get_total_deduction(self, obj):
         teaching_staff = Salary.objects.get(name=obj.user)
-        return teaching_staff.deducted_salary+teaching_staff.other_deduction
+        return teaching_staff.deducted_salary + teaching_staff.other_deduction
 
 
 class TeacherAttendanceUpdateSerializer(serializers.ModelSerializer):
     mark_attendence = serializers.ChoiceField(choices=ATTENDENCE_CHOICE, required=True)
+
     class Meta:
         model = TeacherAttendence
         fields = ['date', 'mark_attendence']
@@ -1273,6 +1290,7 @@ class TeacherAttendanceUpdateSerializer(serializers.ModelSerializer):
 
 class StaffAttendanceUpdateSerializer(serializers.ModelSerializer):
     mark_attendence = serializers.ChoiceField(choices=ATTENDENCE_CHOICE, required=True)
+
     class Meta:
         model = StaffAttendence
         fields = ['date', 'mark_attendence']
@@ -1280,6 +1298,9 @@ class StaffAttendanceUpdateSerializer(serializers.ModelSerializer):
 
 class StudentAttendanceUpdateSerializer(serializers.ModelSerializer):
     mark_attendence = serializers.ChoiceField(choices=ATTENDENCE_CHOICE, required=True)
+
     class Meta:
         model = StudentAttendence
         fields = ['date', 'mark_attendence']
+
+

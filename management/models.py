@@ -1,6 +1,7 @@
 from django.db import models
 
-from authentication.models import User, StudentUser
+from EduSmart import storage_backends
+from authentication.models import User, StudentUser, TeacherUser,TeacherAttendence
 
 
 # Create your models here.
@@ -11,7 +12,7 @@ class Salary(models.Model):
     department = models.CharField(max_length=255)
     designation = models.CharField(max_length=255)
     name = models.ForeignKey(User, on_delete=models.CASCADE)
-    joining_date = models.DateField(null=True, blank=True)
+    salary_month = models.IntegerField(default=1)
     pan_no = models.CharField(max_length=255)
     total_salary = models.DecimalField(max_digits=16, decimal_places=2, default=0.0)
     in_hand_salary = models.DecimalField(max_digits=16, decimal_places=2, default=0.0)
@@ -38,12 +39,12 @@ class Salary(models.Model):
 
 
 class SalaryFormat(models.Model):
-    salary_structure = models.ForeignKey(Salary, on_delete=models.CASCADE, related_name='salary_structure')
+    salary_structure = models.ForeignKey(Salary, on_delete=models.CASCADE, related_name='salary_formats')
     field_name = models.CharField(max_length=255, null=True, blank=True)
     field_amount = models.DecimalField(max_digits=16, decimal_places=2, default=0.0)
 
     def __str__(self):
-        return f"{self.id}"
+        return f"{self.id} - {self.field_name}"
 
 
 class Fee(models.Model):
@@ -84,3 +85,5 @@ class DueFeeDetail(models.Model):
 
     def __str__(self):
         return f"{self.id}"
+
+

@@ -48,7 +48,6 @@ class UserManager(BaseUserManager):
             extra_fields.setdefault("user_type", "non-teaching")
         return self._create_user(email, password, **extra_fields)
 
-
     def create_superuser(self, email=None, password=None, **extra_fields):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
@@ -114,14 +113,18 @@ class User(AbstractUser):
         address = f'{address_details.address_line_1}, {address_details.city}, {address_details.state}, {address_details.country} - {address_details.pincode}'
         return address
 
+
 class SuperAdminUser(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
+
 
 class AdminUser(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
 
+
 class ManagementUser(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
+
 
 class Class(models.Model):
     class_name = models.CharField(max_length=50)
@@ -130,23 +133,26 @@ class Class(models.Model):
     def __str__(self) -> str:
         return f'{self.name} - {self.section}'
 
+
 class TeacherUser(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     full_name = models.CharField(max_length=255, null=True, blank=True)
     dob = models.DateField(null=True, blank=True)
-    image = models.ImageField(upload_to='', blank=True, storage=storage_backends.AzureMediaStorage(azure_container='image'))
+    image = models.ImageField(upload_to='', blank=True,
+                              storage=storage_backends.AzureMediaStorage(azure_container='image'))
     gender = models.CharField(max_length=50)
     joining_date = models.DateField(auto_now_add=True, null=True, blank=True)
     religion = models.CharField(max_length=50)
     blood_group = models.CharField(max_length=50)
     ctc = models.DecimalField(max_digits=16, decimal_places=2, default=0.0)
     # class_taught = models.ManyToManyField(Class)
-    address = models.TextField(blank=True,null=True)
+    address = models.TextField(blank=True, null=True)
     role = models.CharField(max_length=255)
-    experience = models.IntegerField(null=True,blank=True)
+    experience = models.IntegerField(null=True, blank=True)
     class_subject_section_details = models.JSONField(blank=True, null=True)
     highest_qualification = models.CharField(max_length=255)
     fcm_token = models.CharField(max_length=255, blank=True, null=True)
+
     # certificate = models.FileField(upload_to='', blank=True, null=True)
 
     def __str__(self) -> str:
@@ -157,7 +163,8 @@ class StaffUser(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     first_name = models.CharField(255)
     last_name = models.CharField(255)
-    image = models.ImageField(upload_to='', blank=True, storage=storage_backends.AzureMediaStorage(azure_container='image'))
+    image = models.ImageField(upload_to='', blank=True,
+                              storage=storage_backends.AzureMediaStorage(azure_container='image'))
     gender = models.CharField(max_length=50)
     dob = models.DateField(default=datetime.date.today)
     blood_group = models.CharField(max_length=50, blank=True, null=True)
@@ -175,18 +182,20 @@ class StaffUser(models.Model):
 
 class Certificate(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='certificates')
-    certificate_file = models.FileField(upload_to='', storage=storage_backends.AzureMediaStorage(azure_container='file'))
+    certificate_file = models.FileField(upload_to='',
+                                        storage=storage_backends.AzureMediaStorage(azure_container='file'))
 
 
 class StudentUser(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
     dob = models.DateField(default=datetime.date.today)
-    image = models.ImageField(upload_to='', blank=True, storage=storage_backends.AzureMediaStorage(azure_container='image'))
+    image = models.ImageField(upload_to='', blank=True,
+                              storage=storage_backends.AzureMediaStorage(azure_container='image'))
     father_name = models.CharField(max_length=150, null=True, blank=True)
     father_phone_number = PhoneNumberField(blank=True, null=True)
-    mother_name = models.CharField(max_length=150,null=True, blank=True)
-    mother_occupation = models.CharField(max_length=255,null=True, blank=True)
+    mother_name = models.CharField(max_length=150, null=True, blank=True)
+    mother_occupation = models.CharField(max_length=255, null=True, blank=True)
     mother_phone_number = PhoneNumberField(blank=True, null=True)
     gender = models.CharField(max_length=50)
     father_occupation = models.CharField(max_length=255)
@@ -225,8 +234,10 @@ class StudentUser(models.Model):
     def get_subject(self):
         return json.loads(self.subject)
 
+
 class PayrollManagementUser(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
+
 
 class AddressDetails(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='address_details')
@@ -241,12 +252,14 @@ class AddressDetails(models.Model):
     def __str__(self) -> str:
         return f'{self.user} address details'
 
+
 class ErrorLogging(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     context = models.TextField(blank=True, null=True)
     exception = models.TextField(blank=True, null=True)
     traceback = models.TextField(blank=True, null=True)
+
 
 class TeachersSchedule(models.Model):
     school_id = models.CharField(blank=True, null=True)
@@ -255,10 +268,12 @@ class TeachersSchedule(models.Model):
     teacher = models.ForeignKey(TeacherUser, on_delete=models.CASCADE, blank=True, null=True)
     schedule_data = models.JSONField(null=True)
 
+
 class TeacherAttendence(models.Model):
     teacher = models.ForeignKey(TeacherUser, on_delete=models.CASCADE)
     date = models.DateField()
     mark_attendence = models.CharField(max_length=100)
+
 
 class StaffAttendence(models.Model):
     staff = models.ForeignKey(StaffUser, on_delete=models.CASCADE)
@@ -272,7 +287,8 @@ class EventsCalender(models.Model):
     is_event_calendar = models.BooleanField(default=True)  # event = True, academic calendar = False
     title = models.CharField(max_length=255)
     description = models.TextField()
-    event_image = models.ImageField(upload_to='', blank=True, storage=storage_backends.AzureMediaStorage(azure_container='image'))
+    event_image = models.ImageField(upload_to='', blank=True,
+                                    storage=storage_backends.AzureMediaStorage(azure_container='image'))
     start_time = models.TimeField(null=True)
     end_time = models.TimeField(null=True)
     start_date = models.DateField(null=True)
@@ -284,6 +300,7 @@ class EventsCalender(models.Model):
 class EventImage(models.Model):
     event = models.ForeignKey(EventsCalender, on_delete=models.CASCADE)
     event_image = models.FileField(upload_to='', storage=storage_backends.AzureMediaStorage(azure_container='image'))
+
 
 class DayReview(models.Model):
     school_id = models.CharField(max_length=255, null=True, blank=True)
@@ -319,7 +336,7 @@ class TimeTable(models.Model):
     exam_type = models.CharField(max_length=255)
     exam_month = models.DateField()
     more_subject = models.JSONField()
-    status = models.CharField(max_length=100,default=0)
+    status = models.CharField(max_length=100, default=0)
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
 
@@ -353,6 +370,7 @@ class Availability(models.Model):
 
 
 class InquiryForm(models.Model):
+    id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255)
     phone_number = PhoneNumberField(blank=True, null=True)
     e_mail = models.EmailField()
@@ -360,6 +378,5 @@ class InquiryForm(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-
-
-
+    def __str__(self):
+        return self.name

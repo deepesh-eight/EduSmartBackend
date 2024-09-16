@@ -8,7 +8,7 @@ from rest_framework.views import APIView
 
 from authentication.models import StaffUser, TimeTable, TeacherUser, StudentUser, User, TeacherAttendence, \
     StaffAttendence
-from authentication.permissions import IsInSameSchool, IsStaffUser
+from authentication.permissions import IsInSameSchool, IsStaffUser, IsTeacherUser, IsAuthenticatedUser
 from constants import UserLoginMessage, UserResponseMessage, TimeTableMessage, ReportCardMesssage, month_mapping, \
     SalaryMessage, FeeMessage, AttendenceMarkedMessage
 from management.models import Salary, Fee
@@ -204,7 +204,6 @@ class ExamTimeTableDetailView(APIView):
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
 
-
 class ExamTimeTableDeleteView(APIView):
     """
     This class is used to delete a declared timetable which is added by a teacher.
@@ -320,7 +319,8 @@ class ExamReportCardListView(APIView):
                 if curriculum and class_name:
                     report_card = report_card.filter(curriculum=curriculum, class_name=class_name)
                 if curriculum and class_name and section:
-                    report_card = report_card.filter(curriculum=curriculum, class_name=class_name, class_section=section)
+                    report_card = report_card.filter(curriculum=curriculum, class_name=class_name,
+                                                     class_section=section)
                 if curriculum and class_name and section and exam_type:
                     report_card = report_card.filter(
                         curriculum=curriculum, class_name=class_name, class_section=section, exam_type=exam_type
@@ -390,7 +390,8 @@ class ExamReportCardFilterListView(APIView):
 
             # Check role and user type
             if (staff.role == "Payroll Management" or staff.role == "Management") and user.user_type == "non-teaching":
-                teacher_user = StaffUser.objects.get(user=user, user__school_id=request.user.school_id, role="Payroll Management")
+                teacher_user = StaffUser.objects.get(user=user, user__school_id=request.user.school_id,
+                                                     role="Payroll Management")
 
             curriculum = request.query_params.get('curriculum')
             class_name = request.query_params.get('class')
@@ -530,7 +531,6 @@ class StudentReportCardView(APIView):
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
 
-
 class AddSalaryView(APIView):
     """
     This class is used to add salary details of the staff; it can be non-teaching or teaching.
@@ -575,6 +575,36 @@ class AddSalaryView(APIView):
             )
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
+
+class GetSalaryByMonthView(APIView):
+    permission_classes = [IsAuthenticatedUser, IsInSameSchool]
+
+    def get(self, request, month_id):
+        user = request.user
+        try:
+            salary = Salary.objects.filter(name=user, salary_month=month_id)
+            if salary.exists():
+                serializer = AddSalarySerializer(salary, many=True)
+                response = create_response_data(
+                    status=status.HTTP_200_OK,
+                    message="Salary details retrieved successfully",
+                    data=serializer.data
+                )
+                return Response(response, status=status.HTTP_200_OK)
+            else:
+                response = create_response_data(
+                    status=status.HTTP_404_NOT_FOUND,
+                    message="No salary data found for this month.",
+                    data={}
+                )
+                return Response(response, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=str(e),
+                data={}
+            )
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
 
 class SalaryDetailView(APIView):
@@ -636,7 +666,7 @@ class SalaryUpdateView(APIView):
             if (staff.role == "Payroll Management" or staff.role == "Management") and user.user_type == "non-teaching":
                 data = Salary.objects.get(id=pk, school_id=request.user.school_id)
                 serializer = SalaryUpdateSerializer(data, data=request.data, partial=True,
-                                                     context={'request': request})
+                                                    context={'request': request})
 
                 if serializer.is_valid(raise_exception=True):
                     serializer.save()
@@ -676,7 +706,6 @@ class SalaryUpdateView(APIView):
                 data={}
             )
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
-
 
 
 class AddFeeView(APIView):
@@ -743,7 +772,8 @@ class FeeListView(APIView):
 
                 data = Fee.objects.filter(school_id=request.user.school_id).order_by('-id')
                 if search:
-                    data = data.filter(Q(curriculum__icontains=search) | Q(class_name__icontains=search) | Q(payment_type__icontains=search)
+                    data = data.filter(Q(curriculum__icontains=search) | Q(class_name__icontains=search) | Q(
+                        payment_type__icontains=search)
                                        | Q(total_fee__icontains=search) | Q(total_fee__icontains=search))
 
                 # Paginate the queryset
@@ -780,7 +810,6 @@ class FeeListView(APIView):
                 data={}
             )
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
-
 
 
 class FeeUpdateView(APIView):
@@ -882,7 +911,6 @@ class FeeDetailView(APIView):
                 data={}
             )
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
-
 
 
 class StudentList(APIView):
@@ -1005,7 +1033,6 @@ class StudentFilterList(APIView):
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
 
-
 class StudentFeeDetail(APIView):
     """
     This class is used to fetch the detail of the student fee.
@@ -1049,6 +1076,7 @@ class StudentFeeDetail(APIView):
             )
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
+
 class TeacherList(APIView):
     """
     This class is used to fetch a list of teachers.
@@ -1063,16 +1091,23 @@ class TeacherList(APIView):
 
             # Check role and user type
             if (staff.role == "Payroll Management" or staff.role == "Management") and user.user_type == "non-teaching":
+                # Fetch filtered teacher users
                 data = TeacherUser.objects.filter(
                     user__school_id=request.user.school_id,
                     user__is_active=True
                 ).order_by('id')
+
+                # Print the filtered data (TeacherUser queryset)
+                print(f"Filtered TeacherUser Data: {list(data.values())}")
 
                 paginator = self.pagination_class()
                 paginator_queryset = paginator.paginate_queryset(data, request)
 
                 serializer = TeacherListsSerializer(paginator_queryset, many=True)
                 filtered_data = [entry for entry in serializer.data if entry]
+
+                # Print the serialized data
+                print(f"Serialized TeacherUser Data: {filtered_data}")
 
                 response_data = {
                     'status': status.HTTP_200_OK,
@@ -1103,8 +1138,6 @@ class TeacherList(APIView):
                 data={}
             )
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
-
-
 
 
 class TeacherSalaryDetailView(APIView):
@@ -1167,7 +1200,8 @@ class StaffList(APIView):
 
             # Check role and user type
             if (staff.role == "Payroll Management" or staff.role == "Management") and user.user_type == "non-teaching":
-                data = StaffUser.objects.filter(user__school_id=request.user.school_id, user__is_active=True).order_by('-id')
+                data = StaffUser.objects.filter(user__school_id=request.user.school_id, user__is_active=True).order_by(
+                    '-id')
                 paginator = self.pagination_class()
                 paginator_queryset = paginator.paginate_queryset(data, request)
 
@@ -1436,7 +1470,7 @@ class TeacherAttendanceUpdateView(APIView):
             date = request.data.get('date')
             mark_attendence = request.data.get('mark_attendence')
             if not date or not mark_attendence:
-                response= (
+                response = (
                     create_response_data(
                         status=status.HTTP_400_BAD_REQUEST,
                         message="Date and mark_attendence are required.",
@@ -1447,7 +1481,7 @@ class TeacherAttendanceUpdateView(APIView):
             try:
                 attendance_record = TeacherAttendence.objects.get(teacher=teacher, date=date)
             except TeacherAttendence.DoesNotExist:
-                response= (
+                response = (
                     create_response_data(
                         status=status.HTTP_404_NOT_FOUND,
                         message="Attendance record not found for the specified date.",
@@ -1456,7 +1490,8 @@ class TeacherAttendanceUpdateView(APIView):
                 )
                 return Response(response, status=status.HTTP_404_NOT_FOUND)
 
-            serializer = TeacherAttendanceUpdateSerializer(attendance_record, data={'mark_attendence': mark_attendence}, partial=True)
+            serializer = TeacherAttendanceUpdateSerializer(attendance_record, data={'mark_attendence': mark_attendence},
+                                                           partial=True)
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
                 response = create_response_data(
@@ -1531,7 +1566,8 @@ class StaffAttendanceUpdateView(APIView):
                 )
                 return Response(response, status=status.HTTP_404_NOT_FOUND)
 
-            serializer = StaffAttendanceUpdateSerializer(attendance_record, data={'mark_attendence': mark_attendence}, partial=True)
+            serializer = StaffAttendanceUpdateSerializer(attendance_record, data={'mark_attendence': mark_attendence},
+                                                         partial=True)
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
                 response = create_response_data(
@@ -1586,7 +1622,7 @@ class StudentAttendanceUpdateView(APIView):
             date = request.data.get('date')
             mark_attendence = request.data.get('mark_attendence')
             if not date or not mark_attendence:
-                response= (
+                response = (
                     create_response_data(
                         status=status.HTTP_400_BAD_REQUEST,
                         message="Date and mark_attendence are required.",
@@ -1597,7 +1633,7 @@ class StudentAttendanceUpdateView(APIView):
             try:
                 attendance_record = StudentAttendence.objects.get(student=student, date=date)
             except StudentAttendence.DoesNotExist:
-                response= (
+                response = (
                     create_response_data(
                         status=status.HTTP_404_NOT_FOUND,
                         message="Attendance record not found for the specified date.",
@@ -1606,7 +1642,8 @@ class StudentAttendanceUpdateView(APIView):
                 )
                 return Response(response, status=status.HTTP_404_NOT_FOUND)
 
-            serializer = StudentAttendanceUpdateSerializer(attendance_record, data={'mark_attendence': mark_attendence}, partial=True)
+            serializer = StudentAttendanceUpdateSerializer(attendance_record, data={'mark_attendence': mark_attendence},
+                                                           partial=True)
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
                 response = create_response_data(

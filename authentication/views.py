@@ -21,11 +21,12 @@ from django.utils.encoding import force_bytes
 from django.contrib.auth.tokens import default_token_generator
 from django.urls import reverse
 from django.conf import settings
+from django.shortcuts import get_object_or_404
 
 from EduSmart import settings
 from authentication.models import User, AddressDetails, ErrorLogging, Certificate, StaffUser, StaffAttendence, \
     TeacherUser, StudentUser, TeachersSchedule, DayReview, TeacherAttendence, Notification, TimeTable, EventsCalender, \
-    ClassEvent, ClassEventImage, EventImage
+    ClassEvent, ClassEventImage, EventImage, InquiryForm
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsManagementUser, IsPayRollManagementUser, \
     IsBoardingUser, IsInSameSchool, IsTeacherUser, IsAdminOrIsStaffAndInSameSchool
 from authentication.serializers import UserSignupSerializer, UsersListSerializer, UpdateProfileSerializer, \
@@ -3198,6 +3199,56 @@ class InquiryCreateView(APIView):
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
 
+class InquiryListView(APIView):
+    """
+    This class is used to list all inquiries.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        try:
+            inquiries = InquiryForm.objects.all()
+            serializer = InquirySerializer(inquiries, many=True)
+            response = create_response_data(
+                status=status.HTTP_200_OK,
+                message="Inquiries fetched successfully.",
+                data=serializer.data,
+            )
+            return Response(response, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class InquiryDetailView(APIView):
+    """
+    This class is used to retrieve a specific inquiry by its ID.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, pk):
+        try:
+            inquiry = get_object_or_404(InquiryForm, pk=pk)
+            serializer = InquirySerializer(inquiry)
+            response = create_response_data(
+                status=status.HTTP_200_OK,
+                message="Inquiry fetched successfully.",
+                data=serializer.data,
+            )
+            return Response(response, status=status.HTTP_200_OK)
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=e.args[0],
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
 class StaffUpdateView(APIView):
     """
     This class is used to update the non teaching staff detail.
@@ -3304,8 +3355,14 @@ class ChangePasswordAPIView(APIView):
         except User.DoesNotExist:
             return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 
+        # Check if the new password is the same as the current one
+        if user.check_password(new_password):
+            return Response({"error": "New password cannot be the same as the current password."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
         # Set the new password
         user.set_password(new_password)
+
         user.save()
 
         return Response({"message": "Password updated successfully."}, status=status.HTTP_200_OK)

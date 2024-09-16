@@ -98,6 +98,7 @@ class TeacherUserSignupSerializer(serializers.Serializer):
 
         return value
 
+
 class TeacherDetailSerializer(serializers.ModelSerializer):
     email = serializers.SerializerMethodField()
     phone = serializers.SerializerMethodField()
@@ -108,7 +109,8 @@ class TeacherDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = TeacherUser
         fields = ['id', 'full_name', 'gender', 'dob', 'blood_group', 'phone', 'address', 'email', 'religion',
-                  'role', 'joining_date', 'experience', 'ctc', 'class_subject_section_details', 'image', 'certificates', 'highest_qualification', 'class_teacher','fcm_token']
+                  'role', 'joining_date', 'experience', 'ctc', 'class_subject_section_details', 'image', 'certificates',
+                  'highest_qualification', 'class_teacher', 'fcm_token']
 
     def get_name(self, obj):
         return obj.user.name if hasattr(obj, 'user') else None
@@ -150,7 +152,8 @@ class TeacherListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TeacherUser
-        fields = ['id', 'full_name', 'phone', 'email', 'class_subject_section_details', 'image', 'highest_qualification','fcm_token']
+        fields = ['id', 'full_name', 'phone', 'email', 'class_subject_section_details', 'image',
+                  'highest_qualification', 'fcm_token']
 
     def get_phone(self, obj):
         phone_number = obj.user.phone
@@ -188,10 +191,12 @@ class ImageFieldStringAndFile(serializers.Field):
         elif isinstance(data, str):
             return data
         else:
-            raise serializers.ValidationError('Invalid file type. Must be a file object or a string representing a file path.')
+            raise serializers.ValidationError(
+                'Invalid file type. Must be a file object or a string representing a file path.')
+
 
 class TeacherProfileSerializer(serializers.ModelSerializer):
-    email = serializers.EmailField(source='user.email',required=False)
+    email = serializers.EmailField(source='user.email', required=False)
     phone = serializers.CharField(source='user.phone')
     full_name = serializers.CharField(required=False)
     dob = serializers.DateField(required=False)
@@ -215,11 +220,12 @@ class TeacherProfileSerializer(serializers.ModelSerializer):
         required=False
     )
 
-
     class Meta:
         model = TeacherUser
-        fields = ['full_name', 'email', 'phone', 'dob', 'image', 'joining_date', 'religion', 'experience', 'role', 'address',
-                  'ctc', 'blood_group', 'address', 'gender', 'class_subject_section_details','certificate_files', 'highest_qualification']
+        fields = ['full_name', 'email', 'phone', 'dob', 'image', 'joining_date', 'religion', 'experience', 'role',
+                  'address',
+                  'ctc', 'blood_group', 'address', 'gender', 'class_subject_section_details', 'certificate_files',
+                  'highest_qualification']
 
     def update(self, instance, validated_data):
         user_data = validated_data.pop('user', {})
@@ -382,6 +388,7 @@ class ScheduleListSerializer(serializers.ModelSerializer):
             return schedule_data[0].get('class_duration', 0)
         return 0
 
+
 class MixedField(serializers.Field):
     """
     A custom field to handle mixed data types (string or list).
@@ -470,11 +477,11 @@ class ScheduleUpdateSerializer(serializers.ModelSerializer):
         instance.save()  # Save the instance after updating
         return instance
 
+
 class FCMTokenSerializer(serializers.ModelSerializer):
     class Meta:
         model = TeacherUser
         fields = ['fcm_token']
-
 
 
 class TeacherAttendanceSerializer(serializers.ModelSerializer):
@@ -494,7 +501,7 @@ class TeacherAttendanceSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Invalid teacher ID.")
 
         # Check if attendance already marked for the user and today's date
-        existing_attendance = TeacherAttendence.objects.filter(teacher=teacher,date=validated_data['date']).exists()
+        existing_attendance = TeacherAttendence.objects.filter(teacher=teacher, date=validated_data['date']).exists()
         if existing_attendance:
             raise serializers.ValidationError("Attendance already marked for this teacher today.")
 
@@ -504,7 +511,6 @@ class TeacherAttendanceSerializer(serializers.ModelSerializer):
 
 
 class TeacherAttendanceDetailSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = TeacherAttendence
         fields = ['date', 'mark_attendence']
@@ -559,6 +565,7 @@ class TeacherAttendanceFilterListSerializer(serializers.ModelSerializer):
 class CertificateUserProfileSerializer(serializers.ModelSerializer):
     certificate_file = serializers.SerializerMethodField()
     certificate_name = serializers.SerializerMethodField()
+
     class Meta:
         model = Certificate
         fields = ['certificate_file', 'certificate_name']
@@ -584,12 +591,14 @@ class TeacherUserProfileSerializer(serializers.ModelSerializer):
     certificates = serializers.SerializerMethodField()
     class_teacher = serializers.SerializerMethodField()
     age = serializers.SerializerMethodField()
+
     # class_subject_section_details = serializers.SerializerMethodField()
 
     class Meta:
         model = TeacherUser
         fields = ['id', 'full_name', 'gender', 'dob', 'age', 'blood_group', 'phone', 'address', 'email', 'religion',
-                  'role', 'joining_date', 'experience', 'ctc', 'class_subject_section_details', 'image', 'certificates', 'highest_qualification', 'class_teacher']
+                  'role', 'joining_date', 'experience', 'ctc', 'class_subject_section_details', 'image', 'certificates',
+                  'highest_qualification', 'class_teacher']
 
     def get_name(self, obj):
         return obj.user.name if hasattr(obj, 'user') else None
@@ -737,7 +746,6 @@ class CurriculumClassListSerializer(serializers.ModelSerializer):
 
 
 class DayReviewSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = DayReview
         fields = ['class_name', 'section', 'subject', 'discription', 'curriculum']
@@ -777,14 +785,13 @@ class NotificationSerializer(serializers.ModelSerializer):
         }
 
 
-
 class NotificationListSerializer(serializers.ModelSerializer):
     date = serializers.SerializerMethodField()
     time = serializers.SerializerMethodField()
+
     class Meta:
         model = Notification
         fields = ['title', 'description', 'date', 'time', 'sender', 'type', 'is_read', 'reciver_id', 'class_id']
-
 
     def get_date(self, obj):
         ist = pytz.timezone('Asia/Kolkata')
@@ -806,6 +813,7 @@ class AnnouncementCreateSerializer(serializers.ModelSerializer):
 class AnnouncementListSerializer(serializers.ModelSerializer):
     date = serializers.SerializerMethodField()
     time = serializers.SerializerMethodField()
+
     class Meta:
         model = Announcement
         fields = ['id', 'creator_name', 'date', 'time', 'announcement_title', 'description', 'role']
@@ -844,6 +852,7 @@ class CreateTimeTableSerializer(serializers.ModelSerializer):
 class TimeTableListSerializer(serializers.ModelSerializer):
     exam_start_date = serializers.SerializerMethodField()
     exam_end_date = serializers.SerializerMethodField()
+
     class Meta:
         model = TimeTable
         fields = ['id', 'class_name', 'curriculum', 'class_section', 'exam_type', 'exam_start_date', 'exam_end_date']
@@ -854,6 +863,7 @@ class TimeTableListSerializer(serializers.ModelSerializer):
             exam_dates = [subject['date'] for subject in more_subjects]
             return min(exam_dates)
         return None
+
     #
     def get_exam_end_date(self, obj):
         more_subjects = obj.more_subject
@@ -906,12 +916,14 @@ class ExamReportCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ExmaReportCard
-        fields = ['class_name', 'curriculum', 'class_section', 'student_name', 'exam_type', 'exam_month', 'marks_grades', 'total_marks', 'overall_grades']
+        fields = ['class_name', 'curriculum', 'class_section', 'student_name', 'exam_type', 'exam_month',
+                  'marks_grades', 'total_marks', 'overall_grades']
 
 
 class ExamReportListSerializer(serializers.ModelSerializer):
     student_name = serializers.SerializerMethodField()
     roll_no = serializers.SerializerMethodField()
+
     class Meta:
         model = ExmaReportCard
         fields = ['id', 'class_name', 'class_section', 'student_name', 'roll_no', 'exam_type']
@@ -937,7 +949,9 @@ class ExamReportCardViewSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ExmaReportCard
-        fields = ['id', 'class_name', 'curriculum', 'class_section', 'student_name', 'roll_no', 'student', 'exam_type', 'exam_month', 'marks_grades', 'total_marks', 'overall_grades', 'father_name', 'mother_name', 'teacher_name']
+        fields = ['id', 'class_name', 'curriculum', 'class_section', 'student_name', 'roll_no', 'student', 'exam_type',
+                  'exam_month', 'marks_grades', 'total_marks', 'overall_grades', 'father_name', 'mother_name',
+                  'teacher_name']
 
     def get_father_name(self, obj):
         student = obj.student_name
@@ -977,7 +991,8 @@ class ExamReportCardViewSerializer(serializers.ModelSerializer):
 class ExamReportcardUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ExmaReportCard
-        fields = ['class_name', 'class_section', 'student_name', 'exam_type', 'exam_month', 'marks_grades', 'total_marks', 'overall_grades']
+        fields = ['class_name', 'class_section', 'student_name', 'exam_type', 'exam_month', 'marks_grades',
+                  'total_marks', 'overall_grades']
 
 
 class ZoomLinkCreateSerializer(serializers.ModelSerializer):
@@ -1005,6 +1020,7 @@ class ZoomLinkCreateSerializer(serializers.ModelSerializer):
 class ZoomLinkListSerializer(serializers.ModelSerializer):
     start_time = serializers.SerializerMethodField()
     end_time = serializers.SerializerMethodField()
+
     class Meta:
         model = ZoomLink
         fields = ['class_name', 'curriculum', 'section', 'subject', 'date', 'start_time', 'end_time', 'zoom_link']
@@ -1029,16 +1045,19 @@ class StudyMaterialUploadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = StudentMaterial
-        fields = ['class_name', 'section', 'subject', 'curriculum', 'upload_link', 'title', 'discription', 'upload_content', 'content_type']
+        fields = ['class_name', 'section', 'subject', 'curriculum', 'upload_link', 'title', 'discription',
+                  'upload_content', 'content_type']
 
 
 class StudyMaterialListSerializer(serializers.ModelSerializer):
     # upload_content = serializers.SerializerMethodField()
     teacher = serializers.SerializerMethodField()
     upload_date = serializers.SerializerMethodField()
+
     class Meta:
         model = StudentMaterial
-        fields = ['id', 'class_name', 'section', 'subject', 'curriculum', 'upload_link', 'title', 'discription', 'upload_content', 'content_type', 'teacher', 'upload_date']
+        fields = ['id', 'class_name', 'section', 'subject', 'curriculum', 'upload_link', 'title', 'discription',
+                  'upload_content', 'content_type', 'teacher', 'upload_date']
 
     # def get_upload_content(self, obj):
     #     if obj.upload_content:
@@ -1058,11 +1077,13 @@ class StudyMaterialListSerializer(serializers.ModelSerializer):
     def get_upload_date(self, obj):
         return obj.updated_at.date()
 
+
 class StudyMaterialDetailSerializer(serializers.ModelSerializer):
     # upload_content = serializers.SerializerMethodField()
     class Meta:
         model = StudentMaterial
-        fields = ['id', 'class_name', 'section', 'subject', 'curriculum', 'upload_link', 'title', 'discription', 'upload_content', 'content_type']
+        fields = ['id', 'class_name', 'section', 'subject', 'curriculum', 'upload_link', 'title', 'discription',
+                  'upload_content', 'content_type']
 
     # def get_upload_content(self, obj):
     #     if obj.upload_content:
@@ -1078,8 +1099,8 @@ class StudyMaterialUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = StudentMaterial
-        fields = ['id', 'class_name', 'section', 'subject', 'curriculum', 'upload_link', 'title', 'discription', 'upload_content', 'content_type']
-
+        fields = ['id', 'class_name', 'section', 'subject', 'curriculum', 'upload_link', 'title', 'discription',
+                  'upload_content', 'content_type']
 
 
 class SectionListSerializer(serializers.ModelSerializer):
@@ -1133,11 +1154,11 @@ class AvailabilityGetSerializer(serializers.ModelSerializer):
             return datetime.strptime(end_time, '%H:%M:%S').strftime('%I:%M %p')
 
 
-
 class ChatRequestMessageSerializer(serializers.ModelSerializer):
     student_image = serializers.SerializerMethodField()
     student_name = serializers.SerializerMethodField()
     start_time = serializers.SerializerMethodField()
+
     class Meta:
         model = ConnectWithTeacher
         fields = ['id', 'student_image', 'student_name', 'start_time', 'status']
@@ -1192,6 +1213,7 @@ class StudentChatRequestMessageSerializer(serializers.ModelSerializer):
     teacher_image = serializers.SerializerMethodField()
     teacher_name = serializers.SerializerMethodField()
     start_time = serializers.SerializerMethodField()
+
     class Meta:
         model = ConnectWithTeacher
         fields = ['id', 'teacher_image', 'teacher_name', 'start_time', 'status']
@@ -1227,6 +1249,7 @@ class TeacherListBySectionSerializer(serializers.ModelSerializer):
 
 class TeacherAttendanceCreateSerializer(serializers.ModelSerializer):
     date = serializers.SerializerMethodField(required=False)
+
     class Meta:
         model = TeacherAttendence
         fields = ['id', 'date', 'mark_attendence']
@@ -1243,6 +1266,7 @@ class TeacherAttendanceCreateSerializer(serializers.ModelSerializer):
 
 class StaffListBySectionSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
+
     class Meta:
         model = StaffUser
         fields = ['id', 'full_name']
@@ -1253,6 +1277,7 @@ class StaffListBySectionSerializer(serializers.ModelSerializer):
 
 class StaffAttendanceCreateSerializer(serializers.ModelSerializer):
     date = serializers.SerializerMethodField(required=False)
+
     class Meta:
         model = StaffAttendence
         fields = ['id', 'date', 'mark_attendence']
