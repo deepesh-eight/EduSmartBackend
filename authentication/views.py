@@ -3,7 +3,8 @@ import datetime
 import json
 import re
 import logging
-
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 from django.core.mail import send_mail
 from django.db import IntegrityError
 from django.db.models import Q

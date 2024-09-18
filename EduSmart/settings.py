@@ -33,6 +33,7 @@ ALLOWED_HOSTS = ['edu-management.azurewebsites.net']
 # ALLOWED_HOSTS = ['127.0.0.1']
 base_url = 'https://edu-management.azurewebsites.net'
 # Application definition
+CSRF_TRUSTED_ORIGINS = ['https://edu-management.azurewebsites.net']
 
 
 INSTALLED_APPS = [
@@ -203,3 +204,7 @@ DEFAULT_FILE_STORAGE = 'EduSmart.storage_backends.AzureMediaStorage'
 # Media settings
 MEDIA_URL = f'https://{AZURE_ACCOUNT_NAME}.blob.core.windows.net/{AZURE_IMAGE_CONTAINER}/'
 MEDIA_ROOT = ''
+
+# Secure cookies for HTTPS
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
