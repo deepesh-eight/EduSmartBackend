@@ -42,6 +42,12 @@ urlpatterns = [
     path('staff/salary/update/<int:pk>/', StaffSalaryUpdateView.as_view(), name='staff_salary_update'),
     path('staff/salary/detail/<int:pk>/', StaffSalaryDetailView.as_view(), name='staff_salary_detail'),
 
+    # Meal Related API'S
+    path('meals/add/', AddMealView.as_view(), name='add-meal'),
+    path('meals/', MealListView.as_view(), name='meal-list'),
+    path('meals/update/<int:meal_id>/', MealUpdateView.as_view(), name='meal-update'),
+    path('meals/delete/<int:meal_id>/', MealDeleteView.as_view(), name='meal-delete'),
+
     # Attendance related APIs
     path('teacher/attendance/update/<int:pk>/', TeacherAttendanceUpdateView.as_view(),
          name='teacher_attendance_update'),

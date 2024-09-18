@@ -5,19 +5,21 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.shortcuts import get_object_or_404
 
 from authentication.models import StaffUser, TimeTable, TeacherUser, StudentUser, User, TeacherAttendence, \
     StaffAttendence
 from authentication.permissions import IsInSameSchool, IsStaffUser, IsTeacherUser, IsAuthenticatedUser
 from constants import UserLoginMessage, UserResponseMessage, TimeTableMessage, ReportCardMesssage, month_mapping, \
     SalaryMessage, FeeMessage, AttendenceMarkedMessage
-from management.models import Salary, Fee
+from management.models import Salary, Fee, Meal
 from management.serializers import ManagementProfileSerializer, TimeTableSerializer, TimeTableDetailViewSerializer, \
     ExamReportCardSerializer, StudentReportCardSerializer, AddSalarySerializer, SalaryDetailSerializer, \
     SalaryUpdateSerializer, AddFeeSerializer, FeeListSerializer, FeeUpdateSerializer, FeeDetailSerializer, \
     StudentListsSerializer, StudentFilterListSerializer, StudentDetailSerializer, TeacherFeeDetailSerializer, \
     TeacherListsSerializer, StaffListsSerializer, TeacherUserSalaryUpdateSerializer, StaffFeeDetailSerializer, \
-    TeacherAttendanceUpdateSerializer, StaffAttendanceUpdateSerializer, StudentAttendanceUpdateSerializer
+    TeacherAttendanceUpdateSerializer, StaffAttendanceUpdateSerializer, StudentAttendanceUpdateSerializer, \
+    MealSerializer
 from pagination import CustomPagination
 from student.models import ExmaReportCard, StudentAttendence
 from superadmin.models import SchoolProfile
@@ -1673,3 +1675,72 @@ class StudentAttendanceUpdateView(APIView):
                 data={}
             )
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AddMealView(APIView):
+    permission_classes = [IsStaffUser, IsInSameSchool]
+
+    def post(self, request):
+        serializer = MealSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()  # Status will be handled by the model
+            return Response({
+                "status": status.HTTP_201_CREATED,
+                "message": "Meal added successfully!",
+                "data": serializer.data
+            }, status=status.HTTP_201_CREATED)
+        else:
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": "Error adding meal.",
+                "errors": serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class MealListView(APIView):
+    permission_classes = [IsStaffUser, IsInSameSchool]
+
+    def get(self, request):
+        meals = Meal.objects.all()
+        serializer = MealSerializer(meals, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class MealUpdateView(APIView):
+    permission_classes = [IsStaffUser, IsInSameSchool]
+
+    def put(self, request, meal_id):
+        meal = get_object_or_404(Meal, id=meal_id)
+        serializer = MealSerializer(meal, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()  # Status will be handled by the model
+            return Response({
+                "status": status.HTTP_200_OK,
+                "message": "Meal updated successfully!",
+                "data": serializer.data
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": "Error updating meal.",
+                "errors": serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class MealDeleteView(APIView):
+    """
+    API view to delete a meal by its ID.
+    """
+    permission_classes = [IsStaffUser, IsInSameSchool]
+
+    def delete(self, request, meal_id):
+        # Fetch the meal object or return a 404 error if not found
+        meal = get_object_or_404(Meal, id=meal_id)
+
+        # Delete the meal
+        meal.delete()
+
+        return Response({
+            "status": status.HTTP_204_NO_CONTENT,
+            "message": "Meal deleted successfully!"
+        }, status=status.HTTP_204_NO_CONTENT)

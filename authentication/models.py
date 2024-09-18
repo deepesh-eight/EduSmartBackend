@@ -77,6 +77,7 @@ class User(AbstractUser):
     old_id = models.IntegerField(null=True, blank=True)
     name = models.CharField(max_length=150)
     email = models.EmailField(unique=True)
+    fcm_token = models.CharField(max_length=255, null=True, blank=True)
     username = None
     first_name = None
     last_name = None
@@ -151,7 +152,7 @@ class TeacherUser(models.Model):
     experience = models.IntegerField(null=True, blank=True)
     class_subject_section_details = models.JSONField(blank=True, null=True)
     highest_qualification = models.CharField(max_length=255)
-    fcm_token = models.CharField(max_length=255, blank=True, null=True)
+    # fcm_token = models.CharField(max_length=255, blank=True, null=True)
 
     # certificate = models.FileField(upload_to='', blank=True, null=True)
 

@@ -38,7 +38,7 @@ from teacher.serializers import TeacherUserSignupSerializer, TeacherDetailSerial
     TeacherAttendanceFilterListSerializer, AvailabilityCreateSerializer, \
     ChatRequestMessageSerializer, TeacherChatHistorySerializer, AvailabilityGetSerializer, StudyMaterialListSerializer, \
     StudyMaterialDetailSerializer, TeacherListBySectionSerializer, TeacherAttendanceCreateSerializer, \
-    StaffAttendanceCreateSerializer, StaffListBySectionSerializer, FCMTokenSerializer
+    StaffAttendanceCreateSerializer, StaffListBySectionSerializer
 from utils import create_response_data, create_response_list_data, generate_random_password, \
     get_teacher_total_attendance, \
     get_teacher_monthly_attendance, get_teacher_total_absent, get_teacher_monthly_absent
@@ -843,55 +843,6 @@ class TeacherScheduleRenewView(APIView):
                 data={}
             )
             return Response(response_data, status=status.HTTP_404_NOT_FOUND);
-
-
-class FCMTokenUpdateView(APIView):
-    permission_classes = [IsTeacherUser, IsInSameSchool]
-
-    def post(self, request):
-        try:
-            serializer = FCMTokenSerializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            teacher_id = request.user.id
-            fcm_token = serializer.validated_data['fcm_token']
-
-            # Get the teacher user instance
-            teacher = get_object_or_404(TeacherUser, user_id=teacher_id)
-
-            # Update the FCM token
-            teacher.fcm_token = fcm_token
-            teacher.save()
-
-            response_data = create_response_data(
-                status=status.HTTP_200_OK,
-                message="FCM token updated successfully.",
-                data={},
-            )
-            return Response(response_data, status=status.HTTP_200_OK)
-
-        except KeyError as e:
-            response_data = create_response_data(
-                status=status.HTTP_400_BAD_REQUEST,
-                message=f"KeyError: {e.args[0]}",
-                data={},
-            )
-            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
-
-        except ValidationError as er:
-            response_data = create_response_data(
-                status=status.HTTP_400_BAD_REQUEST,
-                message=f"ValidationError: {er.args[0]}",
-                data={},
-            )
-            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
-
-        except Exception as e:
-            response_data = create_response_data(
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                message=f"An unexpected error occurred: {e}",
-                data={},
-            )
-            return Response(response_data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class TeacherAttendanceCreateView(APIView):

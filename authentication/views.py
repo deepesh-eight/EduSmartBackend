@@ -11,6 +11,7 @@ from django.utils import timezone
 from pytz import timezone as pytz_timezone
 from rest_framework import status, permissions
 from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import AuthenticationFailed, TokenError
@@ -37,7 +38,8 @@ from authentication.serializers import UserSignupSerializer, UsersListSerializer
     ClassEventCreateSerializer, ClassEventListSerializer, ClassEventDetailSerializer, ClassEventUpdateSerializer, \
     AcademicCalendarSerializer, EventListSerializer, EventDetailSerializer, TeacherEventListSerializer, \
     TeacherEventDetailSerializer, TeacherCalendarDetailSerializer, ExamScheduleListSerializer, \
-    ExamScheduleDetailSerializer, StudentInfoListSerializer, StudentInfoDetailSerializer, InquirySerializer
+    ExamScheduleDetailSerializer, StudentInfoListSerializer, StudentInfoDetailSerializer, InquirySerializer, \
+    FCMTokenSerializer
 from constants import UserLoginMessage, UserResponseMessage, AttendenceMarkedMessage, ScheduleMessage, \
     CurriculumMessage, DayReviewMessage, NotificationMessage, AnnouncementMessage, TimeTableMessage, ReportCardMesssage, \
     ZoomLinkMessage, StudyMaterialMessage, EventsMessages, ContentMessages, ClassEventMessage, InquiryMessage
@@ -85,14 +87,15 @@ class UserCreateView(APIView):
             state = serializer.validated_data['state']
             country = serializer.validated_data['country']
             pincode = serializer.validated_data['pincode']
+            fcm_token = serializer.validated_data.get('fcm_token')
 
             if user_type == 'admin':
                 user = User.objects.create_admin_user(
-                    name=name, email=email, password=password, phone=phone, user_type=user_type
+                    name=name, email=email, password=password, phone=phone, user_type=user_type, fcm_token=fcm_token
                 )
-            elif user_type == 'management' or user_type == 'payrollmanagement' or user_type == 'boarding':
+            elif user_type in ['management', 'payrollmanagement', 'boarding']:
                 user = User.objects.create_user(
-                    name=name, email=email, password=password, phone=phone, user_type=user_type
+                    name=name, email=email, password=password, phone=phone, user_type=user_type, fcm_token=fcm_token
                 )
             else:
                 raise ValidationError(
@@ -107,7 +110,8 @@ class UserCreateView(APIView):
                 'email': user.email,
                 'phone': str(user.phone),
                 'is_email_verified': user.is_email_verified,
-                'user_type': user.user_type
+                'user_type': user.user_type,
+                'fcm_token': user.fcm_token
             }
             response = create_response_data(
                 status=status.HTTP_201_CREATED,
@@ -120,6 +124,54 @@ class UserCreateView(APIView):
             return Response(f"Missing key in request data: {e}", status=status.HTTP_400_BAD_REQUEST)
         except IntegrityError as e:
             return Response("User already exist", status=status.HTTP_400_BAD_REQUEST)
+
+
+class FCMTokenUpdateView(APIView):
+    permission_classes = [IsAuthenticated]  # Ensure the user is authenticated
+
+    def post(self, request):
+        try:
+            serializer = FCMTokenSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+
+            # Get the authenticated user (can be any user type)
+            user = request.user
+            fcm_token = serializer.validated_data['fcm_token']
+
+            # Update the FCM token for the user
+            user.fcm_token = fcm_token
+            user.save()
+
+            response_data = create_response_data(
+                status=status.HTTP_200_OK,
+                message="FCM token updated successfully.",
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        except KeyError as e:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=f"KeyError: {e.args[0]}",
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+        except ValidationError as er:
+            response_data = create_response_data(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=f"ValidationError: {er.args[0]}",
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            response_data = create_response_data(
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                message=f"An unexpected error occurred: {e}",
+                data={},
+            )
+            return Response(response_data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class FetchUserDetailView(APIView):

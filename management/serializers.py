@@ -10,7 +10,7 @@ from authentication.models import StaffUser, Certificate, TimeTable, TeacherUser
     StaffAttendence
 from constants import ATTENDENCE_CHOICE
 from curriculum.models import Curriculum
-from management.models import Salary, SalaryFormat, Fee, FeeFormat, DueFeeDetail
+from management.models import Salary, SalaryFormat, Fee, FeeFormat, DueFeeDetail, Meal
 from student.models import ExmaReportCard, StudentAttendence
 from superadmin.models import SchoolProfile
 from teacher.serializers import CertificateSerializer
@@ -1304,3 +1304,8 @@ class StudentAttendanceUpdateSerializer(serializers.ModelSerializer):
         fields = ['date', 'mark_attendence']
 
 
+class MealSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Meal
+        fields = ['id', 'meal_type', 'date', 'items', 'status']  # Include 'status' for visibility
+        read_only_fields = ['status']  # Make 'status' read-only to prevent manual updates

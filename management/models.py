@@ -1,7 +1,8 @@
 from django.db import models
+from datetime import date
 
 from EduSmart import storage_backends
-from authentication.models import User, StudentUser, TeacherUser,TeacherAttendence
+from authentication.models import User, StudentUser, TeacherUser, TeacherAttendence
 
 
 # Create your models here.
@@ -87,3 +88,22 @@ class DueFeeDetail(models.Model):
         return f"{self.id}"
 
 
+class Meal(models.Model):
+    MEAL_TYPES = [
+        (1, 'Breakfast'),
+        (2, 'Lunch'),
+        (3, 'Snacks'),
+    ]
+
+    meal_type = models.IntegerField(choices=MEAL_TYPES)
+    date = models.DateField()
+    items = models.JSONField()
+    status = models.BooleanField(default=True)  # Default to True
+
+    def save(self, *args, **kwargs):
+        today = date.today()
+        self.status = (self.date == today)  # Set status to True if date is today, otherwise False
+        super(Meal, self).save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{dict(self.MEAL_TYPES).get(self.meal_type)} on {self.date}"

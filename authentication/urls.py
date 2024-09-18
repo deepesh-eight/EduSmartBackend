@@ -12,6 +12,7 @@ urlpatterns = [
     path('users/list/', UsersList.as_view(), name='users_list'),
     path('user/delete/<int:pk>/', UserDeleteView.as_view(), name='user_delete'),
     path('user/update-profile/', UserUpdateProfileView.as_view(), name='update_profile'),
+    path('update-fcm-token/', FCMTokenUpdateView.as_view(), name='update_fcm_token'),
 
     # Admin Panel APIS
     path('staff/login/', AdminStaffLoginView.as_view(), name='staff_login'),

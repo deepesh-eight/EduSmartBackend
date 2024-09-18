@@ -478,12 +478,6 @@ class ScheduleUpdateSerializer(serializers.ModelSerializer):
         return instance
 
 
-class FCMTokenSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = TeacherUser
-        fields = ['fcm_token']
-
-
 class TeacherAttendanceSerializer(serializers.ModelSerializer):
     teacher = serializers.CharField(required=True)
     mark_attendence = serializers.ChoiceField(choices=ATTENDENCE_CHOICE, required=True)

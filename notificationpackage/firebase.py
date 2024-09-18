@@ -11,6 +11,7 @@ if not firebase_admin._apps:
     cred = credentials.Certificate(cred_path)
     firebase_admin.initialize_app(cred)
 
+
 def send_push_notification(tokens, title, message):
     try:
         # Create a MulticastMessage instance

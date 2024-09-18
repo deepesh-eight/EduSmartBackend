@@ -807,5 +807,6 @@ class InquirySerializer(serializers.ModelSerializer):
 
 class FCMTokenSerializer(serializers.ModelSerializer):
     class Meta:
-        model = TeacherUser
-        fields = ['fcm_token']
+        model = User  # Change to the base User model
+        fields = ['fcm_token']  # This assumes 'fcm_token' is a field in the User model
+
