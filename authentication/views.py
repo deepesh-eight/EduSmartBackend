@@ -30,7 +30,7 @@ from authentication.models import User, AddressDetails, ErrorLogging, Certificat
     TeacherUser, StudentUser, TeachersSchedule, DayReview, TeacherAttendence, Notification, TimeTable, EventsCalender, \
     ClassEvent, ClassEventImage, EventImage, InquiryForm
 from authentication.permissions import IsSuperAdminUser, IsAdminUser, IsManagementUser, IsPayRollManagementUser, \
-    IsBoardingUser, IsInSameSchool, IsTeacherUser, IsAdminOrIsStaffAndInSameSchool
+    IsBoardingUser, IsInSameSchool, IsTeacherUser, IsAdminOrIsStaffAndInSameSchool, IsAuthenticatedUser
 from authentication.serializers import UserSignupSerializer, UsersListSerializer, UpdateProfileSerializer, \
     UserLoginSerializer, NonTeachingStaffSerializers, NonTeachingStaffListSerializers, \
     NonTeachingStaffDetailSerializers, NonTeachingStaffProfileSerializers, StaffAttendanceSerializer, \
@@ -3393,20 +3393,20 @@ class StaffUpdateView(APIView):
 
 
 class ChangePasswordAPIView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAuthenticatedUser]
 
     def post(self, request, *args, **kwargs):
-        # Get the user by ID
-        user_id = request.data.get('user_id')
+        # Get the email and new password from the request data
+        email = request.data.get('email')
         new_password = request.data.get('new_password')
 
-        if not user_id or not new_password:
-            return Response({"error": "user_id and new_password are required."}, status=status.HTTP_400_BAD_REQUEST)
+        if not email or not new_password:
+            return Response({"error": "Email and new_password are required."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            user = User.objects.get(id=user_id)
+            user = User.objects.get(email=email)
         except User.DoesNotExist:
-            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "User with this email not found."}, status=status.HTTP_404_NOT_FOUND)
 
         # Check if the new password is the same as the current one
         if user.check_password(new_password):
@@ -3415,7 +3415,6 @@ class ChangePasswordAPIView(APIView):
 
         # Set the new password
         user.set_password(new_password)
-
         user.save()
 
         return Response({"message": "Password updated successfully."}, status=status.HTTP_200_OK)
