@@ -101,7 +101,7 @@ class StaffProfileSerializer(serializers.ModelSerializer):
             'designation',
             'is_email_verified',
             'is_active',
-            'role'
+            'user_type'
         ]
 
 
