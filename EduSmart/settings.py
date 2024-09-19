@@ -65,7 +65,21 @@ INSTALLED_APPS = [
 ]
 
 '''Frontend and Application only'''
-CORS_ORIGIN_ALLOW_ALL = True
+# CORS_ORIGIN_ALLOW_ALL = True
+# CORS settings
+CORS_ORIGIN_ALLOW_ALL = False
+CORS_ALLOWED_ORIGINS = [
+    'https://edu-management.azurewebsites.net',
+]
+CORS_ALLOW_CREDENTIALS = True
+
+# CSRF settings
+CSRF_TRUSTED_ORIGINS = ['https://edu-management.azurewebsites.net']
+CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_HTTPONLY = False
+
+# Secure cookies for HTTPS
+SESSION_COOKIE_SECURE = True
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -95,7 +109,6 @@ TEMPLATES = [
         },
     },
 ]
-
 
 WSGI_APPLICATION = 'EduSmart.wsgi.application'
 
@@ -141,7 +154,6 @@ TIME_ZONE = 'Asia/Kolkata'
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True
-
 
 # TIME_ZONE = 'UTC'
 #
@@ -189,7 +201,6 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'developerphp45@gmail.com'
 EMAIL_HOST_PASSWORD = 'idthakdtcijdmduu'
 DEFAULT_FROM_EMAIL = 'developerphp45@gmail.com'
-
 
 # Azure Storage settings
 AZURE_ACCOUNT_NAME = 'edublobstoragecontainer'
