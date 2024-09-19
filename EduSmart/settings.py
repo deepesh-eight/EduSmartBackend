@@ -33,7 +33,7 @@ ALLOWED_HOSTS = ['edu-management.azurewebsites.net']
 # ALLOWED_HOSTS = ['127.0.0.1']
 base_url = 'https://edu-management.azurewebsites.net'
 # Application definition
-CSRF_TRUSTED_ORIGINS = ['https://edu-management.azurewebsites.net']
+# CSRF_TRUSTED_ORIGINS = ['https://edu-management.azurewebsites.net']
 
 
 INSTALLED_APPS = [
@@ -207,5 +207,5 @@ MEDIA_URL = f'https://{AZURE_ACCOUNT_NAME}.blob.core.windows.net/{AZURE_IMAGE_CO
 MEDIA_ROOT = ''
 
 # Secure cookies for HTTPS
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SECURE = True
+# CSRF_COOKIE_SECURE = True
+# SESSION_COOKIE_SECURE = True
